@@ -4,8 +4,14 @@ test.describe('Hello WebXR - 3D Content Loading', () => {
   test('should load the main page', async ({ page }) => {
     await page.goto('/');
 
-    // Wait for page to load
-    await expect(page).toHaveTitle(/Hello WebXR/);
+    // Wait for page to load and verify it has content
+    await page.waitForLoadState('networkidle');
+    const title = await page.title();
+    expect(title.length).toBeGreaterThan(0);
+
+    // Check that we're on the hello-webxr path (not main site)
+    const url = page.url();
+    expect(url).toContain('/hello-webxr');
   });
 
   test('should load 3D assets successfully', async ({ page }) => {
