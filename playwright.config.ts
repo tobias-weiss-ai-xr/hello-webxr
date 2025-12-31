@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: process.env.CI ? 'http://localhost/hello-webxr/' : 'https://tobias-weiss.org/hello-webxr/',
+    baseURL: 'https://tobias-weiss.org/hello-webxr/',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
