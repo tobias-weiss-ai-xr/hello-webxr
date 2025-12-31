@@ -1,0 +1,31 @@
+services:
+  hello-webxr:
+    image: hello-webxr:latest
+    build: .
+    container_name: hello-webxr
+    restart: unless-stopped
+    networks:
+      - traefik-web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-web"
+      # HTTP router with redirect to HTTPS
+      - "traefik.http.routers.hello-webxr.rule=Host(`tobias-weiss.org`) && PathPrefix(`/hello-webxr`)"
+      - "traefik.http.routers.hello-webxr.entrypoints=web"
+      - "traefik.http.routers.hello-webxr.priority=100"
+      - "traefik.http.routers.hello-webxr.middlewares=hello-webxr-stripprefix,https-redirect@file"
+      # HTTPS router
+      - "traefik.http.routers.hello-webxr-secure.rule=Host(`tobias-weiss.org`) && PathPrefix(`/hello-webxr`)"
+      - "traefik.http.routers.hello-webxr-secure.priority=100"
+      - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
+      - "traefik.http.routers.hello-webxr-secure.tls=true"
+      - "traefik.http.routers.hello-webxr-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.hello-webxr-secure.middlewares=hello-webxr-stripprefix,security-headers@file,compression@file"
+      # Strip prefix middleware
+      - "traefik.http.middlewares.hello-webxr-stripprefix.stripprefix.prefixes=/hello-webxr"
+      # Service
+      - "traefik.http.services.hello-webxr.loadbalancer.server.port=80"
+
+networks:
+  traefik-web:
+    external: true
