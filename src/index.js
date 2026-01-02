@@ -199,8 +199,76 @@ export function init() {
   ambientMusic = new THREE.Audio(listener);
 
   controls = new PointerLockControls(camera, renderer.domElement);
+
+  // Browser navigation - enable pointer lock on click
+  document.body.addEventListener('click', () => {
+    if (!context.vrMode) {
+      controls.lock();
+    }
+  });
+
+  // Keyboard navigation
+  var moveForward = false;
+  var moveBackward = false;
+  var moveLeft = false;
+  var moveRight = false;
+
+  document.addEventListener('keydown', (ev) => {
+    switch(ev.keyCode) {
+      case 87: case 38: // W or Up Arrow
+        moveForward = true;
+        break;
+      case 65: case 37: // A or Left Arrow
+        moveLeft = true;
+        break;
+      case 83: case 40: // S or Down Arrow
+        moveBackward = true;
+        break;
+      case 68: case 39: // D or Right Arrow
+        moveRight = true;
+        break;
+      case 78: // N - next room
+        if (!context.vrMode) {
+          gotoRoom((context.room + 1) % rooms.length);
+        }
+        break;
+      default: {
+        // Number keys for direct room selection
+        var room = ev.keyCode - 48;
+        if (!ev.metaKey && !context.vrMode && room >= 0 && room < rooms.length) {
+          gotoRoom(room);
+        }
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (ev) => {
+    switch(ev.keyCode) {
+      case 87: case 38:
+        moveForward = false;
+        break;
+      case 65: case 37:
+        moveLeft = false;
+        break;
+      case 83: case 40:
+        moveBackward = false;
+        break;
+      case 68: case 39:
+        moveRight = false;
+        break;
+    }
+  });
+
+  // Store movement state for use in render loop
+  context.browserControls = {
+    controls: controls,
+    moveForward: () => moveForward,
+    moveBackward: () => moveBackward,
+    moveLeft: () => moveLeft,
+    moveRight: () => moveRight
+  };
+
   if (debug) {
-    document.body.addEventListener('click', () => controls.lock());
     document.body.addEventListener('keydown', ev => {
       switch(ev.keyCode) {
         case 87: controls.moveForward(0.2); break;
@@ -281,6 +349,7 @@ export function init() {
     roomPhotogrammetryObject.setup(context);
     roomVertigo.setup(context);
     roomSound.setup(context);
+    roomSpider.setup(context);
 
     rooms[context.room].enter(context);
 
@@ -392,6 +461,20 @@ function animate() {
     const model = controllers[i].getObjectByName('Scene');
     if (model) {
       controllers[i].boundingBox.setFromObject(model);
+    }
+  }
+
+  // Browser navigation - handle keyboard movement
+  if (!context.vrMode && context.browserControls) {
+    const velocity = 3.0; // movement speed
+    const bc = context.browserControls;
+
+    if (bc.controls.isLocked) {
+      // Movement
+      if (bc.moveForward()) context.camera.translateZ(-velocity * delta);
+      if (bc.moveBackward()) context.camera.translateZ(velocity * delta);
+      if (bc.moveLeft()) context.camera.translateX(-velocity * delta);
+      if (bc.moveRight()) context.camera.translateX(velocity * delta);
     }
   }
 
