@@ -39,7 +39,6 @@ export function setup(ctx) {
   const cloudsTex = assets['clouds_tex'];
   const foxrTex = assets['foxr_tex'];
   const newstickerTex = assets['newsticker_tex'];
-  const mozillamrTex = assets['mozillamr_tex'];
 
   const hallMaterial = new THREE.MeshBasicMaterial({map: hallLightmapTex});
 
@@ -59,7 +58,7 @@ export function setup(ctx) {
     'sky': new THREE.MeshBasicMaterial({map: skyTex}),
     'clouds': new THREE.MeshBasicMaterial({map: cloudsTex, transparent: true}),
     'foxr': new THREE.MeshBasicMaterial({map: foxrTex, transparent: true}),
-    'mozillamr': new THREE.MeshBasicMaterial({map: mozillamrTex, transparent: true}),
+    'mozillamr': new THREE.MeshBasicMaterial({transparent: true, opacity: 0}),
   };
 
   hall = assets['hall_model'].scene;

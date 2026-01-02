@@ -14,7 +14,6 @@ export default {
   beam_tex: { url: 'beamfx.png' },
   glow_tex: { url: 'glow.basis', options: { encoding: THREE.sRGBEncoding} },
   newsticker_tex: { url: 'newsticker.jpg', options: { encoding: THREE.sRGBEncoding, flipY: false} },
-  mozillamr_tex: { url: 'mozillamr.basis', options: { encoding: THREE.sRGBEncoding, flipY: false} },
   zoomicon_tex: { url: 'zoomicon.png', options: { encoding: THREE.sRGBEncoding } },
 
   // panoramas
