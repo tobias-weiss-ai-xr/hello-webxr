@@ -227,6 +227,11 @@ export function init() {
       case 68: case 39: // D or Right Arrow
         moveRight = true;
         break;
+      case 78: // N - next room
+        if (!context.vrMode) {
+          gotoRoom((context.room + 1) % rooms.length);
+        }
+        break;
     }
   });
 
