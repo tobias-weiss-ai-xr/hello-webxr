@@ -30,7 +30,7 @@ test.describe('Arachnophobia - Accessibility Tests', () => {
     // Check header has proper heading structure
     const h1 = page.locator('.header-title h1');
     await expect(h1).toBeVisible();
-    await expect(h1).ContainText('Arachnophobia');
+    await expect(h1).toContainText('Arachnophobia');
 
     // Check color contrast for header (black background, white text)
     const headerColor = await header.evaluate((el) => {
