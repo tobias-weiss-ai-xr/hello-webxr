@@ -12,3 +12,8 @@ tests/
 test-*.html
 bundle.js.map
 res/
+src/rooms/
+src/systems/
+src/stations/
+src/lib/
+src/components/
