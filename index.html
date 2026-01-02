@@ -1,45 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-77033033-28"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-77033033-28');
-  </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="apple-touch-icon-precomposed" sizes="57x57" href="./res/apple-touch-icon-57x57.png" />
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="./res/apple-touch-icon-114x114.png" />
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="./res/apple-touch-icon-72x72.png" />
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="./res/apple-touch-icon-144x144.png" />
-  <link rel="apple-touch-icon-precomposed" sizes="120x120" href="./res/apple-touch-icon-120x120.png" />
-  <link rel="apple-touch-icon-precomposed" sizes="152x152" href="./res/apple-touch-icon-152x152.png" />
-  <link rel="icon" type="image/png" href="./res/favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="./res/favicon-16x16.png" sizes="16x16" />
-  <meta name="application-name" content="Hello WebXR!"/>
-  <meta name="msapplication-TileColor" content="#C6C6C6" />
-  <meta name="msapplication-TileImage" content="./res/mstile-144x144.png" />
+  <meta name="application-name" content="Arachnophobia"/>
 
   <!-- Search Engine -->
-  <meta name="description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
+  <meta name="description" content="A WebXR VR experience in a cozy bedroom with an unexpected spider visitor. Face your fears in virtual reality!">
   <!-- Schema.org for Google -->
-  <meta itemprop="name" content="Hello WebXR!">
-  <meta itemprop="description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
+  <meta itemprop="name" content="Arachnophobia">
+  <meta itemprop="description" content="A WebXR VR experience in a cozy bedroom with an unexpected spider visitor.">
   <!-- Twitter -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Hello WebXR!">
-  <meta name="twitter:description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
+  <meta name="twitter:title" content="Arachnophobia - WebXR Experience">
+  <meta name="twitter:description" content="A WebXR VR experience in a cozy bedroom with an unexpected spider visitor.">
   <!-- Open Graph general (Facebook, Pinterest & Google+) -->
-  <meta name="og:title" content="Hello WebXR!">
-  <meta name="og:description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
-  <meta name="og:site_name" content="Hello WebXR!">
+  <meta name="og:title" content="Arachnophobia - WebXR Experience">
+  <meta name="og:description" content="A WebXR VR experience in a cozy bedroom with an unexpected spider visitor.">
+  <meta name="og:site_name" content="Arachnophobia">
   <meta name="og:locale" content="en_US">
   <meta name="og:type" content="website">
 
-  <title>Hello WebXR!</title>
+  <title>Arachnophobia - WebXR Experience</title>
 
   <style>
 
@@ -54,42 +36,26 @@ header {
   margin-top: 1rem;
   text-align: right;
 }
-#mrlogo {
-  margin: 0.3rem 1.5rem;
-  width: 200px;
-}
 header a {
   text-decoration: none;
-  color: #000;
+  color: #fff;
   margin-left: 0.8rem;
   vertical-align: top;
 }
-header a path{
-  fill: #000;
-}
 header a:hover {
-  color: #059;
+  color: #ff6b6b;
   text-decoration: underline;
   text-underline-offset: 6px;
-}
-header a:hover path, #mrlogo:hover path.mrlogobg{
-  fill: #059;
 }
 #handedness a{
   margin-left: 0.3rem;
 }
 .activehand {
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: #000;
   padding: 3px 12px;
   border-radius: 5px;
   pointer-events: none;
-}
-
-@media (max-width: 580px) {
-  #mrlogo{
-    display: none;
-  }
 }
 
 #loading {
@@ -98,15 +64,18 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: url(assets/loadingbg.jpg);
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 #loading h1 {
-  color: white;
-  font-size: 6rem;
+  color: #ff6b6b;
+  font-size: 5rem;
   margin: 1rem;
-  text-shadow: 1px 3px 5px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+}
+#loading p {
+  color: #aaa;
+  font-size: 1.2rem;
+  margin-top: 1rem;
 }
 #loading div {
   text-align: center;
@@ -123,10 +92,12 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
 #no-webxr {
   padding: 20px;
   text-align: center;
+  color: white;
+  background: rgba(0,0,0,0.8);
 }
 
 #no-webxr a {
-  color: #000;
+  color: #ff6b6b;
 }
 
   </style>
@@ -149,9 +120,10 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
 
 <div id="loading">
   <div>
-    <h1> Hello!</h1>
+    <h1>🕷 Arachnophobia</h1>
+    <p>A WebXR VR Experience</p>
     <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" version="1.1">
-      <path stroke="#000" stroke-width="8px" fill="none" d="M 50 5 a 45 45 0 1 0 0.0001 0"
+      <path stroke="#ff6b6b" stroke-width="8px" fill="none" d="M 50 5 a 45 45 0 1 0 0.0001 0"
       stroke-dasharray="282 282" stroke-dashoffset="282" id="progressbar"/>
     </svg>
   </div>
@@ -159,20 +131,17 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
 
 <header>
   <span id="handedness">
-    Handedness:
+    Controller:
     <a href="#" id="lefthand" onclick="setHandedness(this, 'left')">Left</a>
     <a href="#" id="righthand" onclick="setHandedness(this, 'right')">Right</a>
   </span>
 </header>
 
-
-
 <div id="browser-help" style="position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 15px; border-radius: 8px; font-family: sans-serif; font-size: 14px; line-height: 1.6; pointer-events: none; user-select: none; z-index: 1000;">
-  <strong style="color: #5bf;">Browser Navigation:</strong><br>
+  <strong style="color: #ff6b6b;">Desktop Controls:</strong><br>
   Click to enable mouse look<br>
   W/↑ - Forward | S/↓ - Back<br>
-  A/← - Left | D/→ - Right<br>
-  N - Next room
+  A/← - Left | D/→ - Right
 </div>
 
 </body>

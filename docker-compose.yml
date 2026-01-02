@@ -1,8 +1,8 @@
 services:
-  hello-webxr:
-    image: hello-webxr:latest
+  spider-room:
+    image: spider-room:latest
     build: .
-    container_name: hello-webxr
+    container_name: spider-room
     restart: unless-stopped
     networks:
       - traefik-web
@@ -10,21 +10,21 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-web"
       # HTTP router with redirect to HTTPS
-      - "traefik.http.routers.hello-webxr.rule=Host(`tobias-weiss.org`) && PathPrefix(`/hello-webxr`)"
-      - "traefik.http.routers.hello-webxr.entrypoints=web"
-      - "traefik.http.routers.hello-webxr.priority=100"
-      - "traefik.http.routers.hello-webxr.middlewares=hello-webxr-stripprefix,https-redirect@file"
+      - "traefik.http.routers.spider-room.rule=Host(`tobias-weiss.org`) && PathPrefix(`/arachnophobia`)"
+      - "traefik.http.routers.spider-room.entrypoints=web"
+      - "traefik.http.routers.spider-room.priority=100"
+      - "traefik.http.routers.spider-room.middlewares=spider-room-stripprefix,https-redirect@file"
       # HTTPS router
-      - "traefik.http.routers.hello-webxr-secure.rule=Host(`tobias-weiss.org`) && PathPrefix(`/hello-webxr`)"
-      - "traefik.http.routers.hello-webxr-secure.priority=100"
-      - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
-      - "traefik.http.routers.hello-webxr-secure.tls=true"
-      - "traefik.http.routers.hello-webxr-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.hello-webxr-secure.middlewares=hello-webxr-stripprefix,security-headers@file,compression@file"
+      - "traefik.http.routers.spider-room-secure.rule=Host(`tobias-weiss.org`) && PathPrefix(`/arachnophobia`)"
+      - "traefik.http.routers.spider-room-secure.priority=100"
+      - "traefik.http.routers.spider-room-secure.entrypoints=websecure"
+      - "traefik.http.routers.spider-room-secure.tls=true"
+      - "traefik.http.routers.spider-room-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.spider-room-secure.middlewares=spider-room-stripprefix,security-headers@file,compression@file"
       # Strip prefix middleware
-      - "traefik.http.middlewares.hello-webxr-stripprefix.stripprefix.prefixes=/hello-webxr"
+      - "traefik.http.middlewares.spider-room-stripprefix.stripprefix.prefixes=/arachnophobia"
       # Service
-      - "traefik.http.services.hello-webxr.loadbalancer.server.port=80"
+      - "traefik.http.services.spider-room.loadbalancer.server.port=80"
 
 networks:
   traefik-web:
