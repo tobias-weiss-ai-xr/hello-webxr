@@ -10,6 +10,5 @@ README.md
 *.md
 tests/
 test-*.html
-bundle.js
 bundle.js.map
 res/
