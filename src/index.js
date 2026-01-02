@@ -341,7 +341,8 @@ export function init() {
 
     rooms[context.room].enter(context);
 
-    slideshow.setup(context);
+    // Slideshow disabled - was causing automatic room cycling in browser mode
+    // slideshow.setup(context);
 
     document.body.appendChild(renderer.domElement);
     document.body.appendChild(VRButton.createButton(renderer, status => {
@@ -351,7 +352,8 @@ export function init() {
         context.cameraRig.position.set(0, 0, 2);
         context.goto = null;
       } else {
-        slideshow.setup(context);
+        // Slideshow disabled - was causing automatic room cycling in browser mode
+        // slideshow.setup(context);
       }
     }));
     renderer.setAnimationLoop(animate);
@@ -469,9 +471,10 @@ function animate() {
   // render current room
   context.raycontrol.execute(context, delta, elapsedTime);
   rooms[context.room].execute(context, delta, elapsedTime);
-  if (!context.vrMode) {
-    slideshow.execute(context, delta, elapsedTime);
-  }
+  // Slideshow disabled - was causing automatic room cycling in browser mode
+  // if (!context.vrMode) {
+  //   slideshow.execute(context, delta, elapsedTime);
+  // }
 
   renderer.render(scene, camera);
   if (context.goto !== null) {
