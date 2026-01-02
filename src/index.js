@@ -227,18 +227,6 @@ export function init() {
       case 68: case 39: // D or Right Arrow
         moveRight = true;
         break;
-      case 78: // N - next room
-        if (!context.vrMode) {
-          gotoRoom((context.room + 1) % rooms.length);
-        }
-        break;
-      default: {
-        // Number keys for direct room selection
-        var room = ev.keyCode - 48;
-        if (!ev.metaKey && !context.vrMode && room >= 0 && room < rooms.length) {
-          gotoRoom(room);
-        }
-      }
     }
   });
 
