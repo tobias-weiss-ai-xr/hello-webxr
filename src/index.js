@@ -98,7 +98,8 @@ const targetPositions = {
   hall: {
     sound: new THREE.Vector3(0, 0, 0),
     photogrammetry: new THREE.Vector3(1, 0, 0),
-    vertigo: new THREE.Vector3(0, 0, 0)
+    vertigo: new THREE.Vector3(0, 0, 0),
+    spider: new THREE.Vector3(0, 0, -3)
   },
   photogrammetry: {
     hall: new THREE.Vector3(-3.6, 0, 2.8)
@@ -108,6 +109,9 @@ const targetPositions = {
   },
   vertigo: {
     hall: new THREE.Vector3(-1.8, 0, -5)
+  },
+  spider: {
+    hall: new THREE.Vector3(0, 0, 3)
   }
 };
 
