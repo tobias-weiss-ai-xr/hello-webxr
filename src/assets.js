@@ -77,7 +77,6 @@ export default {
   teleport_b_snd: { url: 'ogg/teleport_b.ogg' },
 
   // spider
-  spider_model: { url: 'spider.glb' },
-  spider_tex: { url: 'spider.basis', options: { encoding: THREE.sRGBEncoding, flipY: false} }
+  spider_model: { url: 'spider.glb' }
 };
 
