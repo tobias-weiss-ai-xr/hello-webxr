@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
 import {VRButton} from './lib/VRButton.js';
-import {slideshow} from './lib/slideshow.js';
 import {loadAssets} from './lib/assetManager.js';
 
 // ECSY
@@ -24,19 +23,7 @@ import { Text, Object3D, AreaChecker } from './components/index.js';
 import RayControl from './lib/RayControl.js';
 import Teleport from './lib/Teleport.js';
 
-import * as roomHall from './rooms/Hall.js';
-import * as roomPanorama from './rooms/Panorama.js';
-import * as roomPanoramaStereo from './rooms/PanoramaStereo.js';
-import * as roomPhotogrammetryObject from './rooms/PhotogrammetryObject.js';
-import * as roomVertigo from './rooms/Vertigo.js';
-import * as roomSound from './rooms/Sound.js';
 import * as roomSpider from './rooms/Spider.js';
-import * as roomLanding from './rooms/Landing.js';
-import * as roomControllers from './rooms/Controllers.js';
-import * as roomTeleport from './rooms/Teleport.js';
-import * as roomModels from './rooms/Models.js';
-import * as roomAudio from './rooms/Audio.js';
-import * as roomInteraction from './rooms/Interaction.js';
 
 import {shaders} from './lib/shaders.js';
 
@@ -51,64 +38,15 @@ var raycontrol, teleport, controllers = [];
 var listener, ambientMusic;
 
 var rooms = [
-  roomLanding,        // 0 - Landing room (NEW)
-  roomControllers,    // 1 - Controllers learning room
-  roomTeleport,       // 2 - Teleportation learning room
-  roomModels,         // 3 - 3D Models learning room
-  roomAudio,          // 4 - Spatial Audio learning room
-  roomInteraction,    // 5 - Ray Control learning room
-  roomHall,           // 6 - Original hall
-  roomSound,          // 7 - Sound room
-  roomPhotogrammetryObject, // 8 - Photogrammetry
-  roomVertigo,        // 9 - Vertigo
-  roomSpider,         // 10 - Spider bedroom
-  roomPanoramaStereo, // 11 - Stereo panorama
-  roomPanorama,       // 12-17 - Panoramas
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
+  roomSpider,         // 0 - Spider bedroom
 ];
 
 const roomNames = [
-  'landing',
-  'controllers',
-  'teleport',
-  'models',
-  'audio',
-  'interaction',
-  'hall',
-  'sound',
-  'photogrammetry',
-  'vertigo',
   'spider',
-  'panoramastereo',
-  'panorama1',
-  'panorama2',
-  'panorama3',
-  'panorama4',
-  'panorama5',
 ];
 
 const musicThemes = [
-  false,              // 0 - landing
-  false,              // 1 - controllers
-  false,              // 2 - teleport
-  false,              // 3 - models
-  false,              // 4 - audio
-  false,              // 5 - interaction
-  false,              // 6 - hall
-  false,              // 7 - sound
-  'chopin_snd',       // 8 - photogrammetry
-  'wind_snd',         // 9 - vertigo
-  false,              // 10 - spider
-  false,              // 11 - panorama stereo
-  'birds_snd',        // 12 - panorama1
-  'birds_snd',        // 13 - panorama2
-  'forest_snd',       // 14 - panorama3
-  'wind_snd',         // 15 - panorama4
-  'birds_snd',        // 16 - panorama5
+  false,              // 0 - spider
 ];
 
 const urlObject = new URL(window.location);
@@ -120,42 +58,7 @@ const handedness = urlObject.searchParams.has('handedness') ? urlObject.searchPa
 
 // Target positions when moving from one room to another
 const targetPositions = {
-  landing: {
-    // From landing to learning rooms (handled by room-specific positions)
-  },
-  controllers: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  teleport: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  models: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  audio: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  interaction: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  hall: {
-    sound: new THREE.Vector3(0, 0, 0),
-    photogrammetry: new THREE.Vector3(1, 0, 0),
-    vertigo: new THREE.Vector3(0, 0, 0),
-    spider: new THREE.Vector3(0, 0, -3)
-  },
-  photogrammetry: {
-    hall: new THREE.Vector3(-3.6, 0, 2.8)
-  },
-  sound: {
-    hall: new THREE.Vector3(4.4, 0, 4.8)
-  },
-  vertigo: {
-    hall: new THREE.Vector3(-1.8, 0, -5)
-  },
-  spider: {
-    hall: new THREE.Vector3(0, 0, 3)
-  }
+  spider: {}
 };
 
 function gotoRoom(room) {
@@ -383,35 +286,17 @@ export function init() {
     context.teleport = teleport;
 
     setupControllers();
-    roomLanding.setup(context);
-    roomControllers.setup(context);
-    roomTeleport.setup(context);
-    roomModels.setup(context);
-    roomAudio.setup(context);
-    roomInteraction.setup(context);
-    roomHall.setup(context);
-    roomPanorama.setup(context);
-    roomPanoramaStereo.setup(context);
-    roomPhotogrammetryObject.setup(context);
-    roomVertigo.setup(context);
-    roomSound.setup(context);
     roomSpider.setup(context);
 
     rooms[context.room].enter(context);
 
-    // Slideshow disabled - was causing automatic room cycling in browser mode
-    // slideshow.setup(context);
-
     document.body.appendChild(renderer.domElement);
-    document.body.appendChild(VRButton.createButton(renderer, status => {
+    document.body.appendChild(VRButton.createButton(renderer, status => {
       context.vrMode = status === 'sessionStarted';
       if (context.vrMode) {
         gotoRoom(0);
         context.cameraRig.position.set(0, 0, 2);
         context.goto = null;
-      } else {
-        // Slideshow disabled - was causing automatic room cycling in browser mode
-        // slideshow.setup(context);
       }
     }));
     renderer.setAnimationLoop(animate);
@@ -529,10 +414,6 @@ function animate() {
   // render current room
   context.raycontrol.execute(context, delta, elapsedTime);
   rooms[context.room].execute(context, delta, elapsedTime);
-  // Slideshow disabled - was causing automatic room cycling in browser mode
-  // if (!context.vrMode) {
-  //   slideshow.execute(context, delta, elapsedTime);
-  // }
 
   renderer.render(scene, camera);
   if (context.goto !== null) {

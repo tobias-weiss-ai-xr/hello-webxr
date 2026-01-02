@@ -247,7 +247,7 @@ export function setup(ctx) {
 
   scene.add(ambientSound);
 
-  // Add door interaction state
+  // Add door interaction state (visual only - no room transition)
   ctx.raycontrol.addState('doorSpider', {
     colliderMesh: door,
     onHover: (intersection, active) => {
@@ -256,7 +256,7 @@ export function setup(ctx) {
     },
     onHoverLeave: () => {},
     onSelectStart: (intersection, e) => {
-      ctx.goto = 0;
+      // Door interaction - no room transition in spider-only mode
     },
     onSelectEnd: (intersection) => {}
   });
