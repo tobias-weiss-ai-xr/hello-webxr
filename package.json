@@ -9,7 +9,9 @@
     "watch": "webpack --watch",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "test:a11y": "playwright test tests/accessibility.spec.ts",
+    "test:a11y:headed": "playwright test tests/accessibility.spec.ts --headed"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,7 @@
     "webxr-polyfill": "^2.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@babel/core": "^7.6.4",
     "@playwright/test": "^1.48.0",
     "babel-loader": "^8.0.6",
