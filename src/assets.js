@@ -74,6 +74,10 @@ export default {
   forest_snd: { url: 'ogg/forest.ogg' },
   wind_snd: { url: 'ogg/wind.ogg' },
   teleport_a_snd: { url: 'ogg/teleport_a.ogg' },
-  teleport_b_snd: { url: 'ogg/teleport_b.ogg' }
+  teleport_b_snd: { url: 'ogg/teleport_b.ogg' },
+
+  // spider
+  spider_model: { url: 'spider.glb' },
+  spider_tex: { url: 'spider.basis', options: { encoding: THREE.sRGBEncoding, flipY: false} }
 };
 

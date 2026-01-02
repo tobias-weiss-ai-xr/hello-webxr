@@ -30,6 +30,7 @@ import * as roomPanoramaStereo from './rooms/PanoramaStereo.js';
 import * as roomPhotogrammetryObject from './rooms/PhotogrammetryObject.js';
 import * as roomVertigo from './rooms/Vertigo.js';
 import * as roomSound from './rooms/Sound.js';
+import * as roomSpider from './rooms/Spider.js';
 
 import {shaders} from './lib/shaders.js';
 
@@ -48,6 +49,7 @@ var rooms = [
   roomSound,
   roomPhotogrammetryObject,
   roomVertigo,
+  roomSpider,
   roomPanoramaStereo,
   roomPanorama,
   roomPanorama,
@@ -61,6 +63,7 @@ const roomNames = [
   'sound',
   'photogrammetry',
   'vertigo',
+  'spider',
   'panoramastereo',
   'panorama1',
   'panorama2',
@@ -74,6 +77,7 @@ const musicThemes = [
   false,
   'chopin_snd',
   'wind_snd',
+  false,
   false,
   'birds_snd',
   'birds_snd',
