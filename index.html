@@ -66,18 +66,22 @@ body{
   text-decoration: none;
   color: #fff;
   margin-left: 0.8rem;
+  padding: 3px 12px;
+  border-radius: 5px;
+  transition: all 0.2s ease;
 }
 .header-controls a:hover {
-  color: #ff6b6b;
-  text-decoration: underline;
-  text-underline-offset: 6px;
+  color: #000;
+  background: #ff6b6b;
+  text-decoration: none;
 }
 .activehand {
-  background: #fff;
+  background: #ff6b6b;
   color: #000;
   padding: 3px 12px;
   border-radius: 5px;
   pointer-events: none;
+  font-weight: 600;
 }
 
 #loading {
@@ -165,8 +169,8 @@ body{
   </div>
 </div>
 
-<div id="browser-help" style="position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 15px; border-radius: 8px; font-family: sans-serif; font-size: 14px; line-height: 1.6; pointer-events: none; user-select: none; z-index: 1000;">
-  <strong style="color: #ff6b6b;">Desktop Controls:</strong><br>
+<div id="browser-help" style="position: fixed; bottom: 20px; left: 20px; background: rgba(0,0,0,0.85); color: white; padding: 15px; border-radius: 8px; font-family: sans-serif; font-size: 14px; line-height: 1.6; pointer-events: none; user-select: none; z-index: 1000; border: 1px solid rgba(255,255,255,0.2);">
+  <strong style="color: #ffffff;">Desktop Controls:</strong><br>
   Click to enable mouse look<br>
   W/↑ - Forward | S/↓ - Back<br>
   A/← - Left | D/→ - Right
