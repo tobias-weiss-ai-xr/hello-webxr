@@ -5,6 +5,7 @@ import * as roomPanoramaStereo from '../rooms/PanoramaStereo.js';
 import * as roomPhotogrammetryObject from '../rooms/PhotogrammetryObject.js';
 import * as roomVertigo from '../rooms/Vertigo.js';
 import * as roomSound from '../rooms/Sound.js';
+import * as roomArachnophobia from '../rooms/Arachnophobia.js';
 import { ROOMS, MUSIC_THEMES, TARGET_POSITIONS } from './config.js';
 
 export class RoomManager {
@@ -15,6 +16,7 @@ export class RoomManager {
       roomSound,
       roomPhotogrammetryObject,
       roomVertigo,
+      roomArachnophobia,
       roomPanoramaStereo,
       roomPanorama,
       roomPanorama,
@@ -35,6 +37,7 @@ export class RoomManager {
     roomPhotogrammetryObject.setup(this.context);
     roomVertigo.setup(this.context);
     roomSound.setup(this.context);
+    roomArachnophobia.setup(this.context);
   }
 
   enterRoom(roomIndex) {

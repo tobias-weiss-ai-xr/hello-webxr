@@ -56,6 +56,7 @@ export function setup(ctx) {
     'doorB': createDoorMaterial(ctx),
     'doorC': createDoorMaterial(ctx),
     'doorD': createDoorMaterial(ctx),
+    'doorE': createDoorMaterial(ctx),
     'sky': new THREE.MeshBasicMaterial({map: skyTex}),
     'clouds': new THREE.MeshBasicMaterial({map: cloudsTex, transparent: true}),
     'foxr': new THREE.MeshBasicMaterial({map: foxrTex, transparent: true}),
@@ -114,7 +115,8 @@ export function setup(ctx) {
         doorA: 1,
         doorB: 2,
         doorC: 3,
-        doorD: 4
+        doorD: 4,
+        doorE: 5
       };
       ctx.goto = transitions[intersection.object.name];
     },
@@ -180,6 +182,7 @@ function updateUniforms(time) {
   objectMaterials.doorB.uniforms.time.value = time;
   objectMaterials.doorC.uniforms.time.value = time;
   objectMaterials.doorD.uniforms.time.value = time;
+  objectMaterials.doorE.uniforms.time.value = time;
   objectMaterials.doorD.uniforms.selected.value = 1; //test
   panoballs.updateUniforms(time);
 }

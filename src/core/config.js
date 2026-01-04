@@ -5,6 +5,7 @@ export const ROOMS = [
   'sound',
   'photogrammetry',
   'vertigo',
+  'arachnophobia',
   'panoramastereo',
   'panorama1',
   'panorama2',
@@ -19,6 +20,7 @@ export const MUSIC_THEMES = [
   'chopin_snd',
   'wind_snd',
   false,
+  false,
   'birds_snd',
   'birds_snd',
   'forest_snd',
@@ -30,7 +32,8 @@ export const TARGET_POSITIONS = {
   hall: {
     sound: new THREE.Vector3(0, 0, 0),
     photogrammetry: new THREE.Vector3(1, 0, 0),
-    vertigo: new THREE.Vector3(0, 0, 0)
+    vertigo: new THREE.Vector3(0, 0, 0),
+    arachnophobia: new THREE.Vector3(0, 0, 0)
   },
   photogrammetry: {
     hall: new THREE.Vector3(-3.6, 0, 2.8)
@@ -40,6 +43,9 @@ export const TARGET_POSITIONS = {
   },
   vertigo: {
     hall: new THREE.Vector3(-1.8, 0, -5)
+  },
+  arachnophobia: {
+    hall: new THREE.Vector3(0, 0, -3)
   }
 };
 
