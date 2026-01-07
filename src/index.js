@@ -24,13 +24,6 @@ import { Text, Object3D, AreaChecker } from './components/index.js';
 import RayControl from './lib/RayControl.js';
 import Teleport from './lib/Teleport.js';
 
-import * as roomHall from './rooms/Hall.js';
-import * as roomPanorama from './rooms/Panorama.js';
-import * as roomPanoramaStereo from './rooms/PanoramaStereo.js';
-import * as roomPhotogrammetryObject from './rooms/PhotogrammetryObject.js';
-import * as roomVertigo from './rooms/Vertigo.js';
-import * as roomSound from './rooms/Sound.js';
-import * as roomSpider from './rooms/Spider.js';
 import * as roomLanding from './rooms/Landing.js';
 import * as roomControllers from './rooms/Controllers.js';
 import * as roomTeleport from './rooms/Teleport.js';
@@ -51,24 +44,12 @@ var raycontrol, teleport, controllers = [];
 var listener, ambientMusic;
 
 var rooms = [
-  roomLanding,        // 0 - Landing room (NEW)
+  roomLanding,        // 0 - Landing room
   roomControllers,    // 1 - Controllers learning room
   roomTeleport,       // 2 - Teleportation learning room
   roomModels,         // 3 - 3D Models learning room
   roomAudio,          // 4 - Spatial Audio learning room
   roomInteraction,    // 5 - Ray Control learning room
-  roomHall,           // 6 - Original hall
-  roomSound,          // 7 - Sound room
-  roomPhotogrammetryObject, // 8 - Photogrammetry
-  roomVertigo,        // 9 - Vertigo
-  roomSpider,         // 10 - Spider bedroom
-  roomPanoramaStereo, // 11 - Stereo panorama
-  roomPanorama,       // 12-17 - Panoramas
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
-  roomPanorama,
 ];
 
 const roomNames = [
@@ -78,17 +59,6 @@ const roomNames = [
   'models',
   'audio',
   'interaction',
-  'hall',
-  'sound',
-  'photogrammetry',
-  'vertigo',
-  'spider',
-  'panoramastereo',
-  'panorama1',
-  'panorama2',
-  'panorama3',
-  'panorama4',
-  'panorama5',
 ];
 
 const musicThemes = [
@@ -98,17 +68,6 @@ const musicThemes = [
   false,              // 3 - models
   false,              // 4 - audio
   false,              // 5 - interaction
-  false,              // 6 - hall
-  false,              // 7 - sound
-  'chopin_snd',       // 8 - photogrammetry
-  'wind_snd',         // 9 - vertigo
-  false,              // 10 - spider
-  false,              // 11 - panorama stereo
-  'birds_snd',        // 12 - panorama1
-  'birds_snd',        // 13 - panorama2
-  'forest_snd',       // 14 - panorama3
-  'wind_snd',         // 15 - panorama4
-  'birds_snd',        // 16 - panorama5
 ];
 
 const urlObject = new URL(window.location);
@@ -137,24 +96,6 @@ const targetPositions = {
   },
   interaction: {
     landing: new THREE.Vector3(0, 0, -5)
-  },
-  hall: {
-    sound: new THREE.Vector3(0, 0, 0),
-    photogrammetry: new THREE.Vector3(1, 0, 0),
-    vertigo: new THREE.Vector3(0, 0, 0),
-    spider: new THREE.Vector3(0, 0, -3)
-  },
-  photogrammetry: {
-    hall: new THREE.Vector3(-3.6, 0, 2.8)
-  },
-  sound: {
-    hall: new THREE.Vector3(4.4, 0, 4.8)
-  },
-  vertigo: {
-    hall: new THREE.Vector3(-1.8, 0, -5)
-  },
-  spider: {
-    hall: new THREE.Vector3(0, 0, 3)
   }
 };
 
@@ -201,17 +142,26 @@ var systemsGroup = {};
 function detectWebXR() {
   if ('xr' in navigator) {
     navigator.xr.isSessionSupported('immersive-vr').then( supported => {
-      if (!supported) document.getElementById('no-webxr').classList.remove('hidden');
+      const noWebXRElement = document.getElementById('no-webxr');
+      if (!supported && noWebXRElement) {
+        noWebXRElement.classList.remove('hidden');
+      }
     } );
 
   } else {
-    document.getElementById('no-webxr').classList.remove('hidden');
+    const noWebXRElement = document.getElementById('no-webxr');
+    if (noWebXRElement) {
+      noWebXRElement.classList.remove('hidden');
+    }
   }
 }
 
 export function init() {
 
-  document.getElementById(handedness + 'hand').classList.add('activehand');
+  const handElement = document.getElementById(handedness + 'hand');
+  if (handElement) {
+    handElement.classList.add('activehand');
+  }
 
   detectWebXR();
 
@@ -230,12 +180,24 @@ export function init() {
     AreaCheckerSystem, ControllersSystem, DebugHelperSystem
   ]);
 
-  renderer = new THREE.WebGLRenderer({antialias: true, logarithmicDepthBuffer: false});
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    logarithmicDepthBuffer: false,
+    powerPreference: "high-performance",
+    preserveDrawingBuffer: false,
+    failIfMajorPerformanceCaveat: false
+  });
   renderer.gammaFactor = 2.2;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
+
+  // Performance optimizations
+  renderer.sortObjects = false; // Disable object sorting for better performance
+  renderer.autoClear = true;
+  renderer.autoClearDepth = true;
+  renderer.autoClearStencil = true;
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.005, 10000);
@@ -389,13 +351,6 @@ export function init() {
     roomModels.setup(context);
     roomAudio.setup(context);
     roomInteraction.setup(context);
-    roomHall.setup(context);
-    roomPanorama.setup(context);
-    roomPanoramaStereo.setup(context);
-    roomPhotogrammetryObject.setup(context);
-    roomVertigo.setup(context);
-    roomSound.setup(context);
-    roomSpider.setup(context);
 
     rooms[context.room].enter(context);
 

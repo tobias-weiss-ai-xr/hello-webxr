@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test.describe('Browser Navigation Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
-    await page.goto('https://tobias-weiss.org/hello-webxr/');
+    await page.goto('/');
   });
 
   test('page loads successfully', async ({ page }) => {

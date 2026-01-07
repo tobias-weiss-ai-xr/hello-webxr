@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 
-var scene, doorMaterial, doors = [], infoPanels = [];
+var scene, doorMaterial, doors = [], infoPanels = [], textEntities = [];
 
 const WEBXR_ELEMENTS = [
   {
@@ -75,6 +76,7 @@ function createInfoPanel(element, index, total) {
   const titleMat = new THREE.MeshBasicMaterial({color: element.color});
   const titlePlate = new THREE.Mesh(titleGeo, titleMat);
   titlePlate.position.set(0, 0.6, 0.06);
+  titlePlate.name = `titlePlate_${element.id}`;
   panel.add(titlePlate);
 
   // Description background
@@ -82,6 +84,7 @@ function createInfoPanel(element, index, total) {
   const descMat = new THREE.MeshBasicMaterial({color: 0x1a1a2a});
   const descPlate = new THREE.Mesh(descGeo, descMat);
   descPlate.position.set(0, -0.2, 0.06);
+  descPlate.name = `descPlate_${element.id}`;
   panel.add(descPlate);
 
   // Pedestal
@@ -102,7 +105,7 @@ function createInfoPanel(element, index, total) {
   icon.userData.baseY = 0.9;
   icon.userData.offset = Math.random() * Math.PI * 2;
 
-  return { group, icon, position: new THREE.Vector3(x, 0, z) };
+  return { group, icon, panel, position: new THREE.Vector3(x, 0, z) };
 }
 
 function createDoor(ctx, element, index, total) {
@@ -157,9 +160,63 @@ export function setup(ctx) {
 
   // Info panels for each element
   WEBXR_ELEMENTS.forEach((element, index) => {
-    const { group, icon } = createInfoPanel(element, index, WEBXR_ELEMENTS.length);
+    const { group, icon, panel } = createInfoPanel(element, index, WEBXR_ELEMENTS.length);
     scene.add(group);
-    infoPanels.push({ icon, element });
+    infoPanels.push({ icon, element, panel });
+
+    // Add text labels to the panel
+    const titlePlate = panel.getObjectByName(`titlePlate_${element.id}`);
+    const descPlate = panel.getObjectByName(`descPlate_${element.id}`);
+
+    // Create title text entity
+    if (titlePlate) {
+      const titleTextEntity = ctx.world.createEntity();
+      titleTextEntity
+        .addComponent(Text, {
+          text: `${element.icon} ${element.name}`,
+          color: '#ffffff',
+          fontSize: 0.08,
+          anchor: 'center',
+          baseline: 'middle',
+          textAlign: 'center'
+        })
+        .addComponent(ParentObject3D, {value: titlePlate})
+        .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+      // Create title parent entity
+      const titleParentEntity = ctx.world.createEntity();
+      titleParentEntity
+        .addComponent(Object3D, {value: titlePlate})
+        .addComponent(Children, {value: [titleTextEntity]});
+
+      textEntities.push(titleTextEntity);
+    }
+
+    // Create description text entity
+    if (descPlate) {
+      const descTextEntity = ctx.world.createEntity();
+      descTextEntity
+        .addComponent(Text, {
+          text: element.description,
+          color: '#cccccc',
+          fontSize: 0.045,
+          anchor: 'center',
+          baseline: 'top',
+          textAlign: 'center',
+          maxWidth: 2.1,
+          lineHeight: 1.4
+        })
+        .addComponent(ParentObject3D, {value: descPlate})
+        .addComponent(Position, {x: 0, y: 0.45, z: 0.01});
+
+      // Create description parent entity
+      const descParentEntity = ctx.world.createEntity();
+      descParentEntity
+        .addComponent(Object3D, {value: descPlate})
+        .addComponent(Children, {value: [descTextEntity]});
+
+      textEntities.push(descTextEntity);
+    }
 
     // Create door for this element
     const { door, frame } = createDoor(ctx, element, index, WEBXR_ELEMENTS.length);

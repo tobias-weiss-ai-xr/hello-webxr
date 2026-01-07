@@ -42,29 +42,39 @@ export default class Teleport {
     this.ctx.scene.add(this.teleportEntity);
 
     // sounds
-    this.startSound = new THREE.Audio(ctx.audioListener);
-    this.startSound.setBuffer(ctx.assets['teleport_a_snd']);
-    this.startSound.setLoop(true);
-    this.startSound.pause();
+    try {
+      this.startSound = new THREE.Audio(ctx.audioListener);
+      this.startSound.setBuffer(ctx.assets['teleport_a_snd']);
+      this.startSound.setLoop(true);
+      this.startSound.pause();
+    } catch (e) {
+      console.warn('Failed to initialize start sound:', e);
+      this.startSound = null;
+    }
 
-    this.endSound = new THREE.Audio(ctx.audioListener);
-    this.endSound.setBuffer(ctx.assets['teleport_b_snd']);
-    this.endSound.setLoop(false);
-    this.endSound.pause();
+    try {
+      this.endSound = new THREE.Audio(ctx.audioListener);
+      this.endSound.setBuffer(ctx.assets['teleport_b_snd']);
+      this.endSound.setLoop(false);
+      this.endSound.pause();
+    } catch (e) {
+      console.warn('Failed to initialize end sound:', e);
+      this.endSound = null;
+    }
   }
 
 
   onSelectStart(evt) {
     //if (evt.target === this.ctx.controllers[0])
     this.active = true;
-    this.endSound.pause();
-    this.startSound.play();
+    if (this.endSound) this.endSound.pause();
+    if (this.startSound) this.startSound.play();
   }
 
   onHoverLeave() {
     this.ballColliding.visible = false;
     this.teleportHitGeometry.visible = false;
-    this.startSound.pause();
+    if (this.startSound) this.startSound.pause();
   }
 
   onHover(hitPoint, active) {
@@ -89,8 +99,8 @@ export default class Teleport {
 
     this.active = false;
 
-    this.startSound.pause();
-    this.endSound.play();
+    if (this.startSound) this.startSound.pause();
+    if (this.endSound) this.endSound.play();
   }
 }
 

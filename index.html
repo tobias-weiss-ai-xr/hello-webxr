@@ -1,6 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-77033033-28"></script>
   <script>
@@ -8,9 +12,32 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'UA-77033033-28');
+
+    // Performance monitoring
+    if ('PerformanceObserver' in window) {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.entryType === 'largest-contentful-paint') {
+            gtag('event', 'web_vitals', {
+              name: 'LCP',
+              value: Math.round(entry.startTime),
+              event_category: 'Performance'
+            });
+          }
+        }
+      });
+      observer.observe({entryTypes: ['largest-contentful-paint']});
+    }
   </script>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- Security and Privacy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://www.googletagmanager.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://fonts.gstatic.com blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com">
+  <meta name="referrer" content="no-referrer-when-downgrade">
+
+  <!-- Favicon and Icons -->
   <link rel="apple-touch-icon-precomposed" sizes="57x57" href="./res/apple-touch-icon-57x57.png" />
   <link rel="apple-touch-icon-precomposed" sizes="114x114" href="./res/apple-touch-icon-114x114.png" />
   <link rel="apple-touch-icon-precomposed" sizes="72x72" href="./res/apple-touch-icon-72x72.png" />
@@ -23,23 +50,49 @@
   <meta name="msapplication-TileColor" content="#C6C6C6" />
   <meta name="msapplication-TileImage" content="./res/mstile-144x144.png" />
 
-  <!-- Search Engine -->
-  <meta name="description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
-  <!-- Schema.org for Google -->
-  <meta itemprop="name" content="Hello WebXR!">
-  <meta itemprop="description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Hello WebXR!">
-  <meta name="twitter:description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
-  <!-- Open Graph general (Facebook, Pinterest & Google+) -->
-  <meta name="og:title" content="Hello WebXR!">
-  <meta name="og:description" content="WebXR multi-experience to celebrate the official release of the WebXR specification.">
-  <meta name="og:site_name" content="Hello WebXR!">
-  <meta name="og:locale" content="en_US">
-  <meta name="og:type" content="website">
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Interactive WebXR experience showcasing VR and AR capabilities. Explore immersive 3D environments, learn WebXR concepts, and experience the future of web-based virtual reality.">
+  <meta name="keywords" content="WebXR, VR, AR, Virtual Reality, Augmented Reality, 3D, WebGL, Three.js, immersive web, metaverse">
+  <meta name="author" content="Mozilla Reality">
+  <meta name="theme-color" content="#1a1a2e">
 
-  <title>Hello WebXR!</title>
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://chemie-lernen.org/pse-in-vr/">
+  <meta property="og:title" content="Hello WebXR! - Interactive VR Experience">
+  <meta property="og:description" content="Explore immersive 3D environments and learn WebXR concepts in this interactive virtual reality experience.">
+  <meta property="og:image" content="https://chemie-lernen.org/pse-in-vr/3d-scene.png">
+  <meta property="og:site_name" content="Hello WebXR!">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://chemie-lernen.org/pse-in-vr/">
+  <meta name="twitter:title" content="Hello WebXR! - Interactive VR Experience">
+  <meta name="twitter:description" content="Explore immersive 3D environments and learn WebXR concepts.">
+  <meta name="twitter:image" content="https://chemie-lernen.org/pse-in-vr/3d-scene.png">
+
+  <!-- Schema.org Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Hello WebXR!",
+    "description": "Interactive WebXR experience showcasing VR and AR capabilities",
+    "url": "https://chemie-lernen.org/pse-in-vr/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": "WebXR VR support, 3D environments, Interactive learning, Spatial audio",
+    "screenshot": "https://chemie-lernen.org/pse-in-vr/3d-scene.png"
+  }
+  </script>
+
+  <title>Hello WebXR! - Interactive VR/AR Experience</title>
 
   <style>
 
@@ -75,13 +128,34 @@ header a:hover {
 header a:hover path, #mrlogo:hover path.mrlogobg{
   fill: #059;
 }
+#handedness {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+#handedness span {
+  color: #fff;
+  font-weight: 600;
+  margin-right: 12px;
+}
 #handedness a{
   margin-left: 0.3rem;
+  color: #fff;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+#handedness a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  text-decoration: none;
 }
 .activehand {
-  background: #000;
-  color: #fff;
-  padding: 3px 12px;
+  background: #fff !important;
+  color: #000 !important;
+  font-weight: 700;
+  padding: 6px 14px;
   border-radius: 5px;
   pointer-events: none;
 }
@@ -131,6 +205,9 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
 
   </style>
 
+  <!-- Load vendor bundles first (for better caching) -->
+  <script src="2.bundle.js"></script>
+  <script src="1.bundle.js"></script>
   <script src="bundle.js"></script>
 
   <script type="text/javascript">
@@ -159,7 +236,7 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
 
 <header>
   <span id="handedness">
-    Handedness:
+    <span>Handedness:</span>
     <a href="#" id="lefthand" onclick="setHandedness(this, 'left')">Left</a>
     <a href="#" id="righthand" onclick="setHandedness(this, 'right')">Right</a>
   </span>
@@ -174,6 +251,34 @@ header a:hover path, #mrlogo:hover path.mrlogobg{
   A/← - Left | D/→ - Right<br>
   N - Next room
 </div>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered with scope:', registration.scope);
+
+          // Listen for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New content is available
+                if (confirm('New version available! Reload to update?')) {
+                  window.location.reload();
+                }
+              }
+            });
+          });
+        })
+        .catch((error) => {
+          console.log('Service Worker registration failed:', error);
+        });
+    });
+  }
+</script>
 
 </body>
 </html>

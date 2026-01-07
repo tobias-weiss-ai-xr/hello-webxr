@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 
-var scene, doorMaterial, door, teleportRings = [];
+var scene, doorMaterial, door, teleportRings = [], textEntities = [];
 
 const TELEPORT_INFO = [
   {
@@ -73,7 +74,7 @@ function createTeleportRing(x, z, color) {
   return group;
 }
 
-function createInfoPanel(info, x, y, z) {
+function createInfoPanel(info, index, x, y, z) {
   const panelGeo = new THREE.BoxGeometry(2.5, 1.5, 0.1);
   const panelMat = new THREE.MeshBasicMaterial({color: 0x2a2a3a});
   const panel = new THREE.Mesh(panelGeo, panelMat);
@@ -82,9 +83,18 @@ function createInfoPanel(info, x, y, z) {
   // Title bar
   const titleGeo = new THREE.PlaneGeometry(2.3, 0.4);
   const titleMat = new THREE.MeshBasicMaterial({color: info.color});
-  const title = new THREE.Mesh(titleGeo, titleMat);
-  title.position.set(0, 0.5, 0.06);
-  panel.add(title);
+  const titlePlate = new THREE.Mesh(titleGeo, titleMat);
+  titlePlate.position.set(0, 0.5, 0.06);
+  titlePlate.name = `titlePlate_${index}`;
+  panel.add(titlePlate);
+
+  // Description background
+  const descGeo = new THREE.PlaneGeometry(2.3, 0.9);
+  const descMat = new THREE.MeshBasicMaterial({color: 0x1a1a2a});
+  const descPlate = new THREE.Mesh(descGeo, descMat);
+  descPlate.position.set(0, -0.15, 0.06);
+  descPlate.name = `descPlate_${index}`;
+  panel.add(descPlate);
 
   return panel;
 }
@@ -132,15 +142,67 @@ export function setup(ctx) {
     {x: 3, z: 3, color: 0xe056fd}
   ];
 
-  ringPositions.forEach(pos => {
+  ringPositions.forEach((pos, index) => {
     const ring = createTeleportRing(pos.x, pos.z, pos.color);
     scene.add(ring);
     teleportRings.push(ring);
 
     // Info panel above each ring
-    const info = TELEPORT_INFO[teleportRings.length - 1];
-    const panel = createInfoPanel(info, pos.x, 2, pos.z - 1.5);
+    const info = TELEPORT_INFO[index];
+    const panel = createInfoPanel(info, index, pos.x, 2, pos.z - 1.5);
     scene.add(panel);
+
+    // Add text labels to the panel
+    const titlePlate = panel.getObjectByName(`titlePlate_${index}`);
+    const descPlate = panel.getObjectByName(`descPlate_${index}`);
+
+    // Create title text entity
+    if (titlePlate) {
+      const titleTextEntity = ctx.world.createEntity();
+      titleTextEntity
+        .addComponent(Text, {
+          text: info.title,
+          color: '#ffffff',
+          fontSize: 0.07,
+          anchor: 'center',
+          baseline: 'middle',
+          textAlign: 'center'
+        })
+        .addComponent(ParentObject3D, {value: titlePlate})
+        .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+      const titleParentEntity = ctx.world.createEntity();
+      titleParentEntity
+        .addComponent(Object3D, {value: titlePlate})
+        .addComponent(Children, {value: [titleTextEntity]});
+
+      textEntities.push(titleTextEntity);
+    }
+
+    // Create description text entity
+    if (descPlate) {
+      const descTextEntity = ctx.world.createEntity();
+      descTextEntity
+        .addComponent(Text, {
+          text: info.description,
+          color: '#cccccc',
+          fontSize: 0.04,
+          anchor: 'center',
+          baseline: 'top',
+          textAlign: 'center',
+          maxWidth: 2.1,
+          lineHeight: 1.3
+        })
+        .addComponent(ParentObject3D, {value: descPlate})
+        .addComponent(Position, {x: 0, y: 0.4, z: 0.01});
+
+      const descParentEntity = ctx.world.createEntity();
+      descParentEntity
+        .addComponent(Object3D, {value: descPlate})
+        .addComponent(Children, {value: [descTextEntity]});
+
+      textEntities.push(descTextEntity);
+    }
   });
 
   // Center demonstration area with laser visualization

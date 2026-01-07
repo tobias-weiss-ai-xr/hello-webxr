@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 
-var scene, doorMaterial, door, modelPedestals = [];
+var scene, doorMaterial, door, modelPedestals = [], textEntities = [];
 
 const MODEL_INFO = [
   {title: "glTF Format", desc: "Standard runtime format for WebXR", color: 0xf5a623},
@@ -53,7 +54,7 @@ function createPedestal(x, z, color) {
   return group;
 }
 
-function createInfoPanel(info, x, y, z, lookAt) {
+function createInfoPanel(info, index, x, y, z, lookAt) {
   const group = new THREE.Group();
 
   const panelGeo = new THREE.BoxGeometry(2, 1.2, 0.1);
@@ -65,9 +66,18 @@ function createInfoPanel(info, x, y, z, lookAt) {
 
   const titleGeo = new THREE.PlaneGeometry(1.8, 0.3);
   const titleMat = new THREE.MeshBasicMaterial({color: info.color});
-  const title = new THREE.Mesh(titleGeo, titleMat);
-  title.position.set(0, 0.3, 0.06);
-  panel.add(title);
+  const titlePlate = new THREE.Mesh(titleGeo, titleMat);
+  titlePlate.position.set(0, 0.3, 0.06);
+  titlePlate.name = `titlePlate_${index}`;
+  panel.add(titlePlate);
+
+  // Description background
+  const descGeo = new THREE.PlaneGeometry(1.8, 0.7);
+  const descMat = new THREE.MeshBasicMaterial({color: 0x1a1a2a});
+  const descPlate = new THREE.Mesh(descGeo, descMat);
+  descPlate.position.set(0, -0.15, 0.06);
+  descPlate.name = `descPlate_${index}`;
+  panel.add(descPlate);
 
   return group;
 }
@@ -108,8 +118,60 @@ export function setup(ctx) {
   const positions = [[-3, -3], [3, -3], [-3, 3], [3, 3]];
   positions.forEach(([x, z], i) => {
     createPedestal(x, z, MODEL_INFO[i].color);
-    const panel = createInfoPanel(MODEL_INFO[i], x, 2.5, z - 2.5, {x, y: 2.5, z: z});
+    const panel = createInfoPanel(MODEL_INFO[i], i, x, 2.5, z - 2.5, {x, y: 2.5, z: z});
     scene.add(panel);
+
+    // Add text labels to the panel
+    const titlePlate = panel.getObjectByName(`titlePlate_${i}`);
+    const descPlate = panel.getObjectByName(`descPlate_${i}`);
+
+    // Create title text entity
+    if (titlePlate) {
+      const titleTextEntity = ctx.world.createEntity();
+      titleTextEntity
+        .addComponent(Text, {
+          text: MODEL_INFO[i].title,
+          color: '#ffffff',
+          fontSize: 0.07,
+          anchor: 'center',
+          baseline: 'middle',
+          textAlign: 'center'
+        })
+        .addComponent(ParentObject3D, {value: titlePlate})
+        .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+      const titleParentEntity = ctx.world.createEntity();
+      titleParentEntity
+        .addComponent(Object3D, {value: titlePlate})
+        .addComponent(Children, {value: [titleTextEntity]});
+
+      textEntities.push(titleTextEntity);
+    }
+
+    // Create description text entity
+    if (descPlate) {
+      const descTextEntity = ctx.world.createEntity();
+      descTextEntity
+        .addComponent(Text, {
+          text: MODEL_INFO[i].desc,
+          color: '#cccccc',
+          fontSize: 0.04,
+          anchor: 'center',
+          baseline: 'top',
+          textAlign: 'center',
+          maxWidth: 1.6,
+          lineHeight: 1.3
+        })
+        .addComponent(ParentObject3D, {value: descPlate})
+        .addComponent(Position, {x: 0, y: 0.3, z: 0.01});
+
+      const descParentEntity = ctx.world.createEntity();
+      descParentEntity
+        .addComponent(Object3D, {value: descPlate})
+        .addComponent(Children, {value: [descTextEntity]});
+
+      textEntities.push(descTextEntity);
+    }
   });
 
   // Door

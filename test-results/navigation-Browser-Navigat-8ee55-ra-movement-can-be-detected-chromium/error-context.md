@@ -1,0 +1,129 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Zum Hauptinhalt springen" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - link "chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte" [ref=e7] [cursor=pointer]:
+          - /url: https://chemie-lernen.org/
+          - img "chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte" [ref=e8]
+          - text: chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte
+        - link "" [ref=e9] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e10]: 
+      - navigation "Hauptnavigation" [ref=e11]:
+        - generic [ref=e13]:
+          - list [ref=e14]:
+            - listitem [ref=e15]:
+              - link "Themenbereiche" [ref=e16] [cursor=pointer]:
+                - /url: /themenbereiche/
+            - listitem [ref=e17]:
+              - button "Interaktiv Menü anzeigen" [ref=e18] [cursor=pointer]: Interaktiv
+            - listitem [ref=e20]:
+              - link "Roadmap" [ref=e21] [cursor=pointer]:
+                - /url: /pages/roadmap/
+            - listitem [ref=e22]:
+              - link "Über uns" [ref=e23] [cursor=pointer]:
+                - /url: /pages/about/
+            - listitem [ref=e24]:
+              - link "Kontakt" [ref=e25] [cursor=pointer]:
+                - /url: /pages/contact/
+            - listitem [ref=e26]:
+              - link "Patreon" [ref=e27] [cursor=pointer]:
+                - /url: https://www.patreon.com/c/chemie_lernen_org
+          - search [ref=e28]:
+            - textbox "Themen suchen..." [ref=e30]
+            - button "" [ref=e31] [cursor=pointer]:
+              - generic [ref=e32]: 
+  - main [ref=e35]:
+    - generic [ref=e36]:
+      - img "chemie-lernen.org teaser" [ref=e39]
+      - generic [ref=e41]:
+        - heading "chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte" [level=1] [ref=e42]
+        - paragraph [ref=e43]: chemie-lernen.org - Ihre Plattform für innovative Chemie-Lernräume in Virtual Reality. Machen Sie komplexe chemische Konzepte greifbar und erlebbar.
+      - separator [ref=e44]
+      - heading "Interaktive Lernplattformen" [level=2] [ref=e47]
+      - generic [ref=e48]:
+        - link "🧠 GraphWiz-XR Moderne VR-Social-Plattform - Komplett neu entwickelt mit TypeScript + Rust." [ref=e50] [cursor=pointer]:
+          - /url: https://github.com/tobias-weiss-ai-xr/graphwiz-xr
+          - generic [ref=e51]:
+            - heading "🧠 GraphWiz-XR" [level=3] [ref=e53]
+            - generic [ref=e54]: Moderne VR-Social-Plattform - Komplett neu entwickelt mit TypeScript + Rust.
+        - link "⚛️ Periodensystem Erleben Sie das Periodensystem in 3D mit verschiedenen Ansichten." [ref=e56] [cursor=pointer]:
+          - /url: /perioden-system-der-elemente/
+          - generic [ref=e57]:
+            - heading "⚛️ Periodensystem" [level=3] [ref=e59]
+            - generic [ref=e60]: Erleben Sie das Periodensystem in 3D mit verschiedenen Ansichten.
+        - link "🔬 Molekülstudio Visualisieren Sie Moleküle interaktiv in 3D im Browser." [ref=e62] [cursor=pointer]:
+          - /url: /molekuel-studio/
+          - generic [ref=e63]:
+            - heading "🔬 Molekülstudio" [level=3] [ref=e65]
+            - generic [ref=e66]: Visualisieren Sie Moleküle interaktiv in 3D im Browser.
+      - separator [ref=e67]
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - text: 📖
+          - 'heading "Featured: Mayers Prinzipien des Multimedialen Lernens" [level=2] [ref=e73]'
+          - paragraph [ref=e74]:
+            - strong [ref=e75]: Wie wir effektive digitale Lernumgebungen gestalten
+            - text: Entdecken Sie die wissenschaftlichen Grundlagen hinter unserer Lernplattform! Richard E. Mayers 12 Prinzipien des multimedialen Lernens bilden das Fundament für die Entwicklung unserer interaktiven Chemie-Lernräume.
+          - list [ref=e76]:
+            - listitem [ref=e77]:
+              - text: 🧠
+              - strong [ref=e78]: "Kognitive Psychologie:"
+              - text: Wie das Gehirn visuelle und auditive Informationen verarbeitet
+            - listitem [ref=e79]:
+              - text: 🎯
+              - strong [ref=e80]: "Design-Prinzipien:"
+              - text: 12 evidenzbasierte Prinzipien für effektives Lernen
+            - listitem [ref=e81]:
+              - text: 💡
+              - strong [ref=e82]: "Praktische Anwendung:"
+              - text: Konkrete Beispiele aus unserer Chemie-Lernplattform
+            - listitem [ref=e83]:
+              - text: 📊
+              - strong [ref=e84]: "Checklisten:"
+              - text: Handlungsanleitungen zur Umsetzung in eigenen Projekten
+          - link "Mayers 12 Prinzipien lesen →" [ref=e85] [cursor=pointer]:
+            - /url: /pages/mayers-multimedia-lernen/
+        - generic [ref=e87]:
+          - generic [ref=e88]: 🎓
+          - paragraph [ref=e89]: Für Lehrende, Instructional Designer und E-Learning-Entwickler
+      - generic [ref=e90]:
+        - 'link "Molekülstudio: … December 24, 2025 Neue Dimensionen im Chemielernen: Das Molekülstudio Wir freuen uns, das Molekülstudio als neue Ergänzung zur Chemie-Lernen-Plattform vorstellen zu können. Diese webbasierte …" [ref=e92] [cursor=pointer]':
+          - /url: https://chemie-lernen.org/posts/molekulstudio-3d-visualisierung/
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - 'heading "Molekülstudio: …" [level=3] [ref=e95]'
+              - generic [ref=e96]: December 24, 2025
+            - generic [ref=e97]: "Neue Dimensionen im Chemielernen: Das Molekülstudio Wir freuen uns, das Molekülstudio als neue Ergänzung zur Chemie-Lernen-Plattform vorstellen zu können. Diese webbasierte …"
+        - link "Eine interdisziplinäre … December 18, 2025 Status Quo eines Lernraum-Projekts das mittels Mozilla Hubs das Periodensystem der Elemente sowie Experimente Dieser Forschungsartikel untersucht eine interdisziplinäre …" [ref=e99] [cursor=pointer]:
+          - /url: https://chemie-lernen.org/posts/interdisciplinary-vr-cooperation/
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - heading "Eine interdisziplinäre …" [level=3] [ref=e102]
+              - generic [ref=e103]: December 18, 2025
+            - generic [ref=e104]: Status Quo eines Lernraum-Projekts das mittels Mozilla Hubs das Periodensystem der Elemente sowie Experimente Dieser Forschungsartikel untersucht eine interdisziplinäre …
+  - contentinfo "Website-Fußzeile" [ref=e109]:
+    - generic [ref=e111]:
+      - generic [ref=e112]:
+        - heading "chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte" [level=4] [ref=e113]
+        - paragraph [ref=e114]: chemie-lernen.org - Ihre Plattform für innovative Chemie-Lernräume in Virtual Reality. Machen Sie komplexe chemische Konzepte greifbar und erlebbar.
+        - paragraph [ref=e115]:
+          - link "Besuchen Sie unseren Patreon" [ref=e116] [cursor=pointer]:
+            - /url: https://www.patreon.com/c/chemie_lernen_org
+            - img [ref=e117]
+            - text: Unterstütze uns auf Patreon
+      - generic [ref=e119]:
+        - paragraph [ref=e120]: © 2026 chemie-lernen.org - 📖 Offene, 🖱️ Interaktive und 🥽 Immersive Lerninhalte. Alle Rechte vorbehalten.
+        - paragraph [ref=e121]:
+          - generic [ref=e122]:
+            - link "impressum" [ref=e123] [cursor=pointer]:
+              - /url: /impressum/
+            - text: "|"
+            - link "datenschutz" [ref=e124] [cursor=pointer]:
+              - /url: /datenschutz/
+```

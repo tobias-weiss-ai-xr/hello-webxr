@@ -60,6 +60,7 @@ export function loadAssets(renderer, basePath, assets, onComplete, onProgress, d
     let assetPath = assets[i].url;
     assets[i].loading = true;
     let ext = assetPath.substr(assetPath.lastIndexOf('.') + 1).toLowerCase();
+
     loaders[ext].load(basePath + assetPath, asset => {
       if (debug) {
         console.info(`%c ${assetPath} loaded`, 'color:green');
@@ -84,7 +85,13 @@ export function loadAssets(renderer, basePath, assets, onComplete, onProgress, d
       /* on progress */
     },
     (e) => {
-      console.error('Error loading asset', e);
+      console.error('Error loading asset', assetPath, e);
+      // For audio files, set to null to allow graceful degradation
+      if (ext === 'ogg') {
+        assets[assetId] = null;
+        assets[assetId].loading = false;
+        if (onComplete && allAssetsLoaded(assets)) { onComplete(); }
+      }
     }
     );
   }

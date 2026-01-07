@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 
-var scene, doorMaterial, door, interactiveCubes = [];
+var scene, doorMaterial, door, interactiveCubes = [], textEntities = [];
 
 const INTERACTION_INFO = [
   {title: "Ray Casting", desc: "Laser pointer for distant selection", color: 0xff6b6b},
@@ -107,9 +108,61 @@ export function setup(ctx) {
     panel.lookAt(x, 2.8, z);
     scene.add(panel);
 
-    const title = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.25), new THREE.MeshBasicMaterial({color: INTERACTION_INFO[i].color}));
-    title.position.set(0, 0.3, 0.06);
-    panel.add(title);
+    // Title plate
+    const titlePlate = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.25), new THREE.MeshBasicMaterial({color: INTERACTION_INFO[i].color}));
+    titlePlate.position.set(0, 0.3, 0.06);
+    titlePlate.name = `titlePlate_${i}`;
+    panel.add(titlePlate);
+
+    // Description background
+    const descPlate = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.55), new THREE.MeshBasicMaterial({color: 0x1a1a2a}));
+    descPlate.position.set(0, -0.12, 0.06);
+    descPlate.name = `descPlate_${i}`;
+    panel.add(descPlate);
+
+    // Create title text entity
+    const titleTextEntity = ctx.world.createEntity();
+    titleTextEntity
+      .addComponent(Text, {
+        text: INTERACTION_INFO[i].title,
+        color: '#ffffff',
+        fontSize: 0.065,
+        anchor: 'center',
+        baseline: 'middle',
+        textAlign: 'center'
+      })
+      .addComponent(ParentObject3D, {value: titlePlate})
+      .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+    const titleParentEntity = ctx.world.createEntity();
+    titleParentEntity
+      .addComponent(Object3D, {value: titlePlate})
+      .addComponent(Children, {value: [titleTextEntity]});
+
+    textEntities.push(titleTextEntity);
+
+    // Create description text entity
+    const descTextEntity = ctx.world.createEntity();
+    descTextEntity
+      .addComponent(Text, {
+        text: INTERACTION_INFO[i].desc,
+        color: '#cccccc',
+        fontSize: 0.04,
+        anchor: 'center',
+        baseline: 'top',
+        textAlign: 'center',
+        maxWidth: 1.6,
+        lineHeight: 1.3
+      })
+      .addComponent(ParentObject3D, {value: descPlate})
+      .addComponent(Position, {x: 0, y: 0.25, z: 0.01});
+
+    const descParentEntity = ctx.world.createEntity();
+    descParentEntity
+      .addComponent(Object3D, {value: descPlate})
+      .addComponent(Children, {value: [descTextEntity]});
+
+    textEntities.push(descTextEntity);
   });
 
   // Center laser demonstration
@@ -123,7 +176,9 @@ export function setup(ctx) {
   door.position.set(0, 1.25, 4.9);
   scene.add(door);
 
-  scene.add(new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.7, 0.08), new THREE.MeshBasicMaterial({color: 0x1a1a1a})).setPosition(0, 1.25, 5));
+  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.7, 0.08), new THREE.MeshBasicMaterial({color: 0x1a1a1a}));
+  doorFrame.position.set(0, 1.25, 5);
+  scene.add(doorFrame);
 
   // Teleport
   const teleport = new THREE.Mesh(new THREE.PlaneBufferGeometry(roomSize, roomSize), new THREE.MeshBasicMaterial({visible: false}));
