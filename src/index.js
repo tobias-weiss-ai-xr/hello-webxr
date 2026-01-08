@@ -18,23 +18,19 @@ import BillboardSystem from './systems/BillboardSystem.js';
 import SystemsGroup from './systems/SystemsGroup.js';
 
 import assets from './assets.js';
+import shaders from './lib/shaders.js';
 
 import { Text, Object3D, AreaChecker } from './components/index.js';
 
 import RayControl from './lib/RayControl.js';
 import Teleport from './lib/Teleport.js';
 
-import * as roomLanding from './rooms/Landing.js';
-import * as roomControllers from './rooms/Controllers.js';
-import * as roomTeleport from './rooms/Teleport.js';
-import * as roomModels from './rooms/Models.js';
-import * as roomAudio from './rooms/Audio.js';
-import * as roomInteraction from './rooms/Interaction.js';
+import * as roomLobby from './rooms/lobby.js';
+import ElementRoom from './rooms/ElementRoom.js';
+import ExperimentalRoom from './rooms/ExperimentalRoom.js';
 
-import {shaders} from './lib/shaders.js';
-
-import WebXRPolyfill from 'webxr-polyfill';
-const polyfill = new WebXRPolyfill();
+import {ELEMENTS, EXPERIMENTAL_ROOMS} from './data/elements.js';
+import ParticleSystem from './lib/ParticleSys.js';
 
 var clock = new THREE.Clock();
 
@@ -43,97 +39,63 @@ var raycontrol, teleport, controllers = [];
 
 var listener, ambientMusic;
 
-var rooms = [
-  roomLanding,        // 0 - Landing room
-  roomControllers,    // 1 - Controllers learning room
-  roomTeleport,       // 2 - Teleportation learning room
-  roomModels,         // 3 - 3D Models learning room
-  roomAudio,          // 4 - Spatial Audio learning room
-  roomInteraction,    // 5 - Ray Control learning room
-];
+var rooms = [];
+var currentElementRoom = null;
+var currentExpRoom = null;
 
-const roomNames = [
-  'landing',
-  'controllers',
-  'teleport',
-  'models',
-  'audio',
-  'interaction',
-];
+const ROOM_LOBBY = 0;
+const ROOM_ELEMENTS_START = 1;
+const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
+const ROOM_EXP_START = ROOM_ELEMENTS_END + 1;
 
-const musicThemes = [
-  false,              // 0 - landing
-  false,              // 1 - controllers
-  false,              // 2 - teleport
-  false,              // 3 - models
-  false,              // 4 - audio
-  false,              // 5 - interaction
-];
+var elementRooms = [];
+var expRooms = [];
 
 const urlObject = new URL(window.location);
 const roomName = urlObject.searchParams.get('room');
-context.room = roomNames.indexOf(roomName) !== -1 ? roomNames.indexOf(roomName) : 0;
-// console.log(`Current room "${roomNames[context.room]}", ${context.room}`);
 const debug = urlObject.searchParams.has('debug');
 const handedness = urlObject.searchParams.has('handedness') ? urlObject.searchParams.get('handedness') : "right";
 
-// Target positions when moving from one room to another
 const targetPositions = {
-  landing: {
-    // From landing to learning rooms (handled by room-specific positions)
+  lobby: {
+    fromElement: new THREE.Vector3(0, 0, 5)
   },
-  controllers: {
-    landing: new THREE.Vector3(0, 0, -5)
+  elements: {
+    toLobby: new THREE.Vector3(0, 0, -5)
   },
-  teleport: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  models: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  audio: {
-    landing: new THREE.Vector3(0, 0, -5)
-  },
-  interaction: {
-    landing: new THREE.Vector3(0, 0, -5)
+  expRooms: {
+    toLobby: new THREE.Vector3(0, 0, -5)
   }
 };
 
-function gotoRoom(room) {
+function gotoRoom(roomIndex, elementSymbol = null, expRoomId = null) {
   rooms[context.room].exit(context);
   raycontrol.deactivateAll();
 
-  const prevRoom = roomNames[context.room];
-  const nextRoom = roomNames[room];
+  const prevRoom = context.room;
 
-  if (targetPositions[prevRoom] && targetPositions[prevRoom][nextRoom]) {
-    let deltaPosition = new THREE.Vector3();
-    const targetPosition = targetPositions[prevRoom][nextRoom];
-    var camera = renderer.xr.getCamera(context.camera);
-
-    deltaPosition.x = camera.position.x - targetPosition.x;
-    deltaPosition.z = camera.position.z - targetPosition.z;
-
-    context.cameraRig.position.sub(deltaPosition);
+  if (roomIndex === ROOM_LOBBY) {
+    currentElementRoom = null;
+    currentExpRoom = null;
+  } else if (roomIndex >= ROOM_ELEMENTS_START && roomIndex <= ROOM_ELEMENTS_END) {
+    currentElementRoom = elementSymbol;
+    currentExpRoom = null;
+  } else if (roomIndex >= ROOM_EXP_START) {
+    currentElementRoom = null;
+    currentExpRoom = expRoomId;
   }
 
-  context.room = room;
+  context.room = roomIndex;
+  playMusic(roomIndex);
 
-  playMusic(room);
-
-  rooms[context.room].enter(context);
+  rooms[context.room].enter(context, elementSymbol || expRoomId);
 }
 
-function playMusic(room) {
-  if (ambientMusic.source) ambientMusic.stop();
+function playMusic(roomIndex) {
+  if (ambientMusic && ambientMusic.source) ambientMusic.stop();
 
-  const music = musicThemes[room];
-  if (!music) { return; }
-  ambientMusic.setBuffer(assets[music]);
-  ambientMusic.setLoop(true);
-  ambientMusic.setVolume(1.0);
-  ambientMusic.offset = Math.random() * 60;
-  ambientMusic.play();
+  if (roomIndex !== ROOM_LOBBY) {
+  }
 }
 
 var ecsyWorld;
@@ -157,15 +119,13 @@ function detectWebXR() {
 }
 
 export function init() {
+  detectWebXR();
 
   const handElement = document.getElementById(handedness + 'hand');
   if (handElement) {
     handElement.classList.add('activehand');
   }
 
-  detectWebXR();
-
-  var w = 100;
   ecsyWorld = new World();
   ecsyWorld
     .registerSystem(SDFTextSystem)
@@ -176,7 +136,7 @@ export function init() {
     .registerSystem(BillboardSystem)
     .registerSystem(HierarchySystem);
 
-  systemsGroup['roomHall'] = new SystemsGroup(ecsyWorld, [
+  systemsGroup['lobby'] = new SystemsGroup(ecsyWorld, [
     AreaCheckerSystem, ControllersSystem, DebugHelperSystem
   ]);
 
@@ -189,12 +149,11 @@ export function init() {
   });
   renderer.gammaFactor = 2.2;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
 
-  // Performance optimizations
-  renderer.sortObjects = false; // Disable object sorting for better performance
+  renderer.sortObjects = false;
   renderer.autoClear = true;
   renderer.autoClearDepth = true;
   renderer.autoClearStencil = true;
@@ -209,14 +168,12 @@ export function init() {
 
   controls = new PointerLockControls(camera, renderer.domElement);
 
-  // Browser navigation - enable pointer lock on click
   document.body.addEventListener('click', () => {
     if (!context.vrMode) {
       controls.lock();
     }
   });
 
-  // Keyboard navigation
   var moveForward = false;
   var moveBackward = false;
   var moveLeft = false;
@@ -224,44 +181,22 @@ export function init() {
 
   document.addEventListener('keydown', (ev) => {
     switch(ev.keyCode) {
-      case 87: case 38: // W or Up Arrow
-        moveForward = true;
-        break;
-      case 65: case 37: // A or Left Arrow
-        moveLeft = true;
-        break;
-      case 83: case 40: // S or Down Arrow
-        moveBackward = true;
-        break;
-      case 68: case 39: // D or Right Arrow
-        moveRight = true;
-        break;
-      case 78: // N - next room
-        if (!context.vrMode) {
-          gotoRoom((context.room + 1) % rooms.length);
-        }
-        break;
+      case 87: case 38: moveForward = true; break;
+      case 65: case 37: moveLeft = true; break;
+      case 83: case 40: moveBackward = true; break;
+      case 68: case 39: moveRight = true; break;
     }
   });
 
   document.addEventListener('keyup', (ev) => {
     switch(ev.keyCode) {
-      case 87: case 38:
-        moveForward = false;
-        break;
-      case 65: case 37:
-        moveLeft = false;
-        break;
-      case 83: case 40:
-        moveBackward = false;
-        break;
-      case 68: case 39:
-        moveRight = false;
-        break;
+      case 87: case 38: moveForward = false; break;
+      case 65: case 37: moveLeft = false; break;
+      case 83: case 40: moveBackward = false; break;
+      case 68: case 39: moveRight = false; break;
     }
   });
 
-  // Store movement state for use in render loop
   context.browserControls = {
     controls: controls,
     moveForward: () => moveForward,
@@ -269,30 +204,6 @@ export function init() {
     moveLeft: () => moveLeft,
     moveRight: () => moveRight
   };
-
-  if (debug) {
-    document.body.addEventListener('keydown', ev => {
-      switch(ev.keyCode) {
-        case 87: controls.moveForward(0.2); break;
-        case 65: controls.moveRight(-0.2); break;
-        case 83: controls.moveForward(-0.2); break;
-        case 68: controls.moveRight(0.2); break;
-        case 78: gotoRoom((context.room + 1) % rooms.length); break;
-        default: {
-          var room = ev.keyCode - 48;
-          if (!ev.metaKey && room >= 0 && room < rooms.length) {
-            gotoRoom(room);
-          }
-        }
-      }
-    });
-  }
-  scene.add(controls.getObject());
-
-  parent = new THREE.Object3D();
-  scene.add(parent);
-
-  window.addEventListener('resize', onWindowResize, false);
 
   for (let i = 0; i < 2; i++) {
     controllers[i] = renderer.xr.getController(i);
@@ -302,7 +213,6 @@ export function init() {
     controllers[i].addEventListener('selectend', onSelectEnd);
   }
 
-  // global lights
   const lightSun = new THREE.DirectionalLight(0xeeffff);
   lightSun.name = 'sun';
   lightSun.position.set(0.2, 1, 0.1);
@@ -319,7 +229,7 @@ export function init() {
   cameraRig.position.set(0, 0, 2);
   scene.add(cameraRig);
 
-  context.vrMode = false; // in vr
+  context.vrMode = false;
   context.assets = assets;
   context.shaders = shaders;
   context.scene = parent;
@@ -332,10 +242,74 @@ export function init() {
   context.world = ecsyWorld;
   context.systemsGroup = systemsGroup;
   context.handedness = handedness;
+  context.GotoRoom = gotoRoom;
 
   window.context = context;
 
-  const loadTotal = Object.keys(assets).length;
+  import {VoiceCommander} from './lib/VoiceCommander.js';
+
+// ECSY
+import { World } from 'ecsy';
+import { SDFTextSystem } from './systems/SDFTextSystem.js';
+import { DebugHelperSystem } from './systems/DebugHelperSystem.js';
+import { AreaCheckerSystem } from './systems/AreaCheckerSystem.js';
+import { ControllersSystem } from './systems/ControllersSystem.js';
+import HierarchySystem from './systems/HierarchySystem.js';
+import TransformSystem from './systems/TransformSystem.js';
+import BillboardSystem from './systems/BillboardSystem.js';
+
+import SystemsGroup from './systems/SystemsGroup.js';
+
+import assets from './assets.js';
+import shaders from './lib/shaders.js';
+
+import { Text, Object3D, AreaChecker } from './components/index.js';
+
+import RayControl from './lib/RayControl.js';
+import Teleport from './lib/Teleport.js';
+
+import * as roomLobby from './rooms/lobby.js';
+import ElementRoom from './rooms/ElementRoom.js';
+import ExperimentalRoom from './rooms/ExperimentalRoom.js';
+
+import {ELEMENTS, EXPERIMENTAL_ROOMS} from './data/elements.js';
+
+const ELEMENTS_START = 1;
+const ROOM_ELEMENTS_END = ELEMENTS_START + ELEMENTS.length - 1;
+const ROOM_EXP_START = ROOM_ELEMENTS_END + EXPERIMENTAL_ROOMS.length - 1;
+
+  const rooms = [];
+  const elementRooms = [];
+  const expRooms = [];
+
+  rooms.push({
+    setup: roomLobby.setup,
+    enter: roomLobby.enter,
+    exit: roomLobby.exit,
+    execute: roomLobby.execute
+  });
+
+ELEMENTS.forEach((element) => {
+  rooms.push({
+    setup: (ctx) => ElementRoom.setup(ctx, element.symbol),
+    enter: (ctx) => ElementRoom.enter(ctx, element.symbol),
+    exit: (ctx) => ElementRoom.exit(ctx, element.symbol),
+    execute: (ctx, delta, time) => ElementRoom.execute(ctx, delta, time, element.symbol)
+  });
+  elementRooms.push(ROOM_ELEMENTS_START + (element.atomicNumber - 1));
+});
+
+EXPERIMENTAL_ROOMS.forEach((room, index) => {
+  rooms.push({
+    setup: (ctx) => ExperimentalRoom.setup(ctx, index),
+    enter: (ctx) => ExperimentalRoom.enter(ctx, index),
+    exit: (ctx) => ExperimentalRoom.exit(ctx, index),
+    execute: (ctx, delta, time) => ExperimentalRoom.execute(ctx, delta, time, index)
+  });
+  expRooms.push(ROOM_EXP_START + index);
+});
+
+  context.room = ROOM_LOBBY;
 
   loadAssets(renderer, 'assets/', assets, () => {
     raycontrol = new RayControl(context, handedness);
@@ -345,28 +319,16 @@ export function init() {
     context.teleport = teleport;
 
     setupControllers();
-    roomLanding.setup(context);
-    roomControllers.setup(context);
-    roomTeleport.setup(context);
-    roomModels.setup(context);
-    roomAudio.setup(context);
-    roomInteraction.setup(context);
-
-    rooms[context.room].enter(context);
-
-    // Slideshow disabled - was causing automatic room cycling in browser mode
-    // slideshow.setup(context);
+    roomLobby.setup(context);
 
     document.body.appendChild(renderer.domElement);
-    document.body.appendChild(VRButton.createButton(renderer, status => {
+    document.body.appendChild(VRButton.createButton(renderer, status => {
       context.vrMode = status === 'sessionStarted';
       if (context.vrMode) {
-        gotoRoom(0);
+        gotoRoom(ROOM_LOBBY);
         context.cameraRig.position.set(0, 0, 2);
         context.goto = null;
       } else {
-        // Slideshow disabled - was causing automatic room cycling in browser mode
-        // slideshow.setup(context);
       }
     }));
     renderer.setAnimationLoop(animate);
@@ -376,13 +338,216 @@ export function init() {
 
   loadProgress => {
     document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
-      - (282 - Math.floor(loadProgress / loadTotal * 282)));
+      - (282 - Math.floor(loadProgress / 27 * 282)));
+  },
+
+  debug);
+}
+  detectWebXR();
+
+  const handElement = document.getElementById(handedness + 'hand');
+  if (handElement) {
+    handElement.classList.add('activehand');
+  }
+
+  ecsyWorld = new World();
+  ecsyWorld
+    .registerSystem(SDFTextSystem)
+    .registerSystem(AreaCheckerSystem)
+    .registerSystem(ControllersSystem)
+    .registerSystem(DebugHelperSystem)
+    .registerSystem(TransformSystem)
+    .registerSystem(BillboardSystem)
+    .registerSystem(HierarchySystem);
+
+  systemsGroup['lobby'] = new SystemsGroup(ecsyWorld, [
+    AreaCheckerSystem, ControllersSystem, DebugHelperSystem
+  ]);
+
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    logarithmicDepthBuffer: false,
+    powerPreference: "high-performance",
+    preserveDrawingBuffer: false,
+    failIfMajorPerformanceCaveat: false
+  });
+  renderer.gammaFactor = 2.2;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true;
+
+  renderer.sortObjects = false;
+  renderer.autoClear = true;
+  renderer.autoClearDepth = true;
+  renderer.autoClearStencil = true;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.005, 10000);
+  camera.position.set(0, 1.6, 0);
+  listener = new THREE.AudioListener();
+  camera.add(listener);
+
+  ambientMusic = new THREE.Audio(listener);
+
+  controls = new PointerLockControls(camera, renderer.domElement);
+
+  document.body.addEventListener('click', () => {
+    if (!context.vrMode) {
+      controls.lock();
+    }
+  });
+
+  var moveForward = false;
+  var moveBackward = false;
+  var moveLeft = false;
+  var moveRight = false;
+
+  document.addEventListener('keydown', (ev) => {
+    switch(ev.keyCode) {
+      case 87: case 38: moveForward = true; break;
+      case 65: case 37: moveLeft = true; break;
+      case 83: case 40: moveBackward = true; break;
+      case 68: case 39: moveRight = true; break;
+    }
+  });
+
+  document.addEventListener('keyup', (ev) => {
+    switch(ev.keyCode) {
+      case 87: case 38: moveForward = false; break;
+      case 65: case 37: moveLeft = false; break;
+      case 83: case 40: moveBackward = false; break;
+      case 68: case 39: moveRight = false; break;
+    }
+  });
+
+  context.browserControls = {
+    controls: controls,
+    moveForward: () => moveForward,
+    moveBackward: () => moveBackward,
+    moveLeft: () => moveLeft,
+    moveRight: () => moveRight
+  };
+
+  for (let i = 0; i < 2; i++) {
+    controllers[i] = renderer.xr.getController(i);
+    controllers[i].raycaster = new THREE.Raycaster();
+    controllers[i].raycaster.near = 0.1;
+    controllers[i].addEventListener('selectstart', onSelectStart);
+    controllers[i].addEventListener('selectend', onSelectEnd);
+  }
+
+  const lightSun = new THREE.DirectionalLight(0xeeffff);
+  lightSun.name = 'sun';
+  lightSun.position.set(0.2, 1, 0.1);
+  const lightFill = new THREE.DirectionalLight(0xfff0ee, 0.3);
+  lightFill.name = 'fillLight';
+  lightFill.position.set(-0.2, -1, -0.1);
+
+  scene.add(lightSun, lightFill);
+
+  var cameraRig = new THREE.Group();
+  cameraRig.add(camera);
+  cameraRig.add(controllers[0]);
+  cameraRig.add(controllers[1]);
+  cameraRig.position.set(0, 0, 2);
+  scene.add(cameraRig);
+
+  context.vrMode = false;
+  context.assets = assets;
+  context.shaders = shaders;
+  context.scene = parent;
+  context.renderer = renderer;
+  context.camera = camera;
+  context.audioListener = listener;
+  context.goto = null;
+  context.cameraRig = cameraRig;
+  context.controllers = controllers;
+  context.world = ecsyWorld;
+  context.systemsGroup = systemsGroup;
+  context.handedness = handedness;
+  context.GotoRoom = gotoRoom;
+  context.particleSystem = new ParticleSystem();
+
+  window.context = context;
+
+  rooms.push({
+    setup: roomLobby.setup,
+    enter: roomLobby.enter,
+    exit: roomLobby.exit,
+    execute: roomLobby.execute
+  });
+
+  ELEMENTS.forEach((element) => {
+    rooms.push({
+      setup: (ctx) => ElementRoom.setup(ctx, element.symbol),
+      enter: (ctx) => ElementRoom.enter(ctx, element.symbol),
+      exit: (ctx) => ElementRoom.exit(ctx, element.symbol),
+      execute: (ctx, delta, time) => ElementRoom.execute(ctx, delta, time, element.symbol)
+    });
+    elementRooms.push(ROOM_ELEMENTS_START + (element.atomicNumber - 1));
+  });
+
+  EXPERIMENTAL_ROOMS.forEach((room, index) => {
+    rooms.push({
+      setup: (ctx) => ExperimentalRoom.setup(ctx, index),
+      enter: (ctx) => ExperimentalRoom.enter(ctx, index),
+      exit: (ctx) => ExperimentalRoom.exit(ctx, index),
+      execute: (ctx, delta, time) => ExperimentalRoom.execute(ctx, delta, time, index)
+    });
+    expRooms.push(ROOM_EXP_START + index);
+  });
+
+  context.room = ROOM_LOBBY;
+
+  loadAssets(renderer, 'assets/', assets, () => {
+    raycontrol = new RayControl(context, handedness);
+    context.raycontrol = raycontrol;
+
+    teleport = new Teleport(context);
+    context.teleport = teleport;
+
+    setupControllers();
+    roomLobby.setup(context);
+
+    document.body.appendChild(renderer.domElement);
+    document.body.appendChild(VRButton.createButton(renderer, status => {
+      context.vrMode = status === 'sessionStarted';
+      if (context.vrMode) {
+        gotoRoom(ROOM_LOBBY);
+        context.cameraRig.position.set(0, 0, 2);
+        context.goto = null;
+      } else {
+      }
+    }));
+    renderer.setAnimationLoop(animate);
+
+    document.getElementById('loading').style.display = 'none';
+  },
+
+  loadProgress => {
+    document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
+      - (282 - Math.floor(loadProgress / 27 * 282)));
+  },
+
+  debug);
+}
+    }));
+    renderer.setAnimationLoop(animate);
+
+    document.getElementById('loading').style.display = 'none';
+  },
+
+  loadProgress => {
+    document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
+      - (282 - Math.floor(loadProgress / 27 * 282)));
   },
   debug);
-
 }
 
 function setupControllers() {
+  voiceCommander.init();
+
   var model = assets['generic_controller_model'].scene;
   var material = new THREE.MeshLambertMaterial({
     map: assets['controller_tex'],
@@ -390,7 +555,7 @@ function setupControllers() {
   model.getObjectByName('body').material = material;
   model.getObjectByName('trigger').material = material;
 
-  for (let i = 0;i < 2; i++) {
+  for (let i = 0; i < 2; i++) {
     let controller = controllers[i];
     controller.boundingBox = new THREE.Box3();
     controller.userData.grabbing = null;
@@ -405,16 +570,12 @@ function setupControllers() {
   }
 }
 
-// @FIXME Hack for Oculus Browser issue
 var selectStartSkip = {};
 var selectEndSkip = {};
 var OculusBrowser = navigator.userAgent.indexOf("OculusBrowser") !== -1 &&
   parseInt(navigator.userAgent.match(/OculusBrowser\/([0-9]+)./)[1]) < 8;
 
-// <@FIXME
-
 function onSelectStart(ev) {
-  // @FIXME Hack for Oculus Browser issue
   if (OculusBrowser) {
     const controller = ev.target;
     if (!selectStartSkip[controller]) {
@@ -423,7 +584,6 @@ function onSelectStart(ev) {
     }
     selectStartSkip[controller] = false;
   }
-  // <@FIXME
 
   const trigger = ev.target.getObjectByName('trigger');
   trigger.rotation.x = -0.3;
@@ -431,7 +591,6 @@ function onSelectStart(ev) {
 }
 
 function onSelectEnd(ev) {
-  // @FIXME Hack for Oculus Browser issue
   if (OculusBrowser) {
     const controller = ev.target;
     if (!selectEndSkip[controller]) {
@@ -440,7 +599,6 @@ function onSelectEnd(ev) {
     }
     selectEndSkip[controller] = false;
   }
-  // <@FIXME
 
   const trigger = ev.target.getObjectByName('trigger');
   trigger.rotation.x = 0;
@@ -459,7 +617,6 @@ function animate() {
 
   ecsyWorld.execute(delta, elapsedTime);
 
-  // update controller bounding boxes
   for (let i = 0; i < controllers.length; i++) {
     const model = controllers[i].getObjectByName('Scene');
     if (model) {
@@ -467,13 +624,11 @@ function animate() {
     }
   }
 
-  // Browser navigation - handle keyboard movement
   if (!context.vrMode && context.browserControls) {
-    const velocity = 3.0; // movement speed
+    const velocity = 3.0;
     const bc = context.browserControls;
 
     if (bc.controls.isLocked) {
-      // Movement
       if (bc.moveForward()) context.camera.translateZ(-velocity * delta);
       if (bc.moveBackward()) context.camera.translateZ(velocity * delta);
       if (bc.moveLeft()) context.camera.translateX(-velocity * delta);
@@ -481,13 +636,8 @@ function animate() {
     }
   }
 
-  // render current room
   context.raycontrol.execute(context, delta, elapsedTime);
   rooms[context.room].execute(context, delta, elapsedTime);
-  // Slideshow disabled - was causing automatic room cycling in browser mode
-  // if (!context.vrMode) {
-  //   slideshow.execute(context, delta, elapsedTime);
-  // }
 
   renderer.render(scene, camera);
   if (context.goto !== null) {
@@ -496,4 +646,5 @@ function animate() {
   }
 }
 
+window.addEventListener('resize', onWindowResize, false);
 window.onload = () => {init()};
