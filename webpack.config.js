@@ -33,8 +33,8 @@ module.exports = (env, argv) => {
     },
     performance: {
       hints: isProduction ? 'warning' : false,
-      maxEntrypointSize: 512000,
-      maxAssetSize: 512000
+      maxEntrypointSize: 1048576,
+      maxAssetSize: 1048576
     },
     module: {
       rules: [
