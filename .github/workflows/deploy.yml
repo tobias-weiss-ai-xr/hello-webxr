@@ -1,50 +1,50 @@
-name: Deploy to Production
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [pse-in-vr]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and test
-        run: |
-          npm install --legacy-peer-deps
-          npm run build
-
-      - name: Run tests
-        run: npm test || echo "Tests may fail in CI environment due to system dependencies"
-
-      - name: Build Docker image
-        run: docker compose build
-
-      - name: Save Docker image
-        run: docker save hello-webxr:latest | gzip > hello-webxr.tar.gz
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: docker-image
-          path: hello-webxr.tar.gz
-          retention-days: 7
+          node-version: '18'
+          cache: 'npm'
 
-  deploy-notification:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: success()
-    steps:
-      - name: Deploy success
-        run: |
-          echo "✅ Docker image built successfully"
-          echo "📦 Image available as: hello-webxr:latest"
-          echo "🚀 Deploy to production with: docker compose up -d"
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
