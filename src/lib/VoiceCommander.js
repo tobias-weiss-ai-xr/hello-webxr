@@ -66,7 +66,7 @@ export class VoiceCommander {
   }
 
   async init() {
-    if (!('webkitSpeechRecognition' in window) {
+    if (!('webkitSpeechRecognition' in window)) {
       console.warn('Web Speech API not supported');
       this.setupUI();
       return;

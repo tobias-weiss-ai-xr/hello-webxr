@@ -11,7 +11,7 @@ var infoPanelMesh;
 var experimentStations = [];
 var audioManager;
 
-export function setup(ctx, elementSymbol) {
+export async function setup(ctx, elementSymbol) {
   elementData = ELEMENTS.find(e => e.symbol === elementSymbol);
   if (!elementData) return;
 
@@ -563,16 +563,6 @@ function executeReactionExperiment(ctx, expId, delta, time) {
     if (expId === 'flame' && station.userData.flameIntensity < 1) {
       station.userData.reactionState = 'active';
       audioManager.playSound('flame', 0.7);
-    }
-    }
-
-    if (expId === 'flame' && station.userData.flameIntensity < 1) {
-      station.userData.flameIntensity += delta * 2;
-      station.userData.flameMeshes.forEach((flame, i) => {
-        const baseScale = 1 + Math.sin(time * 10 + i) * 0.3;
-        flame.scale.y = baseScale * station.userData.flameIntensity;
-        flame.material.opacity = 0.7 + Math.sin(time * 10 + i * 0.2) * 0.3;
-      });
     }
   });
 }

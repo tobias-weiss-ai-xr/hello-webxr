@@ -204,14 +204,6 @@ function createCompoundDisplay(ctx, compoundName, position = {x: 0, y: 2, z: 0})
   }
 }
 
-  const curve = new THREE.CatmullRomCurve3(points);
-  const tubeGeo = new THREE.TubeGeometry(curve, 100, 0.1, 8, false);
-  const tubeMat = new THREE.MeshBasicMaterial({color: 0x20C997});
-  const helix = new THREE.Mesh(tubeGeo, tubeMat);
-  helix.position.set(0, 2, 0);
-  scene.add(helix);
-}
-
 function createChallengeArena(ctx) {
   const arenaFloor = new THREE.CylinderGeometry(8, 8, 0.2, 32);
   const arenaMat = new THREE.MeshBasicMaterial({color: 0xFFC107});

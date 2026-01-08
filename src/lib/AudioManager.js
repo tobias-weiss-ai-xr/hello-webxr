@@ -186,7 +186,7 @@ export class AudioManager {
       const sample = i * 100;
       data[i * 300] = (Math.sin(sample / rate * Math.PI) * 0.3 + 0.7);
       data[i * 300 + 100] = (Math.sin(sample / rate * Math.PI) * 0.2);
-      data[i * 300 + 200] = (Math.sin(sample / rate * Math.PI * 0.1 + 0.3);
+      data[i * 300 + 200] = (Math.sin(sample / rate * Math.PI) * 0.1 + 0.3);
     }
 
     return this.createAudioBuffer(context, buffer);

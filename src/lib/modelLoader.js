@@ -44,13 +44,13 @@ export function loadModel(modelPath, callback) {
 
 export function createPlaceholderModel(element) {
   const group = new THREE.Group();
-  let geo, mat;
+  let geo, mat, mesh;
 
   switch(element.symbol) {
     case 'H':
       geo = new THREE.SphereGeometry(0.3, 32, 32);
       mat = new THREE.MeshStandardMaterial({color: element.color, metalness: 0.1, roughness: 0.8});
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -58,7 +58,7 @@ export function createPlaceholderModel(element) {
     case 'C':
       geo = new THREE.OctahedronGeometry(0.3, 1);
       mat = new THREE.MeshStandardMaterial({color: 0x333333, metalness: 0.2, roughness: 0.6});
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -66,7 +66,7 @@ export function createPlaceholderModel(element) {
     case 'Fe':
       geo = new THREE.IcosahedronGeometry(0.3, 1);
       mat = new THREE.MeshStandardMaterial({color: 0x4a4a4a, metalness: 0.8, roughness: 0.3});
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -80,7 +80,7 @@ export function createPlaceholderModel(element) {
         emissive: 0xFFD700,
         emissiveIntensity: 0.1
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -94,7 +94,7 @@ export function createPlaceholderModel(element) {
         emissive: 0x00ff00,
         emissiveIntensity: 0.2
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -106,7 +106,7 @@ export function createPlaceholderModel(element) {
         metalness: 0.9,
         roughness: 0.2
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -120,7 +120,7 @@ export function createPlaceholderModel(element) {
         emissive: NOBLE_GAS_COLORS[element.symbol] || element.color,
         emissiveIntensity: 0.15
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
@@ -132,7 +132,7 @@ export function createPlaceholderModel(element) {
         metalness: element.group === 'metal' || element.group === 'transition' ? 0.7 : 0.1,
         roughness: element.group === 'metal' || element.group === 'transition' ? 0.3 : 0.7
       });
-      const mesh = new THREE.Mesh(geo, mat);
+      mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, 0, 0);
       group.add(mesh);
   }
@@ -160,8 +160,8 @@ export function createMoleculeModel(formula, elementData) {
   const parsedFormula = parseFormula(formula);
 
   const getElementColor = (symbol) => {
-    const elemData = elementData?.find(e => e.symbol === symbol);
-    return elemData?.color || 0xffffff;
+    const elemData = elementData && elementData.find(e => e.symbol === symbol);
+    return elemData && elemData.color || 0xffffff;
   };
 
   const atomPositions = [];
@@ -532,11 +532,6 @@ function createEnergyDisplay(element, size) {
     ray.lookAt(ray.position.clone().multiplyScalar(2));
     group.add(ray);
     rays.push(ray);
-  }
-
-  return group;
-}
-    }
   }
 
   return group;
