@@ -35,7 +35,7 @@ import VoiceCommander from './lib/VoiceCommander.js';
 
 var clock = new THREE.Clock();
 
-var scene, parent, renderer, camera, controls, context = {};
+var scene, renderer, camera, controls, context = {};
 var raycontrol, teleport, controllers = [];
 var voiceCommander;
 
@@ -234,7 +234,7 @@ export function init() {
   context.vrMode = false;
   context.assets = assets;
   context.shaders = shaders;
-  context.scene = parent;
+  context.scene = scene;
   context.renderer = renderer;
   context.camera = camera;
   context.audioListener = listener;

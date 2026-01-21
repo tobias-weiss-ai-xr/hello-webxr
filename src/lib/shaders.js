@@ -1,4 +1,4 @@
-export var shaders = {
+export default {
 door_frag : `
 uniform float time;
 uniform float selected;
