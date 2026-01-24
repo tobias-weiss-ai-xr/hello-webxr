@@ -10,12 +10,12 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
       # HTTP router with redirect to HTTPS
-      - "traefik.http.routers.hello-webxr.rule=Host(`chemie-lernen.org`) && PathPrefix(`/pse-in-vr`)"
+      - "traefik.http.routers.hello-webxr.rule=Host(`pse.chemie-lernen.org`)"
       - "traefik.http.routers.hello-webxr.entrypoints=web"
       - "traefik.http.routers.hello-webxr.priority=100"
       - "traefik.http.routers.hello-webxr.middlewares=hello-webxr-stripprefix,https-redirect@file"
       # HTTPS router
-      - "traefik.http.routers.hello-webxr-secure.rule=Host(`chemie-lernen.org`) && PathPrefix(`/pse-in-vr`)"
+      - "traefik.http.routers.hello-webxr-secure.rule=Host(`pse.chemie-lernen.org`)"
       - "traefik.http.routers.hello-webxr-secure.priority=100"
       - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
       - "traefik.http.routers.hello-webxr-secure.tls=true"
