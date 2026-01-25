@@ -1,6 +1,6 @@
-const CACHE_NAME = 'hello-webxr-v1';
-const STATIC_CACHE = 'static-v1';
-const ASSETS_CACHE = 'assets-v1';
+const CACHE_NAME = 'hello-webxr-v2';
+const STATIC_CACHE = 'static-v2';
+const ASSETS_CACHE = 'assets-v2';
 
 // Files to cache immediately
 const STATIC_FILES = [

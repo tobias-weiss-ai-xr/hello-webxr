@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -71,6 +72,14 @@ module.exports = (env, argv) => {
       https: true,
       host: '0.0.0.0',
       port: 8080
-    }
+    },
+    plugins: [
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'assets', to: 'assets' },
+          { from: 'src/vendor', to: 'src/vendor' }
+        ]
+      })
+    ]
   };
 };

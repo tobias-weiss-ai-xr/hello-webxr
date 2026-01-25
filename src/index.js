@@ -255,6 +255,8 @@ export function init() {
     teleport = new Teleport(context);
     context.teleport = teleport;
 
+    voiceCommander = new VoiceCommander(context);
+
     setupControllers();
     roomLobby.setup(context);
 
