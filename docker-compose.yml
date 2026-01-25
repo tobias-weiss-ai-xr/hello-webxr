@@ -13,18 +13,21 @@ services:
       - "traefik.http.routers.hello-webxr.rule=Host(`pse.chemie-lernen.org`)"
       - "traefik.http.routers.hello-webxr.entrypoints=web"
       - "traefik.http.routers.hello-webxr.priority=100"
-      - "traefik.http.routers.hello-webxr.middlewares=hello-webxr-stripprefix,https-redirect@file"
+      - "traefik.http.routers.hello-webxr.middlewares=asset-rewrite,https-redirect@file,hello-webxr-headers"
       # HTTPS router
       - "traefik.http.routers.hello-webxr-secure.rule=Host(`pse.chemie-lernen.org`)"
       - "traefik.http.routers.hello-webxr-secure.priority=100"
       - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
       - "traefik.http.routers.hello-webxr-secure.tls=true"
       - "traefik.http.routers.hello-webxr-secure.tls.certresolver=mytlschallenge"
-      - "traefik.http.routers.hello-webxr-secure.middlewares=hello-webxr-stripprefix,security-headers@file,compression@file"
+      - "traefik.http.routers.hello-webxr-secure.middlewares=asset-rewrite,security-headers@file,compression@file,hello-webxr-headers"
       # Strip prefix middleware
-      - "traefik.http.middlewares.hello-webxr-stripprefix.stripprefix.prefixes=/pse-in-vr"
+
       # Service
       - "traefik.http.services.hello-webxr.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.asset-rewrite.replacepathregex.regex=^/assets/(.*)$"
+      - "traefik.http.middlewares.asset-rewrite.replacepathregex.replacement=/res/$1"
+      - "traefik.http.middlewares.hello-webxr-headers.headers.customrequestheaders.Service-Worker-Allowed=/"
 
 networks:
   traefik-public:
