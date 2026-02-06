@@ -8,8 +8,6 @@ services:
       dockerfile: Dockerfile
     container_name: hello-webxr
     restart: unless-stopped
-    ports:
-      - "80:80"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"

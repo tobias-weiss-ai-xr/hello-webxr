@@ -258,21 +258,29 @@ export function init() {
     voiceCommander = new VoiceCommander(context);
 
     setupControllers();
-    roomLobby.setup(context);
+
+    rooms[ROOM_LOBBY] = roomLobby;
+    rooms[ROOM_LOBBY].setup(context);
+    context.room = ROOM_LOBBY;
+    context.cameraRig.position.set(0, 0, 2);
 
     document.body.appendChild(renderer.domElement);
     document.body.appendChild(VRButton.createButton(renderer, status => {
+      const wasVrMode = context.vrMode;
       context.vrMode = status === 'sessionStarted';
-      if (context.vrMode) {
-        gotoRoom(ROOM_LOBBY);
+
+      if (context.vrMode && !wasVrMode) {
+        rooms[context.room].exit(context);
         context.cameraRig.position.set(0, 0, 2);
-        context.goto = null;
-      } else {
+      } else if (!context.vrMode && wasVrMode) {
+        rooms[context.room].enter(context);
       }
     }));
-    renderer.setAnimationLoop(animate);
 
     document.getElementById('loading').style.display = 'none';
+
+    rooms[ROOM_LOBBY].enter(context);
+    renderer.setAnimationLoop(animate);
   },
 
   loadProgress => {
@@ -374,11 +382,18 @@ function animate() {
     }
   }
 
-  context.raycontrol.execute(context, delta, elapsedTime);
-  rooms[context.room].execute(context, delta, elapsedTime);
+  if (context.raycontrol) {
+    context.raycontrol.execute(context, delta, elapsedTime);
+  }
+  if (typeof context.room !== 'undefined' && rooms[context.room]) {
+    const currentRoom = rooms[context.room];
+    if (typeof currentRoom.execute === 'function') {
+      currentRoom.execute(context, delta, elapsedTime);
+    }
+  }
 
   renderer.render(scene, camera);
-  if (context.goto !== null) {
+  if (typeof context.goto !== 'undefined' && context.goto !== null) {
     gotoRoom(context.goto);
     context.goto = null;
   }

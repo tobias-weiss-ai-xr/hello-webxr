@@ -64,9 +64,7 @@ module.exports = (env, argv) => {
       poll: false
     },
     devServer: {
-      static: {
-        directory: __dirname
-      },
+      contentBase: __dirname,
       compress: true,
       hot: true,
       https: true,
