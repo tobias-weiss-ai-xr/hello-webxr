@@ -10,12 +10,18 @@ var atomModel;
 var infoPanelMesh;
 var experimentStations = [];
 var audioManager;
+var setupCalled = false;
 
 export async function setup(ctx, elementSymbol) {
+  console.log('[ElementRoom] setup called for:', elementSymbol);
   elementData = ELEMENTS.find(e => e.symbol === elementSymbol);
-  if (!elementData) return;
+  if (!elementData) {
+    console.error('[ElementRoom] Element not found:', elementSymbol);
+    return;
+  }
 
   scene = new THREE.Scene();
+  console.log('[ElementRoom] Scene created:', scene);
 
   const themeColor = elementData.color;
   const bgColor = new THREE.Color(themeColor).multiplyScalar(0.15);
@@ -34,6 +40,9 @@ export async function setup(ctx, elementSymbol) {
   scene.userData.teleportZone = teleportFloorMesh;
   scene.userData.atomModel = atomModel;
   scene.userData.elementData = elementData;
+
+  setupCalled = true;
+  console.log('[ElementRoom] Setup complete for:', elementSymbol);
 }
 
 function createFloor(ctx, themeColor) {
@@ -114,6 +123,12 @@ function createAtomModel(ctx, element) {
 }
 
 function createInfoPanel(ctx, element) {
+  console.log('[ElementRoom] createInfoPanel called, ctx.world:', !!ctx.world);
+  if (!ctx.world) {
+    console.error('[ElementRoom] ctx.world is not available!');
+    return;
+  }
+
   const panelGeo = new THREE.BoxGeometry(3, 4, 0.1);
   const panelMat = new THREE.MeshBasicMaterial({
     color: 0x2a2a3a,
@@ -139,6 +154,7 @@ function createInfoPanel(ctx, element) {
   descPlate.name = 'descPlate';
   infoPanelMesh.add(descPlate);
 
+  console.log('[ElementRoom] Creating title text entity');
   const titleTextEntity = ctx.world.createEntity();
   titleTextEntity
     .addComponent(Text, {
@@ -151,7 +167,8 @@ function createInfoPanel(ctx, element) {
     })
     .addComponent(ParentObject3D, {value: titlePlate})
     .addComponent(Position, {x: 0, y: 0, z: 0.01});
-
+  
+  console.log('[ElementRoom] Creating desc text entity');
   const descTextEntity = ctx.world.createEntity();
   descTextEntity
     .addComponent(Text, {
@@ -168,6 +185,7 @@ function createInfoPanel(ctx, element) {
     .addComponent(Position, {x: 0, y: 1.2, z: 0.01});
 
   infoPanelMesh.userData.textEntities = [titleTextEntity, descTextEntity];
+  console.log('[ElementRoom] Text entities created:', infoPanelMesh.userData.textEntities.length);
 }
 
 function createExperimentStations(ctx, element) {
@@ -226,8 +244,13 @@ function createTeleportZone(ctx) {
 }
 
 export function enter(ctx) {
+  console.log('[ElementRoom] enter called, setupCalled:', setupCalled, 'scene:', !!scene);
   if (!scene) {
-    console.error('ElementRoom scene is undefined, skipping enter');
+    console.error('[ElementRoom] Scene is undefined, skipping enter');
+    return;
+  }
+  if (!setupCalled) {
+    console.error('[ElementRoom] Setup was not called before enter!');
     return;
   }
   ctx.scene.add(scene);
