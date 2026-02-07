@@ -69,7 +69,7 @@ module.exports = (env, argv) => {
       hot: true,
       https: true,
       host: '0.0.0.0',
-      port: process.env.PORT || 8080
+      port: process.env.PORT || 3000
     },
     plugins: [
       new CopyWebpackPlugin({

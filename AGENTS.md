@@ -11,7 +11,7 @@ WebXR-basiertes virtuelles Periodensystem mit 118 Element-Räumen und 10 Experim
 ```bash
 # Development
 npm install
-npm start              # HTTPS dev server at :8080
+npm start              # HTTPS dev server at :3000
 
 # Build
 npm run build          # Production bundle
@@ -141,8 +141,8 @@ export function execute(ctx, delta, time, param) {
 // 23+ = Experimental rooms
 
 // Direct navigation via URL:
-// http://localhost:8080/?room=H  (Go to Hydrogen room)
-// http://localhost:8080/?room=0  (Go to lobby)
+// https://localhost:3000/?room=H  (Go to Hydrogen room)
+// https://localhost:3000/?room=0  (Go to lobby)
 
 // In src/index.js:
 context.goto = roomIndex;  // Triggers room change

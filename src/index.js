@@ -26,8 +26,8 @@ import RayControl from './lib/RayControl.js';
 import Teleport from './lib/Teleport.js';
 
 import * as roomLobby from './rooms/Lobby.js';
-import ElementRoom from './rooms/ElementRoom.js';
-import ExperimentalRoom from './rooms/ExperimentalRoom.js';
+import * as ElementRoom from './rooms/ElementRoom.js';
+import * as ExperimentalRoom from './rooms/ExperimentalRoom.js';
 
 import {ELEMENTS, EXPERIMENTAL_ROOMS} from './data/elements.js';
 import ParticleSystem from './lib/ParticleSys.js';
@@ -42,6 +42,7 @@ var raycontrol, teleport, controllers = [];
 var listener, ambientMusic;
 
 var rooms = [];
+var setupCalledRooms = new Set();
 var currentElementRoom = null;
 var currentExpRoom = null;
 
@@ -49,7 +50,6 @@ const ROOM_LOBBY = 0;
 const ROOM_ELEMENTS_START = 1;
 const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
 const ROOM_EXP_START = ROOM_ELEMENTS_END + 1;
-
 var elementRooms = [];
 var expRooms = [];
 
@@ -82,9 +82,17 @@ function gotoRoom(roomIndex, elementSymbol = null, expRoomId = null) {
   } else if (roomIndex >= ROOM_ELEMENTS_START && roomIndex <= ROOM_ELEMENTS_END) {
     currentElementRoom = elementSymbol;
     currentExpRoom = null;
+    if (!setupCalledRooms.has(roomIndex)) {
+      rooms[roomIndex].setup(context, elementSymbol);
+      setupCalledRooms.add(roomIndex);
+    }
   } else if (roomIndex >= ROOM_EXP_START) {
     currentElementRoom = null;
     currentExpRoom = expRoomId;
+    if (!setupCalledRooms.has(roomIndex)) {
+      rooms[roomIndex].setup(context, expRoomId);
+      setupCalledRooms.add(roomIndex);
+    }
   }
 
   context.room = roomIndex;
@@ -245,6 +253,7 @@ export function init() {
   context.systemsGroup = systemsGroup;
   context.handedness = handedness;
   context.GotoRoom = gotoRoom;
+  context.rooms = rooms;
 
   window.context = context;
 
@@ -261,6 +270,18 @@ export function init() {
 
     rooms[ROOM_LOBBY] = roomLobby;
     rooms[ROOM_LOBBY].setup(context);
+    rooms[ROOM_LOBBY].setupCalled = true;
+
+    ELEMENTS.forEach((element, index) => {
+      const roomIndex = ROOM_ELEMENTS_START + index;
+      rooms[roomIndex] = ElementRoom;
+    });
+
+    EXPERIMENTAL_ROOMS.forEach((room, index) => {
+      const roomIndex = ROOM_EXP_START + index;
+      rooms[roomIndex] = ExperimentalRoom;
+    });
+
     context.room = ROOM_LOBBY;
     context.cameraRig.position.set(0, 0, 2);
 
@@ -279,7 +300,37 @@ export function init() {
 
     document.getElementById('loading').style.display = 'none';
 
-    rooms[ROOM_LOBBY].enter(context);
+    var initialRoom = ROOM_LOBBY;
+    if (roomName) {
+      console.log('URL parameter roomName:', roomName);
+      const elementIndex = ELEMENTS.findIndex(e => e.symbol === roomName);
+      console.log('elementIndex:', elementIndex);
+      if (elementIndex !== -1) {
+        initialRoom = ROOM_ELEMENTS_START + elementIndex;
+        currentElementRoom = roomName;
+        currentExpRoom = null;
+        console.log('Setting initial room to:', initialRoom);
+        context.room = initialRoom;
+      } else {
+        const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => r.id === roomName);
+        console.log('expIndex:', expIndex);
+        if (expIndex !== -1) {
+          initialRoom = ROOM_EXP_START + expIndex;
+          currentElementRoom = null;
+          currentExpRoom = roomName;
+          console.log('Setting initial room to:', initialRoom);
+          context.room = initialRoom;
+        }
+      }
+    }
+
+    console.log('Entering initial room:', initialRoom);
+    if (initialRoom !== ROOM_LOBBY) {
+      rooms[initialRoom].enter(context, currentElementRoom || currentExpRoom);
+    } else {
+      rooms[ROOM_LOBBY].enter(context);
+    }
+
     renderer.setAnimationLoop(animate);
   },
 
