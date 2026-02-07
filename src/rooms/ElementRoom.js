@@ -168,6 +168,9 @@ function createInfoPanel(ctx, element) {
     .addComponent(Position, {x: 0, y: 1.2, z: 0.01});
 
   infoPanelMesh.userData.textEntities = [titleTextEntity, descTextEntity];
+
+  scene.add(titleTextEntity);
+  scene.add(descTextEntity);
 }
 
 function createExperimentStations(ctx, element) {
