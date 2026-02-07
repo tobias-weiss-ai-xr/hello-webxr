@@ -290,18 +290,13 @@ export function init() {
       rooms[roomIndex] = ExperimentalRoom;
     });
 
-    context.room = ROOM_LOBBY;
-
     if (initialRoom !== ROOM_LOBBY) {
       console.log('Setting up initial room:', initialRoom);
       if (!setupCalledRooms.has(initialRoom)) {
         rooms[initialRoom].setup(context, initialElementRoom || initialExpRoom);
         setupCalledRooms.add(initialRoom);
       }
-    }
-
-    console.log('Entering initial room:', initialRoom);
-    if (initialRoom !== ROOM_LOBBY) {
+      console.log('Entering initial room:', initialRoom);
       if (initialElementRoom) {
         currentElementRoom = initialElementRoom;
         currentExpRoom = null;
