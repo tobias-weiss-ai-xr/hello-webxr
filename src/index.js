@@ -276,20 +276,70 @@ export function init() {
 
     setupControllers();
 
-    rooms[ROOM_LOBBY] = roomLobby;
-    rooms[ROOM_LOBBY].setup(context);
-    rooms[ROOM_LOBBY].setupCalled = true;
+  // Register rooms
+  rooms[ROOM_LOBBY].setup(context);
+  rooms[ROOM_LOBBY].setupCalled = true;
 
-    ELEMENTS.forEach((element, index) => {
-      const roomIndex = ROOM_ELEMENTS_START + index;
-      rooms[roomIndex] = ElementRoom;
-    });
+  ELEMENTS.forEach((element, index) => {
+    const roomIndex = ROOM_ELEMENTS_START + index;
+    rooms[roomIndex] = ElementRoom;
+  });
 
-    EXPERIMENTAL_ROOMS.forEach((room, index) => {
-      const roomIndex = ROOM_EXP_START + index;
-      rooms[roomIndex] = ExperimentalRoom;
-    });
+  EXPERIMENTAL_ROOMS.forEach((room, index) => {
+    const roomIndex = ROOM_EXP_START + index;
+    rooms[roomIndex] = ExperimentalRoom;
+  });
 
+  document.body.appendChild(renderer.domElement);
+    document.body.appendChild(VRButton.createButton(renderer, status => {
+      const wasVrMode = context.vrMode;
+      context.vrMode = status === 'sessionStarted';
+
+      if (context.vrMode && !wasVrMode) {
+        rooms[context.room].exit(context);
+        context.cameraRig.position.set(0, 0, 2);
+      } else if (!context.vrMode && wasVrMode) {
+        rooms[context.room].enter(context);
+      }
+    }));
+
+    document.getElementById('loading').style.display = 'none';
+
+    var initialRoom = ROOM_LOBBY;
+    var currentElementRoom = null;
+    var currentExpRoom = null;
+
+    if (roomName) {
+      console.log('URL parameter roomName:', roomName);
+      const elementIndex = ELEMENTS.findIndex(e => e.symbol === roomName);
+      console.log('elementIndex:', elementIndex);
+      if (elementIndex !== -1) {
+        initialRoom = ROOM_ELEMENTS_START + elementIndex;
+        currentElementRoom = roomName;
+        currentExpRoom = null;
+        console.log('Setting initial room to:', initialRoom);
+        if (!setupCalledRooms.has(initialRoom)) {
+          rooms[initialRoom].setup(context, elementSymbol);
+          setupCalledRooms.add(initialRoom);
+        }
+      } else {
+        const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => r.id === roomName);
+        console.log('expIndex:', expIndex);
+        if (expIndex !== -1) {
+          initialRoom = ROOM_EXP_START + expIndex;
+          currentElementRoom = null;
+          currentExpRoom = roomName;
+          console.log('Setting initial room to:', initialRoom);
+          if (!setupCalledRooms.has(initialRoom)) {
+            rooms[initialRoom].setup(context, expRoomId);
+            setupCalledRooms.add(initialRoom);
+          }
+        }
+      }
+      context.room = initialRoom;
+    }
+
+    console.log('Entering initial room:', initialRoom);
     if (initialRoom !== ROOM_LOBBY) {
       console.log('Setting up initial room:', initialRoom);
       if (!setupCalledRooms.has(initialRoom)) {
