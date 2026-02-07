@@ -110,6 +110,7 @@ function playMusic(roomIndex) {
 
 var ecsyWorld;
 var systemsGroup = {};
+var initialized = false;
 
 function detectWebXR() {
   if ('xr' in navigator) {
@@ -126,9 +127,16 @@ function detectWebXR() {
       noWebXRElement.classList.remove('hidden');
     }
   }
-}
+  }
 
 export function init() {
+  if (initialized) {
+    console.log('init() already called, skipping');
+    return;
+  }
+  initialized = true;
+
+  console.log('init() called');
   detectWebXR();
 
   const handElement = document.getElementById(handedness + 'hand');
