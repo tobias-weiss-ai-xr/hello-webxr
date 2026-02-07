@@ -111,7 +111,7 @@ var VRButton = {
 
 			disableButton();
 
-			button.textContent = 'VR NOT SUPPORTED';
+			button.textContent = 'VR NOT ENABLED';
 
 		}
 

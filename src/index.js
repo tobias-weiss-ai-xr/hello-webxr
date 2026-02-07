@@ -31,13 +31,13 @@ import ExperimentalRoom from './rooms/ExperimentalRoom.js';
 
 import {ELEMENTS, EXPERIMENTAL_ROOMS} from './data/elements.js';
 import ParticleSystem from './lib/ParticleSys.js';
-import VoiceCommander from './lib/VoiceCommander.js';
+// import VoiceCommander from './lib/VoiceCommander.js';
 
 var clock = new THREE.Clock();
 
 var scene, renderer, camera, controls, context = {};
 var raycontrol, teleport, controllers = [];
-var voiceCommander;
+// var voiceCommander;
 
 var listener, ambientMusic;
 
@@ -255,7 +255,7 @@ export function init() {
     teleport = new Teleport(context);
     context.teleport = teleport;
 
-    voiceCommander = new VoiceCommander(context);
+    // voiceCommander = new VoiceCommander(context);
 
     setupControllers();
 
@@ -292,7 +292,7 @@ export function init() {
 }
 
 function setupControllers() {
-  voiceCommander.init();
+  // voiceCommander.init();
 
   var model = assets['generic_controller_model'].scene;
   var material = new THREE.MeshLambertMaterial({
