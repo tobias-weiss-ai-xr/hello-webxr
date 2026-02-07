@@ -291,19 +291,29 @@ export function init() {
     });
 
     context.room = ROOM_LOBBY;
-    context.cameraRig.position.set(0, 0, 2);
 
-    document.body.appendChild(renderer.domElement);
-    document.body.appendChild(VRButton.createButton(renderer, status => {
-      const wasVrMode = context.vrMode;
-      context.vrMode = status === 'sessionStarted';
-
-      if (context.vrMode && !wasVrMode) {
-        rooms[context.room].exit(context);
-        context.cameraRig.position.set(0, 0, 2);
-      } else if (!context.vrMode && wasVrMode) {
-        rooms[context.room].enter(context);
+    if (initialRoom !== ROOM_LOBBY) {
+      console.log('Setting up initial room:', initialRoom);
+      if (!setupCalledRooms.has(initialRoom)) {
+        rooms[initialRoom].setup(context, initialElementRoom || initialExpRoom);
+        setupCalledRooms.add(initialRoom);
       }
+    }
+
+    console.log('Entering initial room:', initialRoom);
+    if (initialRoom !== ROOM_LOBBY) {
+      if (initialElementRoom) {
+        currentElementRoom = initialElementRoom;
+        currentExpRoom = null;
+      } else {
+        currentElementRoom = null;
+        currentExpRoom = initialExpRoom;
+      }
+      context.room = initialRoom;
+      rooms[initialRoom].enter(context, initialElementRoom || initialExpRoom);
+    } else {
+      rooms[ROOM_LOBBY].enter(context);
+    }
     }));
 
     document.getElementById('loading').style.display = 'none';
