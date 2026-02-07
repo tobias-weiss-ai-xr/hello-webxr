@@ -66,3 +66,6 @@ typings/
 
 #bundle.js
 #bundle.js.map
+
+# Windows special device files
+nul
