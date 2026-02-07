@@ -142,7 +142,7 @@ function createInfoPanel(ctx, element) {
   const titleTextEntity = ctx.world.createEntity();
   titleTextEntity
     .addComponent(Text, {
-      text: `${element.symbol} - ${element.name}`,
+      text: `${element.symbol} - ${element.name}\n\nGruppe: ${element.group} | Periode: ${element.period} | Block: ${element.block} | Gruppe: ${element.groupNumber}`,
       color: '#ffffff',
       fontSize: 0.1,
       anchor: 'center',
@@ -155,7 +155,7 @@ function createInfoPanel(ctx, element) {
   const descTextEntity = ctx.world.createEntity();
   descTextEntity
     .addComponent(Text, {
-      text: `Ordnungszahl: ${element.atomicNumber}\nAtommasse: ${element.mass}\n\n${element.description}`,
+      text: `Ordnungszahl: ${element.atomicNumber}\nAtommasse: ${element.mass}\nGruppe: ${element.group} | Periode: ${element.period} | Block: ${element.block} | Gruppe: ${element.groupNumber}\nTheme: ${element.theme}\n\n${element.description}`,
       color: '#cccccc',
       fontSize: 0.05,
       anchor: 'center',
