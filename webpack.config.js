@@ -9,6 +9,7 @@ module.exports = (env, argv) => {
     entry: './src/index.js',
     output: {
       filename: 'bundle.js',
+      chunkFilename: '[name].bundle.js',
       path: path.resolve(__dirname),
       publicPath: './'
     },
@@ -69,7 +70,8 @@ module.exports = (env, argv) => {
       hot: true,
       https: true,
       host: '0.0.0.0',
-      port: process.env.PORT || 3000
+      port: process.env.PORT || 3000,
+      writeToDisk: true
     },
     plugins: [
       new CopyWebpackPlugin({

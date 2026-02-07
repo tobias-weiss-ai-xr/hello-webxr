@@ -31,7 +31,7 @@ export async function setup(ctx, elementSymbol) {
   audioManager = new AudioManager(ctx);
   await audioManager.init();
 
-  scene.userData.teleportZone = teleportFloor;
+  scene.userData.teleportZone = teleportFloorMesh;
   scene.userData.atomModel = atomModel;
   scene.userData.elementData = elementData;
 }
@@ -59,10 +59,10 @@ function createAtomModel(ctx, element) {
     emissive: element.color,
     emissiveIntensity: 0.2
   });
-  const nucleus = new THREE.Mesh(nucleusGeo, nucleusMat);
-  nucleus.position.set(0, 0, 0);
-  nucleus.userData.nucleus = true;
-  atomModel.add(nucleus);
+  const nucleusMesh = new THREE.Mesh(nucleusGeo, nucleusMat);
+  nucleusMesh.position.set(0, 0, 0);
+  nucleusMesh.userData.nucleus = true;
+  atomModel.add(nucleusMesh);
 
   const electronCount = element.atomicNumber;
   const shells = [2, 8, 18, 32, 50, 72];
@@ -168,9 +168,6 @@ function createInfoPanel(ctx, element) {
     .addComponent(Position, {x: 0, y: 1.2, z: 0.01});
 
   infoPanelMesh.userData.textEntities = [titleTextEntity, descTextEntity];
-
-  scene.add(titleTextEntity);
-  scene.add(descTextEntity);
 }
 
 function createExperimentStations(ctx, element) {
@@ -217,18 +214,22 @@ function setupLighting(ctx, themeColor) {
   scene.add(pointLight2);
 }
 
+var teleportFloorMesh;
+
 function createTeleportZone(ctx) {
   const teleportGeo = new THREE.PlaneBufferGeometry(20, 20);
   const teleportMat = new THREE.MeshBasicMaterial({visible: false});
-  const teleportFloor = new THREE.Mesh(teleportGeo, teleportMat);
-  teleportFloor.rotation.x = -Math.PI / 2;
-  teleportFloor.position.y = 0.001;
-  scene.add(teleportFloor);
-
-  teleportFloor = teleportFloor;
+  teleportFloorMesh = new THREE.Mesh(teleportGeo, teleportMat);
+  teleportFloorMesh.rotation.x = -Math.PI / 2;
+  teleportFloorMesh.position.y = 0.001;
+  scene.add(teleportFloorMesh);
 }
 
 export function enter(ctx) {
+  if (!scene) {
+    console.error('ElementRoom scene is undefined, skipping enter');
+    return;
+  }
   ctx.scene.add(scene);
   ctx.renderer.setClearColor(scene.background);
   ctx.raycontrol.activateState('elementExperiments');
@@ -267,7 +268,7 @@ export function enter(ctx) {
   });
 
   ctx.raycontrol.addState('elementTeleport', {
-    colliderMesh: teleportFloor,
+    colliderMesh: teleportFloorMesh,
     controller: 'primary',
     onHover: (intersection, active) => {
       ctx.teleport.onHover(intersection.point, active);
