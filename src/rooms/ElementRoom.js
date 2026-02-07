@@ -4,6 +4,8 @@ import { ELEMENTS, GROUP_COLORS } from '../data/elements.js';
 import { AudioManager } from '../lib/AudioManager.js';
 import { createElementDisplay } from '../lib/modelLoader.js';
 
+console.log('[ElementRoom] Module loaded, ELEMENTS:', typeof ELEMENTS, 'has ELEMENTS:', 'ELEMENTS' in {ELEMENTS, GROUP_COLORS});
+
 var scene;
 var elementData;
 var atomModel;
@@ -14,7 +16,9 @@ var setupCalled = false;
 
 export async function setup(ctx, elementSymbol) {
   console.log('[ElementRoom] setup called for:', elementSymbol);
+  console.log('[ElementRoom] ELEMENTS available:', typeof ELEMENTS, 'length:', ELEMENTS ? ELEMENTS.length : 'N/A');
   elementData = ELEMENTS.find(e => e.symbol === elementSymbol);
+  console.log('[ElementRoom] elementData found:', !!elementData, elementData);
   if (!elementData) {
     console.error('[ElementRoom] Element not found:', elementSymbol);
     return;
