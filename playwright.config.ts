@@ -8,10 +8,13 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'https://chemie-lernen.org/pse-in-vr',
+    baseURL: process.env.CI ? 'https://chemie-lernen.org/pse-in-vr' : `https://localhost:${process.env.PORT || '8080'}`,
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    contextOptions: {
+      ignoreHTTPSErrors: true
+    }
   },
   projects: [
     {
