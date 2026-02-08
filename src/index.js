@@ -320,7 +320,7 @@ export function init() {
         currentExpRoom = null;
         console.log('Setting initial room to:', initialRoom);
         if (!setupCalledRooms.has(initialRoom)) {
-          rooms[initialRoom].setup(context, elementSymbol);
+          rooms[initialRoom].setup(context, roomName);
           setupCalledRooms.add(initialRoom);
         }
       } else {
@@ -332,7 +332,7 @@ export function init() {
           currentExpRoom = roomName;
           console.log('Setting initial room to:', initialRoom);
           if (!setupCalledRooms.has(initialRoom)) {
-            rooms[initialRoom].setup(context, expRoomId);
+            rooms[initialRoom].setup(context, roomName);
             setupCalledRooms.add(initialRoom);
           }
         }
@@ -340,59 +340,8 @@ export function init() {
       context.room = initialRoom;
     }
 
-    console.log('Entering initial room:', initialRoom);
-    if (initialRoom !== ROOM_LOBBY) {
-      console.log('Setting up initial room:', initialRoom);
-      if (!setupCalledRooms.has(initialRoom)) {
-        rooms[initialRoom].setup(context, initialElementRoom || initialExpRoom);
-        setupCalledRooms.add(initialRoom);
-      }
-      console.log('Entering initial room:', initialRoom);
-      if (initialElementRoom) {
-        currentElementRoom = initialElementRoom;
-        currentExpRoom = null;
-      } else {
-        currentElementRoom = null;
-        currentExpRoom = initialExpRoom;
-      }
-      context.room = initialRoom;
-      rooms[initialRoom].enter(context, initialElementRoom || initialExpRoom);
-    } else {
-      rooms[ROOM_LOBBY].enter(context);
-    }
-
-    document.getElementById('loading').style.display = 'none';
-
-    var initialRoom = ROOM_LOBBY;
-    if (roomName) {
-      console.log('URL parameter roomName:', roomName);
-      const elementIndex = ELEMENTS.findIndex(e => e.symbol === roomName);
-      console.log('elementIndex:', elementIndex);
-      if (elementIndex !== -1) {
-        initialRoom = ROOM_ELEMENTS_START + elementIndex;
-        currentElementRoom = roomName;
-        currentExpRoom = null;
-        console.log('Setting initial room to:', initialRoom);
-        context.room = initialRoom;
-      } else {
-        const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => r.id === roomName);
-        console.log('expIndex:', expIndex);
-        if (expIndex !== -1) {
-          initialRoom = ROOM_EXP_START + expIndex;
-          currentElementRoom = null;
-          currentExpRoom = roomName;
-          console.log('Setting initial room to:', initialRoom);
-          context.room = initialRoom;
-        }
-      }
-    }
-
-    console.log('Entering initial room:', initialRoom);
-    if (initialRoom !== ROOM_LOBBY) {
-      rooms[initialRoom].enter(context, currentElementRoom || currentExpRoom);
-    } else {
-      rooms[ROOM_LOBBY].enter(context);
-    }
+console.log('Entering initial room:', initialRoom);
+    rooms[initialRoom].enter(context, currentElementRoom || currentExpRoom);
 
     renderer.setAnimationLoop(animate);
   },
