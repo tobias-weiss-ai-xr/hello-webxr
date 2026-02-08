@@ -277,6 +277,7 @@ export function init() {
     setupControllers();
 
   // Register rooms
+  rooms[ROOM_LOBBY] = roomLobby;
   rooms[ROOM_LOBBY].setup(context);
   rooms[ROOM_LOBBY].setupCalled = true;
 
@@ -359,7 +360,6 @@ export function init() {
     } else {
       rooms[ROOM_LOBBY].enter(context);
     }
-    }));
 
     document.getElementById('loading').style.display = 'none';
 
