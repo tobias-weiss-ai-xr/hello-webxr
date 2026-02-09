@@ -55,6 +55,21 @@ function createRoomSpecificSetup(ctx, roomId) {
     case 'organic_chem':
       createCarbonUniverse(ctx);
       break;
+    case 'extreme_conditions':
+      createExtremeConditions(ctx);
+      break;
+    case 'industrial_apps':
+      createIndustrialApps(ctx);
+      break;
+    case 'historical_lab':
+      createHistoricalLab(ctx);
+      break;
+    case 'space_chem':
+      createSpaceChem(ctx);
+      break;
+    case 'nano_world':
+      createNanoWorld(ctx);
+      break;
     case 'challenge_arena':
       createChallengeArena(ctx);
       break;
@@ -202,6 +217,229 @@ function createCompoundDisplay(ctx, compoundName, position = {x: 0, y: 2, z: 0})
     scene.add(lattice);
     scene.userData.compoundDisplay = lattice;
   }
+}
+
+function createExtremeConditions(ctx) {
+  const pressureChamberGeo = new THREE.CylinderGeometry(2, 2, 4, 32);
+  const chamberMat = new THREE.MeshBasicMaterial({
+    color: 0xFFA94D,
+    transparent: true,
+    opacity: 0.3
+  });
+  const chamber = new THREE.Mesh(pressureChamberGeo, chamberMat);
+  chamber.position.set(0, 2, 0);
+  chamber.name = 'pressureChamber';
+  scene.add(chamber);
+
+  const plasmaGeo = new THREE.SphereGeometry(1.5, 32, 32);
+  const plasmaMat = new THREE.MeshBasicMaterial({
+    color: 0xFF6B35,
+    transparent: true,
+    opacity: 0.6
+  });
+  const plasma = new THREE.Mesh(plasmaGeo, plasmaMat);
+  plasma.position.set(0, 2, 0);
+  plasma.name = 'plasma';
+  scene.add(plasma);
+
+  const superfluidHeGeo = new THREE.TorusGeometry(1.8, 0.15, 16, 100);
+  const heMat = new THREE.MeshBasicMaterial({
+    color: 0x74B9FF,
+    transparent: true,
+    opacity: 0.5
+  });
+  const superfluidHe = new THREE.Mesh(superfluidHeGeo, heMat);
+  superfluidHe.position.set(3, 2, 0);
+  superfluidHe.rotation.x = Math.PI / 2;
+  superfluidHe.name = 'superfluidHe';
+  scene.add(superfluidHe);
+
+  scene.userData.plasma = plasma;
+  scene.userData.superfluidHe = superfluidHe;
+}
+
+function createIndustrialApps(ctx) {
+  const blastFurnaceGeo = new THREE.CylinderGeometry(1.5, 2, 5, 8);
+  const furnaceMat = new THREE.MeshBasicMaterial({
+    color: 0x74B9FF,
+    transparent: true,
+    opacity: 0.6
+  });
+  const furnace = new THREE.Mesh(blastFurnaceGeo, furnaceMat);
+  furnace.position.set(0, 2.5, 0);
+  scene.add(furnace);
+
+  const pipelineGeo = new THREE.CylinderGeometry(0.3, 0.3, 8, 16);
+  const pipeMat = new THREE.MeshBasicMaterial({color: 0x4a4a4a});
+  for (let i = 0; i < 4; i++) {
+    const pipe = new THREE.Mesh(pipelineGeo, pipeMat);
+    pipe.position.set(-3 + i * 2, 1, 3);
+    pipe.rotation.z = Math.PI / 2;
+    scene.add(pipe);
+  }
+
+  const reactorGeo = new THREE.BoxGeometry(3, 4, 3);
+  const reactorMat = new THREE.MeshBasicMaterial({
+    color: 0x20C997,
+    transparent: true,
+    opacity: 0.5
+  });
+  const reactor = new THREE.Mesh(reactorGeo, reactorMat);
+  reactor.position.set(0, 2, -4);
+  scene.add(reactor);
+}
+
+function createHistoricalLab(ctx) {
+  const antiqueTableGeo = new THREE.BoxGeometry(4, 1, 2);
+  const tableMat = new THREE.MeshBasicMaterial({color: 0x8B4513});
+  const table = new THREE.Mesh(antiqueTableGeo, tableMat);
+  table.position.set(0, 0.5, 0);
+  scene.add(table);
+
+  const crucibleGeo = new THREE.ConeGeometry(0.3, 0.5, 32);
+  const crucibleMat = new THREE.MeshBasicMaterial({
+    color: 0xD63384,
+    transparent: true,
+    opacity: 0.8
+  });
+  const crucible = new THREE.Mesh(crucibleGeo, crucibleMat);
+  crucible.position.set(1, 1, 0);
+  scene.add(crucible);
+
+  const parchmentGeo = new THREE.PlaneGeometry(1.5, 1);
+  const parchmentMat = new THREE.MeshBasicMaterial({
+    color: 0xF5DEB3,
+    side: THREE.DoubleSide
+  });
+  const parchment = new THREE.Mesh(parchmentGeo, parchmentMat);
+  parchment.position.set(-1, 1.1, 0);
+  parchment.rotation.y = -Math.PI / 4;
+  scene.add(parchment);
+
+  const alchemySymbolGeo = new THREE.RingGeometry(0.8, 1, 32);
+  const symbolMat = new THREE.MeshBasicMaterial({
+    color: 0xFFD700,
+    side: THREE.DoubleSide
+  });
+  const symbol = new THREE.Mesh(alchemySymbolGeo, symbolMat);
+  symbol.position.set(0, 3, 0);
+  symbol.name = 'alchemySymbol';
+  scene.add(symbol);
+  scene.userData.alchemySymbol = symbol;
+}
+
+function createSpaceChem(ctx) {
+  const starsGeo = new THREE.BufferGeometry();
+  const starsCount = 1000;
+  const positions = new Float32Array(starsCount * 3);
+  for (let i = 0; i < starsCount * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 50;
+  }
+  starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const starsMat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.1
+  });
+  const stars = new THREE.Points(starsGeo, starsMat);
+  stars.name = 'starField';
+  scene.add(stars);
+  scene.userData.stars = stars;
+
+  const nebulaGeo = new THREE.SphereGeometry(8, 32, 32);
+  const nebulaMat = new THREE.MeshBasicMaterial({
+    color: 0x6C5CE7,
+    transparent: true,
+    opacity: 0.15
+  });
+  const nebula = new THREE.Mesh(nebulaGeo, nebulaMat);
+  nebula.position.set(0, 2, -10);
+  scene.add(nebula);
+
+  const fragmentGeo = new THREE.IcosahedronGeometry(1, 1);
+  const fragmentMat = new THREE.MeshBasicMaterial({
+    color: 0xE17055,
+    wireframe: true
+  });
+  for (let i = 0; i < 5; i++) {
+    const fragment = new THREE.Mesh(fragmentGeo, fragmentMat);
+    fragment.position.set(
+      (Math.random() - 0.5) * 6,
+      2 + Math.random() * 2,
+      (Math.random() - 0.5) * 6
+    );
+    fragment.userData.orbitSpeed = 0.2 + Math.random() * 0.3;
+    fragment.userData.orbitAngle = Math.random() * Math.PI * 2;
+    fragment.name = 'fragment';
+    scene.add(fragment);
+  }
+}
+
+function createNanoWorld(ctx) {
+  const latticeGroup = new THREE.Group();
+
+  const atomGeo = new THREE.SphereGeometry(0.2, 16, 16);
+  const atomMat = new THREE.MeshBasicMaterial({color: 0x17A2B8});
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      for (let k = 0; k < 3; k++) {
+        const atom = new THREE.Mesh(atomGeo, atomMat);
+        atom.position.set(i - 1, j + 1, k - 1);
+        latticeGroup.add(atom);
+      }
+    }
+  }
+
+  const bondGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+  const bondMat = new THREE.MeshBasicMaterial({color: 0x0A0A1A});
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      for (let k = 0; k < 3; k++) {
+        if (i < 2) {
+          const bondH = new THREE.Mesh(bondGeo, bondMat);
+          bondH.rotation.z = Math.PI / 2;
+          bondH.position.set(i - 0.5, j + 1, k - 1);
+          latticeGroup.add(bondH);
+        }
+        if (j < 2) {
+          const bondV = new THREE.Mesh(bondGeo, bondMat);
+          bondV.position.set(i - 1, j + 1.5, k - 1);
+          latticeGroup.add(bondV);
+        }
+        if (k < 2) {
+          const bondD = new THREE.Mesh(bondGeo, bondMat);
+          bondD.rotation.x = Math.PI / 2;
+          bondD.position.set(i - 1, j + 1, k - 0.5);
+          latticeGroup.add(bondD);
+        }
+      }
+    }
+  }
+
+  latticeGroup.position.set(0, 2, 0);
+  latticeGroup.scale.set(1.5, 1.5, 1.5);
+  latticeGroup.name = 'nanoLattice';
+  scene.add(latticeGroup);
+  scene.userData.nanoLattice = latticeGroup;
+
+  const orbitalGeo = new THREE.TorusGeometry(2.5, 0.05, 16, 100);
+  const orbitalMat = new THREE.MeshBasicMaterial({
+    color: 0x74B9FF,
+    transparent: true,
+    opacity: 0.4
+  });
+  const orbitalX = new THREE.Mesh(orbitalGeo, orbitalMat);
+  orbitalX.position.set(0, 2, 0);
+  scene.add(orbitalX);
+
+  const orbitalY = orbitalX.clone();
+  orbitalY.rotation.x = Math.PI / 2;
+  scene.add(orbitalY);
+
+  const orbitalZ = orbitalX.clone();
+  orbitalZ.rotation.y = Math.PI / 2;
+  scene.add(orbitalZ);
 }
 
 function createChallengeArena(ctx) {
@@ -398,5 +636,37 @@ export function execute(ctx, delta, time) {
   if (scene.userData.core) {
     scene.userData.core.rotation.y += delta * 0.5;
     scene.userData.core.material.opacity = 0.4 + Math.sin(time * 2) * 0.1;
+  }
+
+  if (scene.userData.plasma) {
+    scene.userData.plasma.scale.setScalar(1 + Math.sin(time * 5) * 0.1);
+    scene.userData.plasma.material.opacity = 0.5 + Math.sin(time * 8) * 0.1;
+  }
+
+  if (scene.userData.superfluidHe) {
+    scene.userData.superfluidHe.rotation.z += delta * 2;
+    scene.userData.superfluidHe.rotation.x = Math.PI / 2 + Math.sin(time * 0.5) * 0.2;
+  }
+
+  if (scene.userData.alchemySymbol) {
+    scene.userData.alchemySymbol.rotation.z += delta * 0.3;
+    scene.userData.alchemySymbol.material.opacity = 0.7 + Math.sin(time * 2) * 0.3;
+  }
+
+  if (scene.userData.stars) {
+    scene.userData.stars.rotation.y += delta * 0.1;
+  }
+
+  scene.children.forEach(child => {
+    if (child.userData.orbitSpeed !== undefined) {
+      child.userData.orbitAngle += delta * child.userData.orbitSpeed;
+      child.position.x = Math.cos(child.userData.orbitAngle) * 3;
+      child.position.z = Math.sin(child.userData.orbitAngle) * 3;
+    }
+  });
+
+  if (scene.userData.nanoLattice) {
+    scene.userData.nanoLattice.rotation.y += delta * 0.5;
+    scene.userData.nanoLattice.rotation.x = Math.sin(time * 0.5) * 0.1;
   }
 }
