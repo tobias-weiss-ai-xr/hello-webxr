@@ -312,6 +312,8 @@ export function init() {
 
     if (roomName) {
       console.log('URL parameter roomName:', roomName);
+
+      // URL Validation: Check if roomName is a valid element or experimental room
       const elementIndex = ELEMENTS.findIndex(e => e.symbol === roomName);
       console.log('elementIndex:', elementIndex);
       if (elementIndex !== -1) {
@@ -319,9 +321,19 @@ export function init() {
         currentElementRoom = roomName;
         currentExpRoom = null;
         console.log('Setting initial room to:', initialRoom);
-        if (!setupCalledRooms.has(initialRoom)) {
-          rooms[initialRoom].setup(context, roomName);
-          setupCalledRooms.add(initialRoom);
+
+        // VR Mode Safety: Verify room has all required exports
+        if (rooms[initialRoom] && typeof rooms[initialRoom].setup === 'function' &&
+            typeof rooms[initialRoom].enter === 'function' &&
+            typeof rooms[initialRoom].exit === 'function' &&
+            typeof rooms[initialRoom].execute === 'function') {
+          if (!setupCalledRooms.has(initialRoom)) {
+            rooms[initialRoom].setup(context, roomName);
+            setupCalledRooms.add(initialRoom);
+          }
+        } else {
+          console.error('Invalid room module at index:', initialRoom, 'Missing required exports');
+          initialRoom = ROOM_LOBBY;
         }
       } else {
         const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => r.id === roomName);
@@ -331,10 +343,24 @@ export function init() {
           currentElementRoom = null;
           currentExpRoom = roomName;
           console.log('Setting initial room to:', initialRoom);
-          if (!setupCalledRooms.has(initialRoom)) {
-            rooms[initialRoom].setup(context, roomName);
-            setupCalledRooms.add(initialRoom);
+
+          // VR Mode Safety: Verify room has all required exports
+          if (rooms[initialRoom] && typeof rooms[initialRoom].setup === 'function' &&
+              typeof rooms[initialRoom].enter === 'function' &&
+              typeof rooms[initialRoom].exit === 'function' &&
+              typeof rooms[initialRoom].execute === 'function') {
+            if (!setupCalledRooms.has(initialRoom)) {
+              rooms[initialRoom].setup(context, roomName);
+              setupCalledRooms.add(initialRoom);
+            }
+          } else {
+            console.error('Invalid room module at index:', initialRoom, 'Missing required exports');
+            initialRoom = ROOM_LOBBY;
           }
+        } else {
+          // URL Validation: Invalid room ID, fall back to lobby
+          console.warn('Invalid room ID in URL parameter:', roomName, '- Falling back to lobby');
+          initialRoom = ROOM_LOBBY;
         }
       }
       context.room = initialRoom;
