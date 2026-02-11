@@ -370,11 +370,6 @@ export function init() {
       gotoRoom(initialRoom, currentElementRoom || currentExpRoom);
     }
 
-console.log('Entering initial room:', initialRoom);
-    console.log('Before camera reset - position:', context.cameraRig.position.x, context.cameraRig.position.y, context.cameraRig.position.z);
-    context.cameraRig.position.set(0, 1.6, 6.8);
-    context.cameraRig.rotation.set(0, 0, 0);
-    console.log('After camera reset - position:', context.cameraRig.position.x, context.cameraRig.position.y, context.cameraRig.position.z);
     rooms[initialRoom].enter(context, currentElementRoom || currentExpRoom);
 
     renderer.setAnimationLoop(animate);

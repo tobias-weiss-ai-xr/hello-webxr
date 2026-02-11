@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  # Development service with hot-reload support
+  dev:
+    image: node:16-alpine
+    container_name: hello-webxr-dev
+    working_dir: /app
+    volumes:
+      - .:/app                # Mount entire project for development
+      - /app/node_modules      # Prevent host node_modules from overwriting container
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm start
+    restart: unless-stopped
+
+  # Production service (unchanged)
   hello-webxr:
     image: hello-webxr:latest
     build:

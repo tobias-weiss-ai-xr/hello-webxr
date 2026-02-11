@@ -57,12 +57,12 @@ Fix critical startup crash, verify generic element room functionality across ele
 5. Documentation: Update AGENTS.md if experimental room pattern changes
 
 ### Definition of Done
-- [ ] `npm test` passes with no failures
-- [ ] Dev server starts without console errors
-- [ ] All 3 element rooms (H, He, Fe) navigate correctly via URL
-- [ ] All 10 experimental rooms have unique implementations in switch statement
-- [ ] URL with invalid room ID shows error message (no crash)
-- [ ] VR mode toggle doesn't crash on missing exports
+- [x] `npm test` passes with no failures
+- [x] Dev server starts without console errors
+- [x] All 3 element rooms (H, He, Fe) navigate correctly via URL
+- [x] All 10 experimental rooms have unique implementations in switch statement
+- [x] URL with invalid room ID shows error message (no crash)
+- [x] VR mode toggle doesn't crash on missing exports
 
 ### Must Have
 - Fix critical lobby room bug
@@ -177,7 +177,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 > Implementation + Test = ONE Task. Never separate.
 > EVERY task MUST have: Recommended Agent Profile + Parallelization info.
 
-- [ ] 1. Fix Critical Lobby Room Bug
+- [x] 1. Fix Critical Lobby Room Bug
 
   **What to do**:
   - Add line in `src/index.js` before line 280: `rooms[ROOM_LOBBY] = roomLobby;`
@@ -303,7 +303,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 2. Test ElementRoom with Hydrogen
+- [x] 2. Test ElementRoom with Hydrogen
 
   **What to do**:
   - Create test file `tests/hydrogen-room.spec.js`
@@ -444,7 +444,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 3. Test ElementRoom with Helium (Noble Gas)
+- [x] 3. Test ElementRoom with Helium (Noble Gas)
 
   **What to do**:
   - Create test file `tests/helium-room.spec.js`
@@ -568,7 +568,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 4. Test ElementRoom with Iron (Transition Metal)
+- [x] 4. Test ElementRoom with Iron (Transition Metal)
 
   **What to do**:
   - Create test file `tests/iron-room.spec.js`
@@ -701,7 +701,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 5. Implement extreme_conditions Experimental Room
+- [x] 5. Implement extreme_conditions Experimental Room
 
   **What to do**:
   - Create function `createExtremeConditions(ctx)` in `src/rooms/ExperimentalRoom.js`
@@ -838,7 +838,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 6. Implement industrial_apps Experimental Room
+- [x] 6. Implement industrial_apps Experimental Room
 
   **What to do**:
   - Create function `createIndustrialApps(ctx)` in `src/rooms/ExperimentalRoom.js`
@@ -946,7 +946,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 7. Implement historical_lab Experimental Room
+- [x] 7. Implement historical_lab Experimental Room
 
   **What to do**:
   - Create function `createHistoricalLab(ctx)` in `src/rooms/ExperimentalRoom.js`
@@ -1043,7 +1043,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 8. Implement space_chem Experimental Room
+- [x] 8. Implement space_chem Experimental Room
 
   **What to do**:
   - Create function `createSpaceChem(ctx)` in `src/rooms/ExperimentalRoom.js`
@@ -1140,7 +1140,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 9. Implement nano_world Experimental Room
+- [x] 9. Implement nano_world Experimental Room
 
   **What to do**:
   - Create function `createNanoWorld(ctx)` in `src/rooms/ExperimentalRoom.js`
@@ -1238,7 +1238,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 10. Add URL Validation Guard
+- [x] 10. Add URL Validation Guard
 
   **What to do**:
   - Add guard clause in `src/index.js` gotoRoom function or URL parameter handling
@@ -1353,7 +1353,7 @@ Parallel Speedup: ~33% faster than sequential (tasks 2-4 and 5-9 can run in para
 
 ---
 
-- [ ] 11. Verify VR Mode Safety (Enter/Exit Exports)
+- [x] 11. Verify VR Mode Safety (Enter/Exit Exports)
 
   **What to do**:
   - Verify that all room modules (Lobby, ElementRoom, ExperimentalRoom) export all 4 functions: setup, enter, exit, execute
@@ -1528,15 +1528,15 @@ npm test
 ```
 
 ### Final Checklist
-- [ ] Lobby room assignment fix applied
-- [ ] Hydrogen room test passes (room index 1)
-- [ ] Helium room test passes (room index 2)
-- [ ] Iron room test passes (room index 26, 26 electrons, >=3 shells)
-- [ ] All 5 new experimental rooms load via URL
-- [ ] All 10 experimental rooms have unique implementations (switch case coverage 100%)
-- [ ] Invalid room URL shows error, stays in lobby (index 0)
-- [ ] All 3 room modules export 4 functions (setup, enter, exit, execute)
-- [ ] VR mode toggle verified safe
-- [ ] All existing tests still pass
-- [ ] Server starts without console errors
-- [ ] No individual element room files created (generic pattern maintained)
+- [x] Lobby room assignment fix applied
+- [x] Hydrogen room test passes (room index 1)
+- [x] Helium room test passes (room index 2)
+- [x] Iron room test passes (room index 26, 26 electrons, >=3 shells)
+- [x] All 5 new experimental rooms load via URL
+- [x] All 10 experimental rooms have unique implementations (switch case coverage 100%)
+- [x] Invalid room URL shows error, stays in lobby (index 0)
+- [x] All 3 room modules export 4 functions (setup, enter, exit, execute)
+- [x] VR mode toggle verified safe
+- [x] All existing tests still pass
+- [x] Server starts without console errors
+- [x] No individual element room files created (generic pattern maintained)
