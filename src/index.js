@@ -96,6 +96,8 @@ function gotoRoom(roomIndex, elementSymbol = null, expRoomId = null) {
   }
 
   context.room = roomIndex;
+  context.cameraRig.position.set(0, 1.6, 6.8);
+  context.cameraRig.rotation.set(0, 0, 0);
   playMusic(roomIndex);
 
   rooms[context.room].enter(context, elementSymbol || expRoomId);
@@ -244,7 +246,6 @@ export function init() {
   cameraRig.add(camera);
   cameraRig.add(controllers[0]);
   cameraRig.add(controllers[1]);
-  cameraRig.position.set(0, 0, 2);
   scene.add(cameraRig);
 
   context.vrMode = false;
@@ -298,7 +299,8 @@ export function init() {
 
       if (context.vrMode && !wasVrMode) {
         rooms[context.room].exit(context);
-        context.cameraRig.position.set(0, 0, 2);
+        context.cameraRig.position.set(0, 1.6, 6.8);
+        context.cameraRig.rotation.set(0, 0, 0);
       } else if (!context.vrMode && wasVrMode) {
         rooms[context.room].enter(context);
       }
@@ -364,9 +366,15 @@ export function init() {
         }
       }
       context.room = initialRoom;
+      // Call gotoRoom to reset camera position for URL navigation
+      gotoRoom(initialRoom, currentElementRoom || currentExpRoom);
     }
 
 console.log('Entering initial room:', initialRoom);
+    console.log('Before camera reset - position:', context.cameraRig.position.x, context.cameraRig.position.y, context.cameraRig.position.z);
+    context.cameraRig.position.set(0, 1.6, 6.8);
+    context.cameraRig.rotation.set(0, 0, 0);
+    console.log('After camera reset - position:', context.cameraRig.position.x, context.cameraRig.position.y, context.cameraRig.position.z);
     rooms[initialRoom].enter(context, currentElementRoom || currentExpRoom);
 
     renderer.setAnimationLoop(animate);
