@@ -1,29 +1,27 @@
 import * as THREE from 'three';
-import * as roomHall from '../rooms/Hall.js';
-import * as roomPanorama from '../rooms/Panorama.js';
-import * as roomPanoramaStereo from '../rooms/PanoramaStereo.js';
-import * as roomPhotogrammetryObject from '../rooms/PhotogrammetryObject.js';
-import * as roomVertigo from '../rooms/Vertigo.js';
-import * as roomSound from '../rooms/Sound.js';
-import * as roomArachnophobia from '../rooms/Arachnophobia.js';
-import { ROOMS, MUSIC_THEMES, TARGET_POSITIONS } from './config.js';
+import * as Lobby from '../rooms/Lobby.js';
+import * as ElementRoom from '../rooms/ElementRoom.js';
+import * as ExperimentalRoom from '../rooms/ExperimentalRoom.js';
+import { ROOMS, MUSIC_THEMES, TARGET_POSITIONS, ELEMENTS, ROOM_LOBBY, ROOM_ELEMENTS_START, ROOM_EXP_START } from './config.js';
 
 export class RoomManager {
   constructor(context) {
     this.context = context;
-    this.rooms = [
-      roomHall,
-      roomSound,
-      roomPhotogrammetryObject,
-      roomVertigo,
-      roomArachnophobia,
-      roomPanoramaStereo,
-      roomPanorama,
-      roomPanorama,
-      roomPanorama,
-      roomPanorama,
-      roomPanorama,
-    ];
+    this.rooms = {};
+    
+    // Register PSE rooms
+    this.rooms[ROOM_LOBBY] = Lobby;
+    
+    // Register all 118 element rooms
+    ELEMENTS.forEach((element, index) => {
+      this.rooms[ROOM_ELEMENTS_START + index] = ElementRoom;
+    });
+    
+    // Register 10 experimental rooms (indices 119-128)
+    for (let i = 0; i < 10; i++) {
+      this.rooms[ROOM_EXP_START + i] = ExperimentalRoom;
+    }
+    
     this.roomNames = ROOMS;
     this.musicThemes = MUSIC_THEMES;
     this.targetPositions = TARGET_POSITIONS;
@@ -31,17 +29,14 @@ export class RoomManager {
   }
 
   setup() {
-    roomHall.setup(this.context);
-    roomPanorama.setup(this.context);
-    roomPanoramaStereo.setup(this.context);
-    roomPhotogrammetryObject.setup(this.context);
-    roomVertigo.setup(this.context);
-    roomSound.setup(this.context);
-    roomArachnophobia.setup(this.context);
+    // PSE room setup
+    Lobby.setup(this.context);
+    ElementRoom.setup(this.context);
+    ExperimentalRoom.setup(this.context);
   }
 
   enterRoom(roomIndex) {
-    if (roomIndex < 0 || roomIndex >= this.rooms.length) {
+    if (roomIndex < 0 || roomIndex >= this.roomNames.length) {
       console.warn(`Invalid room index: ${roomIndex}`);
       return;
     }

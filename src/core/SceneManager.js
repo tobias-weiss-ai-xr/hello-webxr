@@ -53,7 +53,7 @@ export class SceneManager {
   initCameraRig() {
     this.cameraRig = new THREE.Group();
     this.cameraRig.add(this.camera);
-    this.cameraRig.position.set(0, 0, 2);
+    this.cameraRig.position.set(0, 0, 0);
   }
 
   initLights() {

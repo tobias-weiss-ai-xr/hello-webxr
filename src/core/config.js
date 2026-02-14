@@ -1,17 +1,32 @@
 import * as THREE from 'three';
+import { ELEMENTS } from '../data/elements.js';
+
+export { ELEMENTS };
+
+// Room indices
+export const ROOM_LOBBY = 0;
+export const ROOM_ELEMENTS_START = 1;
+export const ROOM_ELEMENTS_END = 118;
+export const ROOM_EXP_START = 119;
+
+// Experimental room names
+const EXPERIMENTAL_ROOMS = [
+  'extreme_conditions',
+  'industrial_apps',
+  'historical_lab',
+  'space_chem',
+  'nano_world',
+  'reaction_lab',
+  'nuclear_lab',
+  'electrochem_lab',
+  'organic_lab',
+  'challenge_arena',
+];
 
 export const ROOMS = [
-  'hall',
-  'sound',
-  'photogrammetry',
-  'vertigo',
-  'arachnophobia',
-  'panoramastereo',
-  'panorama1',
-  'panorama2',
-  'panorama3',
-  'panorama4',
-  'panorama5',
+  'lobby',           // 0
+  ...ELEMENTS.map(e => e.symbol.toLowerCase()), // 1-118
+  ...EXPERIMENTAL_ROOMS, // 119-128
 ];
 
 export const MUSIC_THEMES = [
