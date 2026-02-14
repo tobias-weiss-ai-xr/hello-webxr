@@ -121,17 +121,18 @@ export class App {
   }
 
   setupControls() {
-    if (!this.debug) {
-      return;
-    }
-
+    // Enable mouse controls for non-VR mode (always, not just debug)
     this.controls = new PointerLockControls(
       this.sceneManager.getCamera(),
       this.sceneManager.getRenderer().domElement
     );
     this.sceneManager.getScene().add(this.controls.getObject());
 
-    document.body.addEventListener('click', () => this.controls.lock());
+    document.body.addEventListener('click', () => {
+      if (!this.vrMode) {
+        this.controls.lock();
+      }
+    });
     document.body.addEventListener('keydown', (ev) => this.handleDebugKeys(ev));
   }
 
@@ -210,8 +211,6 @@ export class App {
     this.roomManager.setup();
     this.roomManager.enterRoom(this.startRoomIndex);
 
-    slideshow.setup(context);
-
     document.body.appendChild(this.sceneManager.getDomElement());
     document.body.appendChild(VRButton.createButton(this.sceneManager.getRenderer(), (status) => {
       this.onVRStatusChange(status);
@@ -237,8 +236,6 @@ export class App {
       this.roomManager.enterRoom(0);
       this.context.cameraRig.position.set(0, 0, 2);
       this.context.goto = null;
-    } else {
-      slideshow.setup(this.context);
     }
   }
 
@@ -291,10 +288,6 @@ export class App {
 
     this.context.raycontrol.execute(this.context, delta, elapsedTime);
     this.roomManager.execute(delta, elapsedTime);
-
-    if (!this.vrMode) {
-      slideshow.execute(this.context, delta, elapsedTime);
-    }
 
     this.sceneManager.render();
 
