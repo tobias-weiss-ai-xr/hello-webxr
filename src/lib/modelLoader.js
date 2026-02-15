@@ -545,12 +545,12 @@ export function optimizeModelForVR(model) {
 
       if (child.material) {
         child.material.side = THREE.DoubleSide;
-      child.material.needsUpdate = true;
-      child.material.transparent = child.material.opacity < 1;
-      child.material.depthWrite = !child.material.transparent;
-      child.material.depthTest = child.material.transparent
-          ? THREE.DepthTest
-          : THREE.DepthTest.Always;
+        child.material.needsUpdate = true;
+        child.material.transparent = child.material.opacity < 1;
+        child.material.depthWrite = !child.material.transparent;
+        // depthTest should be a boolean, true by default
+        // Only disable for fully transparent objects
+        child.material.depthTest = child.material.opacity > 0.01;
       }
     }
 

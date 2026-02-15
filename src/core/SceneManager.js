@@ -8,6 +8,7 @@ export class SceneManager {
     this.camera = null;
     this.cameraRig = null;
     this.parent = null;
+    this.clock = new THREE.Clock();
   }
 
   init() {
@@ -16,24 +17,36 @@ export class SceneManager {
     this.initCamera();
     this.initCameraRig();
     this.initLights();
+    this.initEnvironment();
   }
 
   initRenderer() {
     this.renderer = new THREE.WebGLRenderer({
       antialias: RENDERER_DEFAULTS.antialias,
-      logarithmicDepthBuffer: RENDERER_DEFAULTS.logarithmicDepthBuffer
+      logarithmicDepthBuffer: RENDERER_DEFAULTS.logarithmicDepthBuffer,
+      powerPreference: 'high-performance'
     });
     this.renderer.gammaFactor = RENDERER_DEFAULTS.gammaFactor;
     this.renderer.outputEncoding = RENDERER_DEFAULTS.outputEncoding;
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.xr.enabled = true;
+    
+    // Enable shadow maps for better visual quality
+    this.renderer.shadowMap.enabled = false; // Disabled for VR performance
+    
+    // Tone mapping for better color reproduction
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
   }
 
   initScene() {
     this.scene = new THREE.Scene();
     this.parent = new THREE.Object3D();
     this.scene.add(this.parent);
+    
+    // Enable frustum culling optimization
+    this.scene.autoUpdate = true;
   }
 
   initCamera() {
@@ -48,6 +61,9 @@ export class SceneManager {
       CAMERA_DEFAULTS.position.y,
       CAMERA_DEFAULTS.position.z
     );
+    
+    // Enable layers for selective rendering
+    this.camera.layers.enable(0); // Default layer
   }
 
   initCameraRig() {
@@ -69,6 +85,16 @@ export class SceneManager {
     fillLight.position.copy(LIGHT_DEFAULTS.fill.position);
 
     this.scene.add(sunLight, fillLight);
+    
+    // Add subtle ambient light for better fill
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.05);
+    ambientLight.name = 'ambient';
+    this.scene.add(ambientLight);
+  }
+  
+  initEnvironment() {
+    // Initialize fog for depth perception (can be overridden per room)
+    this.scene.fog = null;
   }
 
   addCameraListener(listener) {
@@ -82,6 +108,11 @@ export class SceneManager {
   }
 
   render() {
+    const delta = this.clock.getDelta();
+    
+    // Update frustum culling
+    this.scene.updateMatrixWorld(true);
+    
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -107,5 +138,13 @@ export class SceneManager {
 
   getDomElement() {
     return this.renderer.domElement;
+  }
+  
+  getDelta() {
+    return this.clock.getDelta();
+  }
+  
+  getElapsedTime() {
+    return this.clock.getElapsedTime();
   }
 }

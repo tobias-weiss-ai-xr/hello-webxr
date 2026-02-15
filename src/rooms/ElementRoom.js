@@ -13,6 +13,8 @@ var infoPanelMesh;
 var experimentStations = [];
 var audioManager;
 var setupCalled = false;
+var backgroundParticles;
+var orbitTrails = [];
 
 export async function setup(ctx, elementSymbol) {
   console.log('[ElementRoom] setup called for:', elementSymbol);
@@ -51,12 +53,59 @@ export async function setup(ctx, elementSymbol) {
 
 function createFloor(ctx, themeColor) {
   const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 64);
-  const floorMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(themeColor).multiplyScalar(0.1)
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(themeColor).multiplyScalar(0.1),
+    metalness: 0.2,
+    roughness: 0.8
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.y = -0.1;
   scene.add(floor);
+
+  // Add decorative floor ring
+  const ringGeo = new THREE.RingGeometry(9.5, 10, 64);
+  const ringMat = new THREE.MeshBasicMaterial({ 
+    color: themeColor, 
+    transparent: true, 
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.01;
+  scene.add(ring);
+
+  // Create floating particles around the room
+  createBackgroundParticles(ctx, themeColor);
+}
+
+function createBackgroundParticles(ctx, themeColor) {
+  const particleCount = 200;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const radius = 3 + Math.random() * 7;
+    const theta = Math.random() * Math.PI * 2;
+    const y = 0.5 + Math.random() * 4;
+
+    positions[i3] = Math.cos(theta) * radius;
+    positions[i3 + 1] = y;
+    positions[i3 + 2] = Math.sin(theta) * radius;
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 0.04,
+    color: themeColor,
+    transparent: true,
+    opacity: 0.5
+  });
+
+  backgroundParticles = new THREE.Points(geometry, material);
+  scene.add(backgroundParticles);
 }
 
 function createAtomModel(ctx, element) {
@@ -224,16 +273,36 @@ function createExperimentStations(ctx, element) {
 }
 
 function setupLighting(ctx, themeColor) {
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  // Ambient light for base illumination
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
   scene.add(ambientLight);
 
-  const pointLight1 = new THREE.PointLight(themeColor, 0.8, 15);
+  // Hemisphere light for natural feel
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1a1a1a, 0.15);
+  scene.add(hemiLight);
+
+  // Main accent lights
+  const pointLight1 = new THREE.PointLight(themeColor, 1.0, 20);
   pointLight1.position.set(5, 5, 5);
   scene.add(pointLight1);
 
-  const pointLight2 = new THREE.PointLight(themeColor, 0.8, 15);
+  const pointLight2 = new THREE.PointLight(themeColor, 1.0, 20);
   pointLight2.position.set(-5, 5, -5);
   scene.add(pointLight2);
+
+  // Top down light
+  const topLight = new THREE.PointLight(0xffffff, 0.5, 15);
+  topLight.position.set(0, 8, 0);
+  scene.add(topLight);
+
+  // Rim lights for dramatic effect
+  const rimLight1 = new THREE.PointLight(0xffffff, 0.3, 12);
+  rimLight1.position.set(0, 2, 8);
+  scene.add(rimLight1);
+
+  const rimLight2 = new THREE.PointLight(0xffffff, 0.3, 12);
+  rimLight2.position.set(0, 2, -8);
+  scene.add(rimLight2);
 }
 
 var teleportFloorMesh;
@@ -677,6 +746,9 @@ export function execute(ctx, delta, time) {
         data.angle += data.speed * delta;
         child.position.x = Math.cos(data.angle) * data.shellRadius;
         child.position.z = Math.sin(data.angle) * data.shellRadius;
+        
+        // Add subtle bobbing motion
+        child.position.y = Math.sin(time * 3 + data.angle) * 0.05;
       } else if (child.userData.nucleus) {
         child.rotation.y += delta * 0.3;
         const pulse = 1 + Math.sin(time * 2) * 0.05;
@@ -687,9 +759,22 @@ export function execute(ctx, delta, time) {
       }
     });
 
+    // Slow rotation of entire atom model
+    atomModel.rotation.y += delta * 0.1;
+    
     if (atomModel.userData.themedDisplay) {
       atomModel.rotation.y += delta * 0.15;
     }
+  }
+
+  // Animate background particles
+  if (backgroundParticles) {
+    const positions = backgroundParticles.geometry.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i + 1] += Math.sin(time + i) * 0.001;
+    }
+    backgroundParticles.geometry.attributes.position.needsUpdate = true;
+    backgroundParticles.rotation.y += delta * 0.01;
   }
 
   experimentInteractions.forEach(interaction => {

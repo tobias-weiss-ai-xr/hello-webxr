@@ -480,12 +480,28 @@ function createGenericLab(ctx) {
 
 function createFloor(ctx, themeColor) {
   const floorGeo = new THREE.CylinderGeometry(12, 12, 0.2, 64);
-  const floorMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(themeColor).multiplyScalar(0.08)
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(themeColor).multiplyScalar(0.08),
+    metalness: 0.2,
+    roughness: 0.8
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.y = -0.1;
   scene.add(floor);
+
+  // Add decorative floor ring
+  const ringGeo = new THREE.RingGeometry(11.5, 12, 64);
+  const ringMat = new THREE.MeshBasicMaterial({ 
+    color: themeColor, 
+    transparent: true, 
+    opacity: 0.25,
+    side: THREE.DoubleSide
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.01;
+  scene.add(ring);
+  scene.userData.floorRing = ring;
 }
 
 function createExperimentStations(ctx, roomData) {
@@ -526,16 +542,36 @@ function createExperimentStations(ctx, roomData) {
 }
 
 function setupLighting(ctx, themeColor) {
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  // Ambient light for base illumination
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
   scene.add(ambientLight);
 
-  const pointLight1 = new THREE.PointLight(themeColor, 0.6, 20);
+  // Hemisphere light for natural feel
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1a1a1a, 0.1);
+  scene.add(hemiLight);
+
+  // Main accent lights
+  const pointLight1 = new THREE.PointLight(themeColor, 0.8, 25);
   pointLight1.position.set(5, 8, 5);
   scene.add(pointLight1);
 
-  const pointLight2 = new THREE.PointLight(themeColor, 0.6, 20);
+  const pointLight2 = new THREE.PointLight(themeColor, 0.8, 25);
   pointLight2.position.set(-5, 8, -5);
   scene.add(pointLight2);
+
+  // Top down light
+  const topLight = new THREE.PointLight(0xffffff, 0.4, 15);
+  topLight.position.set(0, 10, 0);
+  scene.add(topLight);
+
+  // Rim lights for dramatic effect
+  const rimLight1 = new THREE.PointLight(0xffffff, 0.2, 15);
+  rimLight1.position.set(0, 3, 10);
+  scene.add(rimLight1);
+
+  const rimLight2 = new THREE.PointLight(0xffffff, 0.2, 15);
+  rimLight2.position.set(0, 3, -10);
+  scene.add(rimLight2);
 }
 
 function createTeleportZone(ctx) {
@@ -655,6 +691,11 @@ export function execute(ctx, delta, time) {
 
   if (scene.userData.stars) {
     scene.userData.stars.rotation.y += delta * 0.1;
+  }
+
+  // Animate floor ring
+  if (scene.userData.floorRing) {
+    scene.userData.floorRing.material.opacity = 0.2 + Math.sin(time * 1.5) * 0.1;
   }
 
   scene.children.forEach(child => {

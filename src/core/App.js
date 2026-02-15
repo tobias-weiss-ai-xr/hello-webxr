@@ -136,29 +136,29 @@ export class App {
     document.body.addEventListener('keydown', (ev) => this.handleDebugKeys(ev));
   }
 
-  handleDebugKeys(ev) {
-    switch (ev.keyCode) {
-      case DEBUG_KEYS.forward:
-        this.controls.moveForward(0.2);
-        break;
-      case DEBUG_KEYS.left:
-        this.controls.moveRight(-0.2);
-        break;
-      case DEBUG_KEYS.backward:
-        this.controls.moveForward(-0.2);
-        break;
-      case DEBUG_KEYS.right:
-        this.controls.moveRight(0.2);
-        break;
-      case DEBUG_KEYS.nextRoom:
+handleDebugKeys(ev) {
+    switch(ev.code) {
+      case 'KeyN': // N or n key - next room
         this.roomManager.enterRoom((this.roomManager.getCurrentRoomIndex() + 1) % this.roomManager.rooms.length);
         break;
-      default: {
-        const room = ev.keyCode - 48;
-        if (!ev.metaKey && room >= 0 && room < this.roomManager.rooms.length) {
-          this.roomManager.enterRoom(room);
-        }
-      }
+      case 'KeyW':
+        this.controls.moveForward(0.2);
+        break;
+      case 'KeyA':
+        this.controls.moveRight(-0.2);
+        break;
+      case 'KeyS':
+        this.controls.moveForward(-0.2);
+        break;
+      case 'KeyD':
+        this.controls.moveRight(0.2);
+        break;
+    }
+
+    // Handle number keys (0-9) for direct room navigation
+    const room = parseInt(ev.key);
+    if (!isNaN(room) && room >= 0 && room < this.roomManager.rooms.length && !ev.metaKey) {
+      this.roomManager.enterRoom(room);
     }
   }
 
@@ -210,6 +210,12 @@ export class App {
     this.roomManager = new RoomManager(context);
     this.roomManager.setup();
     this.roomManager.enterRoom(this.startRoomIndex);
+
+    // Expose room index on context for testing
+    Object.defineProperty(this.context, 'room', {
+      get: () => this.roomManager.getCurrentRoomIndex(),
+      set: (value) => { this.context.goto = value; }
+    });
 
     document.body.appendChild(this.sceneManager.getDomElement());
     document.body.appendChild(VRButton.createButton(this.sceneManager.getRenderer(), (status) => {

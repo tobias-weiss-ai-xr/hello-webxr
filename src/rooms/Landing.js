@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 
 var scene, doorMaterial, doors = [], infoPanels = [], textEntities = [];
+var ambientParticles, floorRing;
 
 const WEBXR_ELEMENTS = [
   {
@@ -65,7 +66,7 @@ function createInfoPanel(element, index, total) {
 
   // Panel base
   const panelGeo = new THREE.BoxGeometry(2.5, 1.8, 0.1);
-  const panelMat = new THREE.MeshBasicMaterial({color: 0x2a2a3a});
+  const panelMat = new THREE.MeshStandardMaterial({color: 0x2a2a3a, metalness: 0.3, roughness: 0.7});
   const panel = new THREE.Mesh(panelGeo, panelMat);
   panel.position.set(x, 1.5, z);
   panel.lookAt(0, 1.5, 0);
@@ -89,14 +90,20 @@ function createInfoPanel(element, index, total) {
 
   // Pedestal
   const pedestalGeo = new THREE.BoxGeometry(1.5, 0.6, 1.5);
-  const pedestalMat = new THREE.MeshBasicMaterial({color: 0x1a1a2a});
+  const pedestalMat = new THREE.MeshStandardMaterial({color: 0x1a1a2a, metalness: 0.2, roughness: 0.8});
   const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
   pedestal.position.set(x, 0.3, z);
   group.add(pedestal);
 
   // Icon placeholder (simple geometric shape representing element)
   const iconGeo = new THREE.SphereGeometry(0.3, 16, 16);
-  const iconMat = new THREE.MeshBasicMaterial({color: element.color});
+  const iconMat = new THREE.MeshStandardMaterial({
+    color: element.color,
+    emissive: element.color,
+    emissiveIntensity: 0.2,
+    metalness: 0.5,
+    roughness: 0.5
+  });
   const icon = new THREE.Mesh(iconGeo, iconMat);
   icon.position.set(x, 0.9, z);
   group.add(icon);
@@ -124,7 +131,7 @@ function createDoor(ctx, element, index, total) {
 
   // Door frame
   const frameGeo = new THREE.BoxGeometry(1.7, 2.7, 0.08);
-  const frameMat = new THREE.MeshBasicMaterial({color: 0x1a1a1a});
+  const frameMat = new THREE.MeshStandardMaterial({color: 0x1a1a1a, metalness: 0.3, roughness: 0.7});
   const frame = new THREE.Mesh(frameGeo, frameMat);
   frame.position.copy(door.position);
   frame.position.z += (z < 0 ? -0.05 : 0.05);
@@ -134,29 +141,87 @@ function createDoor(ctx, element, index, total) {
   return { door, frame };
 }
 
+function createAmbientParticles(ctx) {
+  const particleCount = 300;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const radius = 2 + Math.random() * 8;
+    const theta = Math.random() * Math.PI * 2;
+    const y = 0.5 + Math.random() * 3;
+
+    positions[i3] = Math.cos(theta) * radius;
+    positions[i3 + 1] = y;
+    positions[i3 + 2] = Math.sin(theta) * radius;
+
+    // Varied colors matching room theme
+    const colorChoice = Math.random();
+    if (colorChoice < 0.33) {
+      colors[i3] = 0.29; colors[i3 + 1] = 0.56; colors[i3 + 2] = 0.89; // Blue
+    } else if (colorChoice < 0.66) {
+      colors[i3] = 0.88; colors[i3 + 1] = 0.34; colors[i3 + 2] = 0.99; // Purple
+    } else {
+      colors[i3] = 0.31; colors[i3 + 1] = 0.89; colors[i3 + 2] = 0.76; // Teal
+    }
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 0.03,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.4,
+    blending: THREE.AdditiveBlending
+  });
+
+  return new THREE.Points(geometry, material);
+}
+
 export function setup(ctx) {
   scene = new THREE.Scene();
 
   // Floor - large circular platform
   const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 64);
-  const floorMat = new THREE.MeshBasicMaterial({color: 0x1a1a2e});
+  const floorMat = new THREE.MeshStandardMaterial({color: 0x1a1a2e, metalness: 0.2, roughness: 0.8});
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.y = -0.1;
   scene.add(floor);
 
+  // Decorative floor ring
+  const ringGeo = new THREE.RingGeometry(9.5, 10, 64);
+  const ringMat = new THREE.MeshBasicMaterial({ 
+    color: 0x4a90e2, 
+    transparent: true, 
+    opacity: 0.25,
+    side: THREE.DoubleSide
+  });
+  floorRing = new THREE.Mesh(ringGeo, ringMat);
+  floorRing.rotation.x = -Math.PI / 2;
+  floorRing.position.y = 0.01;
+  scene.add(floorRing);
+
   // Center platform
   const centerGeo = new THREE.CylinderGeometry(3, 3, 0.3, 32);
-  const centerMat = new THREE.MeshBasicMaterial({color: 0x2a2a4a});
+  const centerMat = new THREE.MeshStandardMaterial({color: 0x2a2a4a, metalness: 0.3, roughness: 0.7});
   const center = new THREE.Mesh(centerGeo, centerMat);
   center.position.y = 0.15;
   scene.add(center);
 
   // Center title column
   const columnGeo = new THREE.CylinderGeometry(0.5, 0.6, 3, 16);
-  const columnMat = new THREE.MeshBasicMaterial({color: 0x3a3a5a});
+  const columnMat = new THREE.MeshStandardMaterial({color: 0x3a3a5a, metalness: 0.4, roughness: 0.6});
   const column = new THREE.Mesh(columnGeo, columnMat);
   column.position.y = 1.5;
   scene.add(column);
+
+  // Create ambient particles
+  ambientParticles = createAmbientParticles(ctx);
+  scene.add(ambientParticles);
 
   // Info panels for each element
   WEBXR_ELEMENTS.forEach((element, index) => {
@@ -234,18 +299,30 @@ export function setup(ctx) {
   const dome = new THREE.Mesh(domeGeo, domeMat);
   scene.add(dome);
 
-  // Ambient lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  // Enhanced lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
   scene.add(ambientLight);
 
+  // Hemisphere light for natural feel
+  const hemiLight = new THREE.HemisphereLight(0x4a90e2, 0x1a1a2e, 0.15);
+  scene.add(hemiLight);
+
   // Point lights for atmosphere
-  const light1 = new THREE.PointLight(0x4a90e2, 0.5, 10);
-  light1.position.set(5, 3, 0);
+  const light1 = new THREE.PointLight(0x4a90e2, 0.8, 15);
+  light1.position.set(5, 4, 0);
   scene.add(light1);
 
-  const light2 = new THREE.PointLight(0xe056fd, 0.5, 10);
-  light2.position.set(-5, 3, 0);
+  const light2 = new THREE.PointLight(0xe056fd, 0.8, 15);
+  light2.position.set(-5, 4, 0);
   scene.add(light2);
+
+  const light3 = new THREE.PointLight(0x50e3c2, 0.5, 12);
+  light3.position.set(0, 3, 5);
+  scene.add(light3);
+
+  const light4 = new THREE.PointLight(0xf5a623, 0.5, 12);
+  light4.position.set(0, 3, -5);
+  scene.add(light4);
 
   // Teleport floor (invisible)
   const teleportGeo = new THREE.PlaneBufferGeometry(20, 20);
@@ -321,4 +398,19 @@ export function execute(ctx, delta, time) {
       door.scale.z = Math.max(door.scale.z - delta * door.scale.z, 1);
     }
   });
+
+  // Animate ambient particles
+  if (ambientParticles) {
+    const positions = ambientParticles.geometry.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i + 1] += Math.sin(time + i) * 0.001;
+    }
+    ambientParticles.geometry.attributes.position.needsUpdate = true;
+    ambientParticles.rotation.y += delta * 0.02;
+  }
+
+  // Animate floor ring
+  if (floorRing) {
+    floorRing.material.opacity = 0.2 + Math.sin(time * 1.5) * 0.1;
+  }
 }

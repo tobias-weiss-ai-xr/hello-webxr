@@ -1,5 +1,28 @@
 import * as THREE from 'three';
-var scene, doorMaterial, door;
+var scene, doorMaterial, door, spotLight, dustParticles;
+
+function createDustParticles(ctx) {
+  const particleCount = 100;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 10;
+    positions[i * 3 + 1] = Math.random() * 5;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 0.02,
+    color: 0xffffcc,
+    transparent: true,
+    opacity: 0.4
+  });
+
+  return new THREE.Points(geometry, material);
+}
 
 function createDoorMaterial(ctx) {
   return new THREE.ShaderMaterial({
@@ -77,8 +100,24 @@ export function setup(ctx) {
 }
 
 export function enter(ctx) {
-  ctx.renderer.setClearColor(0x000000);
+  ctx.renderer.setClearColor(0x111111);
   ctx.scene.add(scene);
+
+  // Add spotlight for dramatic lighting
+  spotLight = new THREE.SpotLight(0xffffee, 1.5, 15, Math.PI / 4, 0.5);
+  spotLight.position.set(0, 8, 3);
+  spotLight.target.position.set(0, 1, 0);
+  ctx.scene.add(spotLight);
+  ctx.scene.add(spotLight.target);
+
+  // Add dust particles
+  dustParticles = createDustParticles(ctx);
+  ctx.scene.add(dustParticles);
+
+  // Add subtle ambient light
+  const ambientLight = new THREE.AmbientLight(0x333333, 0.2);
+  ctx.scene.add(ambientLight);
+
   ctx.raycontrol.activateState('doorPhotogrammetry');
   ctx.raycontrol.activateState('teleportPhotogrammetry');
 }
@@ -86,6 +125,21 @@ export function enter(ctx) {
 export function exit(ctx) {
   ctx.raycontrol.deactivateState('doorPhotogrammetry');
   ctx.raycontrol.deactivateState('teleportPhotogrammetry');
+
+  // Clean up spotlight
+  if (spotLight) {
+    ctx.scene.remove(spotLight);
+    ctx.scene.remove(spotLight.target);
+    spotLight = null;
+  }
+
+  // Clean up dust particles
+  if (dustParticles) {
+    ctx.scene.remove(dustParticles);
+    dustParticles.geometry.dispose();
+    dustParticles.material.dispose();
+    dustParticles = null;
+  }
 
   ctx.scene.remove(scene);
 }
@@ -95,5 +149,20 @@ export function execute(ctx, delta, time) {
 
   if (door.scale.z > 0.5) {
     door.scale.z = Math.max(door.scale.z - delta * door.scale.z, 0.5);
+  }
+
+  // Animate dust particles - gentle floating motion
+  if (dustParticles) {
+    dustParticles.rotation.y = time * 0.02;
+    const positions = dustParticles.geometry.attributes.position.array;
+    for (let i = 0; i < positions.length / 3; i++) {
+      positions[i * 3 + 1] += Math.sin(time + i) * 0.001;
+    }
+    dustParticles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // Subtle spotlight flicker
+  if (spotLight) {
+    spotLight.intensity = 1.5 + Math.sin(time * 3) * 0.1;
   }
 }

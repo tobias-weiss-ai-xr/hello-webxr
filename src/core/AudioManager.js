@@ -2,10 +2,27 @@ import * as THREE from 'three';
 import assets from '../assets.js';
 
 export class AudioManager {
-  constructor(listener) {
-    this.listener = listener;
-    this.ambientMusic = new THREE.Audio(listener);
+  constructor(ctxOrListener) {
+    // Accept either a context object or a direct AudioListener
+    if (ctxOrListener && ctxOrListener.camera) {
+      this.ctx = ctxOrListener;
+      this.listener = ctxOrListener.camera.children.find(c => c instanceof THREE.AudioListener);
+      if (!this.listener) {
+        this.listener = new THREE.AudioListener();
+        ctxOrListener.camera.add(this.listener);
+      }
+    } else {
+      this.listener = ctxOrListener;
+    }
+    this.ambientMusic = new THREE.Audio(this.listener);
     this.currentTheme = null;
+    this.initialized = false;
+  }
+
+  async init() {
+    // Async initialization hook for future use
+    this.initialized = true;
+    return this;
   }
 
   stopMusic() {

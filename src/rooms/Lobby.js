@@ -7,21 +7,46 @@ var elementButtons = [], expButtons = [];
 var periodicTableMesh;
 var infoPanel, currentSelection = null;
 var teleportFloor;
+var starField;
+var ambientParticles;
 
 const ATOM_RADIUS = 0.8;
 const ORBIT_RADIUS = 4;
 const ELECTRON_SPEED = 0.5;
+const STAR_COUNT = 500;
+const PARTICLE_COUNT = 100;
 
 export function setup(ctx) {
   scene = new THREE.Scene();
 
   scene.background = new THREE.Color(0x0a0a1a);
+  
+  // Create starfield background
+  createStarfield(ctx);
+  createAmbientParticles(ctx);
 
   const floorGeo = new THREE.CylinderGeometry(15, 15, 0.2, 64);
-  const floorMat = new THREE.MeshBasicMaterial({color: 0x1a1a2e});
+  const floorMat = new THREE.MeshStandardMaterial({ 
+    color: 0x1a1a2e,
+    metalness: 0.3,
+    roughness: 0.8
+  });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.y = -0.1;
   scene.add(floor);
+
+  // Add floor glow ring
+  const ringGeo = new THREE.RingGeometry(14.5, 15, 64);
+  const ringMat = new THREE.MeshBasicMaterial({ 
+    color: 0x4a90e2, 
+    transparent: true, 
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
+  const glowRing = new THREE.Mesh(ringGeo, ringMat);
+  glowRing.rotation.x = -Math.PI / 2;
+  glowRing.position.y = 0.01;
+  scene.add(glowRing);
 
   const teleportGeo = new THREE.PlaneBufferGeometry(30, 30);
   const teleportMat = new THREE.MeshBasicMaterial({visible: false});
@@ -37,18 +62,100 @@ export function setup(ctx) {
   createExpRoomButtons(ctx);
   createInfoPanel(ctx);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  // Enhanced lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
   scene.add(ambientLight);
 
-  const coreLight = new THREE.PointLight(0x4a90e2, 1, 10);
+  const coreLight = new THREE.PointLight(0x4a90e2, 1.5, 15);
   coreLight.position.set(0, 2, 0);
   scene.add(coreLight);
+
+  // Add hemisphere light for better ambient feel
+  const hemiLight = new THREE.HemisphereLight(0x4a90e2, 0x1a1a2e, 0.3);
+  scene.add(hemiLight);
+
+  // Add accent lights
+  const accentLight1 = new THREE.PointLight(0xFF6B6B, 0.5, 20);
+  accentLight1.position.set(10, 3, 0);
+  scene.add(accentLight1);
+
+  const accentLight2 = new THREE.PointLight(0x50e3c2, 0.5, 20);
+  accentLight2.position.set(-10, 3, 0);
+  scene.add(accentLight2);
 
   scene.userData.teleport = teleportFloor;
   scene.userData.atomCore = atomCore;
   scene.userData.electronOrbits = electronOrbits;
+  scene.userData.glowRing = glowRing;
 
   registerInteractions(ctx);
+}
+
+function createStarfield(ctx) {
+  const starsGeometry = new THREE.BufferGeometry();
+  const starPositions = new Float32Array(STAR_COUNT * 3);
+  const starColors = new Float32Array(STAR_COUNT * 3);
+
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const i3 = i * 3;
+    const radius = 50 + Math.random() * 50;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+
+    starPositions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+    starPositions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+    starPositions[i3 + 2] = radius * Math.cos(phi);
+
+    // Varied star colors (white, blue, yellow tints)
+    const colorChoice = Math.random();
+    if (colorChoice < 0.6) {
+      starColors[i3] = 1; starColors[i3 + 1] = 1; starColors[i3 + 2] = 1;
+    } else if (colorChoice < 0.8) {
+      starColors[i3] = 0.8; starColors[i3 + 1] = 0.9; starColors[i3 + 2] = 1;
+    } else {
+      starColors[i3] = 1; starColors[i3 + 1] = 1; starColors[i3 + 2] = 0.8;
+    }
+  }
+
+  starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+  starsGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+  const starsMaterial = new THREE.PointsMaterial({
+    size: 0.5,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.8
+  });
+
+  starField = new THREE.Points(starsGeometry, starsMaterial);
+  scene.add(starField);
+}
+
+function createAmbientParticles(ctx) {
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const i3 = i * 3;
+    const radius = 5 + Math.random() * 10;
+    const theta = Math.random() * Math.PI * 2;
+    
+    particlePositions[i3] = Math.cos(theta) * radius;
+    particlePositions[i3 + 1] = 0.5 + Math.random() * 3;
+    particlePositions[i3 + 2] = Math.sin(theta) * radius;
+  }
+
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.05,
+    color: 0x4a90e2,
+    transparent: true,
+    opacity: 0.4
+  });
+
+  ambientParticles = new THREE.Points(particleGeometry, particleMaterial);
+  scene.add(ambientParticles);
 }
 
 function createAtomNucleus(ctx) {
@@ -375,4 +482,25 @@ export function execute(ctx, delta, time) {
   elementButtons.forEach((button, i) => {
     button.position.y = 1.6 + Math.sin(time * 2 + i * 0.5) * 0.1;
   });
+
+  // Animate starfield rotation
+  if (starField) {
+    starField.rotation.y += delta * 0.01;
+  }
+
+  // Animate ambient particles
+  if (ambientParticles) {
+    const positions = ambientParticles.geometry.attributes.position.array;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const i3 = i * 3;
+      positions[i3 + 1] += Math.sin(time + i) * 0.002;
+    }
+    ambientParticles.geometry.attributes.position.needsUpdate = true;
+    ambientParticles.rotation.y += delta * 0.02;
+  }
+
+  // Animate floor glow ring
+  if (scene.userData.glowRing) {
+    scene.userData.glowRing.material.opacity = 0.2 + Math.sin(time * 1.5) * 0.1;
+  }
 }

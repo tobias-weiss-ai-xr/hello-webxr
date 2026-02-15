@@ -8,10 +8,16 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: process.env.CI ? 'http://localhost/hello-webxr/' : 'https://tobias-weiss.org/hello-webxr/',
+    baseURL: 'http://localhost:8080/',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+  },
+  webServer: {
+    command: 'npm start',
+    url: 'http://localhost:8080/',
+    reuseExistingServer: true,
+    timeout: 120000,
   },
   projects: [
     {

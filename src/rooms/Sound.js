@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-var scene, listener, timeout, mixer, door, doorMaterial;
+var scene, listener, timeout, mixer, door, doorMaterial, floorGlow, pulseLights;
 
 const soundNames = [
   'bells',
@@ -31,6 +31,37 @@ function createDoorMaterial(ctx) {
     vertexShader: ctx.shaders.basic_vert,
     fragmentShader: ctx.shaders.door_frag
   });
+}
+
+function createFloorGlow(ctx) {
+  const geometry = new THREE.RingGeometry(3, 8, 64);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x4444ff,
+    transparent: true,
+    opacity: 0.15,
+    side: THREE.DoubleSide
+  });
+  const ring = new THREE.Mesh(geometry, material);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.01;
+  return ring;
+}
+
+function createPulseLights(ctx) {
+  const lights = [];
+  const colors = [0xff4444, 0x44ff44, 0x4444ff, 0xffff44];
+
+  for (let i = 0; i < 4; i++) {
+    const light = new THREE.PointLight(colors[i], 0, 8);
+    light.position.set(
+      Math.cos(i * Math.PI / 2) * 5,
+      3,
+      Math.sin(i * Math.PI / 2) * 5
+    );
+    lights.push(light);
+  }
+
+  return lights;
 }
 
 export function setup(ctx) {
@@ -177,10 +208,18 @@ function playSound() {
 }
 
 export function enter(ctx) {
-  ctx.renderer.setClearColor(0x000000);
+  ctx.renderer.setClearColor(0x0a0a15);
   ctx.scene.add(scene);
   ctx.scene.add(door);
   ctx.camera.add(listener);
+
+  // Add floor glow
+  floorGlow = createFloorGlow(ctx);
+  ctx.scene.add(floorGlow);
+
+  // Add pulse lights
+  pulseLights = createPulseLights(ctx);
+  pulseLights.forEach(light => ctx.scene.add(light));
 
   timeout = setTimeout(playSound, 2000);
   ctx.raycontrol.activateState('teleportSound');
@@ -191,6 +230,21 @@ export function exit(ctx) {
   ctx.scene.remove(scene);
   ctx.scene.remove(door);
   ctx.camera.remove(listener);
+
+  // Clean up floor glow
+  if (floorGlow) {
+    ctx.scene.remove(floorGlow);
+    floorGlow.geometry.dispose();
+    floorGlow.material.dispose();
+    floorGlow = null;
+  }
+
+  // Clean up pulse lights
+  if (pulseLights) {
+    pulseLights.forEach(light => ctx.scene.remove(light));
+    pulseLights = null;
+  }
+
   ctx.raycontrol.deactivateState('teleportSound');
   ctx.raycontrol.deactivateState('sound');
   clearTimeout(timeout);
@@ -206,5 +260,23 @@ export function execute(ctx, delta, time) {
 
   if (door.scale.z > 0.5) {
     door.scale.z = Math.max(door.scale.z - delta * door.scale.z, 0.5);
+  }
+
+  // Animate floor glow - pulse with the beat
+  if (floorGlow) {
+    floorGlow.material.opacity = 0.1 + Math.sin(time * 2) * 0.05;
+    floorGlow.rotation.z = time * 0.1;
+  }
+
+  // Animate pulse lights - flash with current sound
+  if (pulseLights && currentSound >= 0) {
+    const lightIndex = currentSound % pulseLights.length;
+    pulseLights.forEach((light, i) => {
+      if (i === lightIndex) {
+        light.intensity = 0.8 + Math.sin(time * 8) * 0.4;
+      } else {
+        light.intensity = Math.max(0, light.intensity - delta * 2);
+      }
+    });
   }
 }

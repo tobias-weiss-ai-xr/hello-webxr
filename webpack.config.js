@@ -5,6 +5,15 @@ module.exports = {
     filename: 'bundle.js',
     path: __dirname
   },
+  devServer: {
+    host: '0.0.0.0',
+    port: 8080,
+    compress: true,
+    hot: true,
+    contentBase: __dirname,
+    publicPath: '/',
+    historyApiFallback: true
+  },
   devtool: 'source-map',
   module: {
     rules: [
@@ -16,6 +25,6 @@ module.exports = {
   ]
   },
   watchOptions: {
-    ignored: [/node_modules/],
+    ignored: [/node_modules/]
   }
 };
