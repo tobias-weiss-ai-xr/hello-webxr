@@ -1,12 +1,12 @@
-# Arachnophobia - Spider VR Experience
+# PSE - Periodic Table VR Experience
 
-**Generated:** 2026-02-13
-**Commit:** 251ed62
-**Branch:** spider-room-only
+**Generated:** 2026-02-15
+**Commit:** 128d8e7
+**Branch:** docker-deployment
 
-Arachnophobia spider VR experience with immersive 3D spider visualization and interaction.
+Immersive WebXR educational visualization for exploring the Periodic Table of Elements in Virtual Reality.
 
-**Status:** Identity/structure copy from hello-webxr. Refer to `arachnophobia/AGENTS.md` for full documentation.
+**Status:** Active development. Based on WebXR/Three.js/ECSY architecture.
 
 ---
 
@@ -14,7 +14,6 @@ Arachnophobia spider VR experience with immersive 3D spider visualization and in
 
 | Task | Location |
 |------|----------|
-| Full documentation | `../arachnophobia/AGENTS.md` |
 | Entry point, room navigation | `src/index.js` |
 | Interaction system | `src/lib/RayControl.js` |
 | Room logic | `src/rooms/*.js` |
@@ -47,7 +46,7 @@ assets/           # 3D models, textures, audio (oggs/, blender/)
 ```bash
 # Development
 npm install
-npm start              # HTTPS dev server at :3000
+npm start              # Dev server at http://localhost:8080
 
 # Build
 npm run build          # Production bundle
@@ -64,18 +63,9 @@ python packshaders.py  # Repack GLSL into src/lib/shaders.js
 
 ---
 
-## ANTI-PATTERNS (THIS PROJECT)
-
-- Misleading folder name: `pse/` = spider room (NOT Periodic Table)
-- Package name still `"name": "hello-webxr"` (copy-paste artifact from Mozilla)
-- Branch name `spider-room-only` indicates subset of functionality
-- No project-specific AGENTS.md - mirrors hello-webxr structure exactly
-
----
-
 ## NOTES
 
-- Identical codebase structure to `hello-webxr/` and `arachnophobia/` (same WebXR/ECSY/Three.js patterns)
-- Uses single `bundle.js` (arachnophobia has 3-way code splitting)
+- WebXR/Three.js/ECSY architecture with immersive VR rooms
+- Uses single `bundle.js` for production build
 - Additional accessibility tests in package.json (`test:a11y`)
-- Refer to `arachnophobia/AGENTS.md` for detailed room patterns, code style, and conventions
+- Enhanced with particles, starfields, and atmospheric lighting across all rooms

@@ -30,8 +30,8 @@ export default [
     offsety: 0.04
   },
   {
-    title: 'Hello WebXR!',
-    description: 'A small compendium of interactions and little experiences introducing and celebrating the final specification of the WebXR API.\n \nMade by the Mozilla Mixed Reality team\nmixedreality.mozilla.org',
+    title: 'PSE - Periodic Table VR',
+    description: 'An immersive WebXR educational visualization for exploring the Periodic Table of Elements in Virtual Reality.\n\nNavigate through element rooms with 3D atomic models and interactive electron orbitals.',
     offsety: 0.06
   },
   {

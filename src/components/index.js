@@ -44,7 +44,7 @@ export class Text {
     this.anchor = 'center'; // ['left', 'right', 'center', 'align']
     this.baseline = 'center'; // ['top', 'center', 'bottom']
     this.color = '#FFF';
-    this.font = 'https://code.cdn.mozilla.net/fonts/ttf/ZillaSlab-SemiBold.ttf';
+    this.font = 'https://fonts.gstatic.com/s/roboto/v30/KFOjCnqEu92Fr1Mu51TzBic6.ttf';
     this.fontSize = 0.2;
     this.letterSpacing = 0;
     this.lineHeight = 0;
