@@ -50,7 +50,16 @@ export class RoomManager {
 
     this.currentRoomIndex = roomIndex;
     this.playMusic(roomIndex);
-    this.rooms[this.currentRoomIndex].enter(this.context);
+    
+    // Pass room index to enter() so rooms know which element/room to display
+    const roomModule = this.rooms[this.currentRoomIndex];
+    if (roomModule.enter.length > 1) {
+      // Room expects (ctx, roomIndex) - pass index for element rooms
+      roomModule.enter(this.context, this.currentRoomIndex, this.roomNames[this.currentRoomIndex]);
+    } else {
+      // Room only expects (ctx) - backwards compatible
+      roomModule.enter(this.context);
+    }
   }
 
   handleRoomTransition(fromIndex, toIndex) {

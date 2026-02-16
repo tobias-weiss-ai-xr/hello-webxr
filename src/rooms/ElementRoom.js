@@ -13,19 +13,49 @@ var infoPanelMesh;
 var experimentStations = [];
 var audioManager;
 var setupCalled = false;
+var currentElementSymbol = null;
 var backgroundParticles;
 var orbitTrails = [];
 
-export async function setup(ctx, elementSymbol) {
-  console.log('[ElementRoom] setup called for:', elementSymbol);
+/**
+ * Global setup - called once during app initialization
+ * Does NOT create scene (scene is created per-element in enter())
+ */
+export function setup(ctx) {
+  console.log('[ElementRoom] Global setup called');
+  // Just initialize audio manager globally
+  audioManager = new AudioManager(ctx);
+  audioManager.init().then(() => {
+    console.log('[ElementRoom] Audio manager initialized');
+  });
+  setupCalled = true;
+}
+
+/**
+ * Per-element setup - creates the scene for a specific element
+ * Called from enter() when navigating to an element room
+ */
+async function setupElement(ctx, elementSymbol) {
+  console.log('[ElementRoom] setupElement called for:', elementSymbol);
   console.log('[ElementRoom] ELEMENTS available:', typeof ELEMENTS, 'length:', ELEMENTS ? ELEMENTS.length : 'N/A');
-  elementData = ELEMENTS.find(e => e.symbol === elementSymbol);
+  
+  // Reset state for new element
+  scene = null;
+  elementData = null;
+  atomModel = null;
+  infoPanelMesh = null;
+  experimentStations = [];
+  backgroundParticles = null;
+  orbitTrails = [];
+  
+  elementData = ELEMENTS.find(e => e.symbol.toLowerCase() === elementSymbol.toLowerCase());
   console.log('[ElementRoom] elementData found:', !!elementData, elementData);
   if (!elementData) {
     console.error('[ElementRoom] Element not found:', elementSymbol);
-    return;
+    return false;
   }
 
+  currentElementSymbol = elementSymbol;
   scene = new THREE.Scene();
   console.log('[ElementRoom] Scene created:', scene);
 
@@ -40,15 +70,12 @@ export async function setup(ctx, elementSymbol) {
   setupLighting(ctx, themeColor);
   createTeleportZone(ctx);
 
-  audioManager = new AudioManager(ctx);
-  await audioManager.init();
-
   scene.userData.teleportZone = teleportFloorMesh;
   scene.userData.atomModel = atomModel;
   scene.userData.elementData = elementData;
 
-  setupCalled = true;
   console.log('[ElementRoom] Setup complete for:', elementSymbol);
+  return true;
 }
 
 function createFloor(ctx, themeColor) {
@@ -316,16 +343,37 @@ function createTeleportZone(ctx) {
   scene.add(teleportFloorMesh);
 }
 
-export function enter(ctx) {
-  console.log('[ElementRoom] enter called, setupCalled:', setupCalled, 'scene:', !!scene);
+export function enter(ctx, roomIndex, roomName) {
+  console.log('[ElementRoom] enter called, roomIndex:', roomIndex, 'roomName:', roomName);
+  
+  // Determine element symbol from room name or index
+  let elementSymbol = roomName;
+  if (!elementSymbol && roomIndex !== undefined) {
+    // Room index 1-118 are element rooms
+    const elementIndex = roomIndex - 1; // ROOM_ELEMENTS_START = 1
+    if (elementIndex >= 0 && elementIndex < ELEMENTS.length) {
+      elementSymbol = ELEMENTS[elementIndex].symbol.toLowerCase();
+    }
+  }
+  
+  console.log('[ElementRoom] Entering element room for:', elementSymbol);
+  
+  // Check if we need to setup for a different element
+  if (elementSymbol && elementSymbol !== currentElementSymbol) {
+    console.log('[ElementRoom] New element detected, setting up:', elementSymbol);
+    // Clean up previous scene if exists
+    if (scene) {
+      ctx.scene.remove(scene);
+    }
+    // Setup new element (synchronously for now)
+    setupElement(ctx, elementSymbol);
+  }
+  
   if (!scene) {
-    console.error('[ElementRoom] Scene is undefined, skipping enter');
+    console.error('[ElementRoom] Scene is undefined after setup, skipping enter');
     return;
   }
-  if (!setupCalled) {
-    console.error('[ElementRoom] Setup was not called before enter!');
-    return;
-  }
+  
   ctx.scene.add(scene);
   ctx.renderer.setClearColor(scene.background);
   ctx.raycontrol.activateState('elementExperiments');
