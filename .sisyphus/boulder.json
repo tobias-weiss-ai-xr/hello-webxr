@@ -1,9 +1,13 @@
 {
   "active_plan": "C:\\Users\\Tobias\\git\\webxr\\pse\\.sisyphus\\plans\\element-room-enhancement.md",
   "started_at": "2026-02-16T08:16:28.849Z",
+  "completed_at": "2026-02-16T09:45:00.000Z",
   "session_ids": [
     "ses_39c96aadfffeOfO3fUG6s474xY"
   ],
   "plan_name": "element-room-enhancement",
-  "agent": "atlas"
+  "agent": "atlas",
+  "status": "completed",
+  "tasks_completed": 9,
+  "tasks_total": 9
 }
