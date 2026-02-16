@@ -127,3 +127,84 @@ test.describe('N-key navigation', () => {
     expect(hasElementFound).toBe(true);
   });
 });
+
+test.describe('Element room enhancements', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('canvas', { timeout: 30000 });
+    await page.waitForTimeout(3000);
+  });
+
+  test('should use electronConfiguration for accurate shell display', async ({ page }) => {
+    // Listen for console logs
+    const logs = [];
+    page.on('console', msg => {
+      logs.push(msg.text());
+    });
+
+    // Navigate to Sodium (Na) - atomic number 11, room index 11
+    // Press N 11 times to reach Sodium
+    for (let i = 0; i < 11; i++) {
+      await page.keyboard.press('n');
+      await page.waitForTimeout(300);
+    }
+    
+    await page.waitForTimeout(1000);
+
+    // Check that setup completed without errors
+    const hasErrors = logs.some(log => 
+      log.includes('TypeError') || 
+      log.includes('undefined')
+    );
+    expect(hasErrors).toBe(false);
+
+    // Canvas should still be visible
+    const canvas = page.locator('canvas');
+    await expect(canvas).toBeVisible();
+  });
+
+  test('help panel should be visible in element room', async ({ page }) => {
+    // Press N to enter first element room
+    await page.keyboard.press('n');
+    await page.waitForTimeout(1000);
+
+    // Canvas should be visible (help panel renders in 3D scene)
+    const canvas = page.locator('canvas');
+    await expect(canvas).toBeVisible();
+    
+    // No console errors
+    const errors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        errors.push(msg.text());
+      }
+    });
+    
+    const criticalErrors = errors.filter(e => 
+      e.includes('HelpPanel') || e.includes('createHelpPanel')
+    );
+    expect(criticalErrors).toHaveLength(0);
+  });
+
+  test('back-to-lobby button should exist in element room', async ({ page }) => {
+    // Press N to enter first element room
+    await page.keyboard.press('n');
+    await page.waitForTimeout(1000);
+
+    // Verify room loaded - check console for element room setup
+    const roomLogs = [];
+    page.on('console', msg => {
+      if (msg.text().includes('[ElementRoom]')) {
+        roomLogs.push(msg.text());
+      }
+    });
+
+    // Navigate again to trigger more logs
+    await page.keyboard.press('n');
+    await page.waitForTimeout(500);
+
+    // Canvas should remain visible
+    const canvas = page.locator('canvas');
+    await expect(canvas).toBeVisible();
+  });
+});

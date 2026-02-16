@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { createHelpPanel } from '../components/HelpPanel.js';
 import { ELEMENTS, GROUP_COLORS } from '../data/elements.js';
 import { AudioManager } from '../core/AudioManager.js';
 import { createElementDisplay } from '../lib/modelLoader.js';
@@ -16,6 +17,8 @@ var setupCalled = false;
 var currentElementSymbol = null;
 var backgroundParticles;
 var orbitTrails = [];
+var backButton;
+var helpPanel;
 
 /**
  * Global setup - called once during app initialization
@@ -47,6 +50,8 @@ async function setupElement(ctx, elementSymbol) {
   experimentStations = [];
   backgroundParticles = null;
   orbitTrails = [];
+  backButton = null;
+  helpPanel = null;
   
   elementData = ELEMENTS.find(e => e.symbol.toLowerCase() === elementSymbol.toLowerCase());
   console.log('[ElementRoom] elementData found:', !!elementData, elementData);
@@ -69,6 +74,16 @@ async function setupElement(ctx, elementSymbol) {
   createExperimentStations(ctx, elementData);
   setupLighting(ctx, themeColor);
   createTeleportZone(ctx);
+  createBackButton(ctx);
+
+  // Create help panel
+  helpPanel = createHelpPanel(ctx, {
+    position: {x: 4, y: 3, z: -4},
+    showDesktop: true,
+    showVR: true
+  });
+  helpPanel.lookAt(0, 1.6, 0);
+  scene.add(helpPanel);
 
   scene.userData.teleportZone = teleportFloorMesh;
   scene.userData.atomModel = atomModel;
@@ -153,15 +168,13 @@ function createAtomModel(ctx, element) {
   nucleusMesh.userData.nucleus = true;
   atomModel.add(nucleusMesh);
 
-  const electronCount = element.atomicNumber;
-  const shells = [2, 8, 18, 32, 50, 72];
-  let electronsPlaced = 0;
-  let shellRadius = 1.0;
+  const config = element.electronConfiguration || [element.atomicNumber];
+  config.forEach((electronCount, shellIndex) => {
+    if (electronCount === 0) return; // Skip empty shells
 
-  while (electronsPlaced < electronCount) {
-    const maxInShell = shells[Math.min(Math.floor(shellRadius / 1.0), shells.length - 1)];
-    const electronsInShell = Math.min(maxInShell, electronCount - electronsPlaced);
+    const shellRadius = 1.0 + shellIndex * 0.6;
 
+    // Create shell ring (torus)
     const shellGeo = new THREE.TorusGeometry(shellRadius, 0.02, 16, 64);
     const shellMat = new THREE.MeshBasicMaterial({
       color: element.color,
@@ -171,10 +184,12 @@ function createAtomModel(ctx, element) {
     const shell = new THREE.Mesh(shellGeo, shellMat);
     shell.rotation.x = Math.PI / 2;
     shell.userData.shell = true;
+    shell.userData.shellIndex = shellIndex;
     atomModel.add(shell);
 
-    for (let i = 0; i < electronsInShell; i++) {
-      const angle = (i / electronsInShell) * Math.PI * 2;
+    // Place electrons around this shell
+    for (let i = 0; i < electronCount; i++) {
+      const angle = (i / electronCount) * Math.PI * 2;
       const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
       const electronMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -189,15 +204,13 @@ function createAtomModel(ctx, element) {
         angle: angle,
         shellRadius: shellRadius,
         speed: 1.5 + Math.random() * 0.5,
-        electron: true
+        electron: true,
+        shellIndex: shellIndex
       };
 
       atomModel.add(electron);
     }
-
-    electronsPlaced += electronsInShell;
-    shellRadius += 0.5;
-  }
+  });
 
   scene.add(atomModel);
 }
@@ -343,6 +356,19 @@ function createTeleportZone(ctx) {
   scene.add(teleportFloorMesh);
 }
 
+function createBackButton(ctx) {
+  const backGeo = new THREE.BoxGeometry(0.8, 0.3, 0.05);
+  const backMat = new THREE.MeshBasicMaterial({
+    color: 0x4a90e2,
+    transparent: true,
+    opacity: 0.8
+  });
+  backButton = new THREE.Mesh(backGeo, backMat);
+  backButton.position.set(0, 2.8, -4);
+  backButton.name = 'backButton';
+  scene.add(backButton);
+}
+
 export function enter(ctx, roomIndex, roomName) {
   console.log('[ElementRoom] enter called, roomIndex:', roomIndex, 'roomName:', roomName);
   
@@ -427,12 +453,29 @@ export function enter(ctx, roomIndex, roomName) {
       ctx.teleport.onSelectEnd(intersection.point);
     }
   });
+
+  ctx.raycontrol.addState('elementBackToLobby', {
+    colliderMesh: [backButton],
+    controller: 'primary',
+    onHover: (intersection, active) => {
+      backButton.scale.setScalar(active ? 1.1 : 1);
+      backButton.material.opacity = active ? 1.0 : 0.8;
+    },
+    onHoverLeave: () => {
+      backButton.scale.setScalar(1);
+      backButton.material.opacity = 0.8;
+    },
+    onSelectStart: (intersection, e) => {
+      ctx.goto = 0;
+    }
+  });
 }
 
 export function exit(ctx) {
   ctx.raycontrol.deactivateState('elementExperiments');
   ctx.raycontrol.deactivateState('elementTeleport');
   ctx.raycontrol.deactivateState('elementInfoPanel');
+  ctx.raycontrol.deactivateState('elementBackToLobby');
   ctx.scene.remove(scene);
 }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { createHelpPanel } from '../components/HelpPanel.js';
 import { ELEMENTS, EXPERIMENTAL_ROOMS, GROUP_COLORS, NOBLE_GAS_COLORS } from '../data/elements.js';
 
 var scene, atomCore, electronOrbits = [];
@@ -9,6 +10,7 @@ var infoPanel, currentSelection = null;
 var teleportFloor;
 var starField;
 var ambientParticles;
+var helpPanel;
 
 const ATOM_RADIUS = 0.8;
 const ORBIT_RADIUS = 4;
@@ -87,6 +89,15 @@ export function setup(ctx) {
   scene.userData.atomCore = atomCore;
   scene.userData.electronOrbits = electronOrbits;
   scene.userData.glowRing = glowRing;
+
+  // Create help panel showing controls
+  helpPanel = createHelpPanel(ctx, {
+    position: {x: 5, y: 3, z: -5},
+    showDesktop: true,
+    showVR: true
+  });
+  helpPanel.lookAt(0, 1.6, 0);
+  scene.add(helpPanel);
 
   registerInteractions(ctx);
 }

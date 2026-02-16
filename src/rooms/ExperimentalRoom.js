@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { createHelpPanel } from '../components/HelpPanel.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import { loadMoleculeModel, createCrystalLattice, optimizeModelForVR } from '../lib/modelLoader.js';
 
@@ -7,6 +8,7 @@ var scene;
 var roomData;
 var experimentStations = [];
 var teleportFloor;
+var helpPanel;
 
 const ROOM_COLORS = {
   reaction_lab: 0xFF6B6B,
@@ -37,6 +39,15 @@ export function setup(ctx, roomId) {
   setupLighting(ctx, themeColor);
   createTeleportZone(ctx);
   createNavigationPanel(ctx);
+
+  // Create help panel
+  helpPanel = createHelpPanel(ctx, {
+    position: {x: 4, y: 3, z: -4},
+    showDesktop: true,
+    showVR: true
+  });
+  helpPanel.lookAt(0, 1.6, 0);
+  scene.add(helpPanel);
 
   scene.userData.teleport = teleportFloor;
 }
