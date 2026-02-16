@@ -139,7 +139,7 @@ export class App {
 handleDebugKeys(ev) {
     switch(ev.code) {
       case 'KeyN': // N or n key - next room
-        this.roomManager.enterRoom((this.roomManager.getCurrentRoomIndex() + 1) % this.roomManager.rooms.length);
+        this.roomManager.enterRoom((this.roomManager.getCurrentRoomIndex() + 1) % this.roomManager.roomNames.length);
         break;
       case 'KeyW':
         this.controls.moveForward(0.2);
@@ -157,7 +157,7 @@ handleDebugKeys(ev) {
 
     // Handle number keys (0-9) for direct room navigation
     const room = parseInt(ev.key);
-    if (!isNaN(room) && room >= 0 && room < this.roomManager.rooms.length && !ev.metaKey) {
+    if (!isNaN(room) && room >= 0 && room < this.roomManager.roomNames.length && !ev.metaKey) {
       this.roomManager.enterRoom(room);
     }
   }
