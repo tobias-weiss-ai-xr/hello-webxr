@@ -68,7 +68,8 @@ export const CAMERA_DEFAULTS = {
   fov: 80,
   near: 0.005,
   far: 10000,
-  position: { x: 0, y: 1.6, z: 0 }
+  // Start position: outside the core, facing the help panel at (5, 3, -5)
+  position: { x: 5, y: 1.6, z: 8 }
 };
 
 export const RENDERER_DEFAULTS = {
