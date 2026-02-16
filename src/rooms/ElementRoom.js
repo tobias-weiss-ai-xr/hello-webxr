@@ -4,6 +4,16 @@ import { createHelpPanel } from '../components/HelpPanel.js';
 import { ELEMENTS, GROUP_COLORS } from '../data/elements.js';
 import { AudioManager } from '../core/AudioManager.js';
 import { createElementDisplay } from '../lib/modelLoader.js';
+import roomThemeManager from '../lib/RoomThemeManager.js';
+import i18nManager from '../lib/I18nManager.js';
+
+// Experiment classes
+import ReactionExperiment from '../experiments/ReactionExperiment.js';
+import ElectricalExperiment from '../experiments/ElectricalExperiment.js';
+import ElectrochemicalExperiment from '../experiments/ElectrochemicalExperiment.js';
+import NuclearExperiment from '../experiments/NuclearExperiment.js';
+import OrganicExperiment from '../experiments/OrganicExperiment.js';
+import CrystalExperiment from '../experiments/CrystalExperiment.js';
 
 console.log('[ElementRoom] Module loaded, ELEMENTS:', typeof ELEMENTS, 'has ELEMENTS:', 'ELEMENTS' in {ELEMENTS, GROUP_COLORS});
 
@@ -19,6 +29,23 @@ var backgroundParticles;
 var orbitTrails = [];
 var backButton;
 var helpPanel;
+var themeCleanup = null;
+
+// Experiment instances storage - maps expId to experiment instance
+var experimentInstances = {};
+
+// Haptic feedback callback for experiments
+var hapticCallback = null;
+
+// Desktop mode state for non-VR fallback
+var desktopRaycaster = new THREE.Raycaster();
+var desktopMouse = new THREE.Vector2();
+var hoveredStation = null;
+var selectedStation = null;
+var desktopModeActive = false;
+var boundDesktopMouseMoveHandler = null;
+var boundDesktopClickHandler = null;
+var boundDesktopKeyHandler = null;
 
 /**
  * Global setup - called once during app initialization
@@ -52,6 +79,10 @@ async function setupElement(ctx, elementSymbol) {
   orbitTrails = [];
   backButton = null;
   helpPanel = null;
+  themeCleanup = null;
+  
+  // Reset experiment instances
+  experimentInstances = {};
   
   elementData = ELEMENTS.find(e => e.symbol.toLowerCase() === elementSymbol.toLowerCase());
   console.log('[ElementRoom] elementData found:', !!elementData, elementData);
@@ -64,15 +95,20 @@ async function setupElement(ctx, elementSymbol) {
   scene = new THREE.Scene();
   console.log('[ElementRoom] Scene created:', scene);
 
-  const themeColor = elementData.color;
-  const bgColor = new THREE.Color(themeColor).multiplyScalar(0.15);
-  scene.background = bgColor;
+  // Apply theme using RoomThemeManager
+  var themeResult = roomThemeManager.applyTheme(scene, elementData.theme || 'default', elementData);
+  themeCleanup = themeResult.cleanup;
+  backgroundParticles = themeResult.particles;
+  
+  // Store theme for floor creation
+  var theme = themeResult.theme;
+  var themeColor = elementData.color;
 
-  createFloor(ctx, themeColor);
+  createFloor(ctx, themeColor, theme);
   createAtomModel(ctx, elementData);
   createInfoPanel(ctx, elementData);
   createExperimentStations(ctx, elementData);
-  setupLighting(ctx, themeColor);
+  createExperimentInstances(ctx, elementData);
   createTeleportZone(ctx);
   createBackButton(ctx);
 
@@ -93,10 +129,13 @@ async function setupElement(ctx, elementSymbol) {
   return true;
 }
 
-function createFloor(ctx, themeColor) {
+function createFloor(ctx, themeColor, theme) {
+  // Use theme floor color if available, otherwise derive from element color
+  var floorColor = theme ? theme.floorColor : new THREE.Color(themeColor).multiplyScalar(0.1);
+  
   const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 64);
   const floorMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(themeColor).multiplyScalar(0.1),
+    color: floorColor,
     metalness: 0.2,
     roughness: 0.8
   });
@@ -116,38 +155,6 @@ function createFloor(ctx, themeColor) {
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.01;
   scene.add(ring);
-
-  // Create floating particles around the room
-  createBackgroundParticles(ctx, themeColor);
-}
-
-function createBackgroundParticles(ctx, themeColor) {
-  const particleCount = 200;
-  const geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(particleCount * 3);
-
-  for (let i = 0; i < particleCount; i++) {
-    const i3 = i * 3;
-    const radius = 3 + Math.random() * 7;
-    const theta = Math.random() * Math.PI * 2;
-    const y = 0.5 + Math.random() * 4;
-
-    positions[i3] = Math.cos(theta) * radius;
-    positions[i3 + 1] = y;
-    positions[i3 + 2] = Math.sin(theta) * radius;
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-  const material = new THREE.PointsMaterial({
-    size: 0.04,
-    color: themeColor,
-    transparent: true,
-    opacity: 0.5
-  });
-
-  backgroundParticles = new THREE.Points(geometry, material);
-  scene.add(backgroundParticles);
 }
 
 function createAtomModel(ctx, element) {
@@ -251,7 +258,7 @@ function createInfoPanel(ctx, element) {
   const titleTextEntity = ctx.world.createEntity();
   titleTextEntity
     .addComponent(Text, {
-      text: `${element.symbol} - ${element.name}\nGruppe: ${element.group}\nPeriode: ${element.period}\nBlock: ${element.block}\nGruppe: ${element.groupNumber}`,
+      text: `${element.symbol} - ${element.name}\n${i18nManager.t('element.info.group')}: ${element.group}\n${i18nManager.t('element.info.period')}: ${element.period}\n${i18nManager.t('element.info.block')}: ${element.block}\n${i18nManager.t('element.info.group')}: ${element.groupNumber}`,
       color: '#ffffff',
       fontSize: 0.1,
       anchor: 'center',
@@ -265,7 +272,7 @@ function createInfoPanel(ctx, element) {
   const descTextEntity = ctx.world.createEntity();
   descTextEntity
     .addComponent(Text, {
-      text: `Ordnungszahl: ${element.atomicNumber}\nAtommasse: ${element.mass}\nGruppe: ${element.group}\nPeriode: ${element.period}\nBlock: ${element.block}\nGruppe: ${element.groupNumber}\nTheme: ${element.theme}\n\n${element.description}`,
+      text: `${i18nManager.t('element.info.atomicNumber')}: ${element.atomicNumber}\n${i18nManager.t('element.info.mass')}: ${element.mass}\n${i18nManager.t('element.info.group')}: ${element.group}\n${i18nManager.t('element.info.period')}: ${element.period}\n${i18nManager.t('element.info.block')}: ${element.block}\n${i18nManager.t('element.info.group')}: ${element.groupNumber}\nTheme: ${element.theme}\n\n${element.description}`,
       color: '#cccccc',
       fontSize: 0.05,
       anchor: 'center',
@@ -312,37 +319,88 @@ function createExperimentStations(ctx, element) {
   });
 }
 
-function setupLighting(ctx, themeColor) {
-  // Ambient light for base illumination
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-  scene.add(ambientLight);
-
-  // Hemisphere light for natural feel
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1a1a1a, 0.15);
-  scene.add(hemiLight);
-
-  // Main accent lights
-  const pointLight1 = new THREE.PointLight(themeColor, 1.0, 20);
-  pointLight1.position.set(5, 5, 5);
-  scene.add(pointLight1);
-
-  const pointLight2 = new THREE.PointLight(themeColor, 1.0, 20);
-  pointLight2.position.set(-5, 5, -5);
-  scene.add(pointLight2);
-
-  // Top down light
-  const topLight = new THREE.PointLight(0xffffff, 0.5, 15);
-  topLight.position.set(0, 8, 0);
-  scene.add(topLight);
-
-  // Rim lights for dramatic effect
-  const rimLight1 = new THREE.PointLight(0xffffff, 0.3, 12);
-  rimLight1.position.set(0, 2, 8);
-  scene.add(rimLight1);
-
-  const rimLight2 = new THREE.PointLight(0xffffff, 0.3, 12);
-  rimLight2.position.set(0, 2, -8);
-  scene.add(rimLight2);
+/**
+ * Create experiment instances based on element.experiments[] array
+ * Maps experiment IDs to their corresponding experiment class instances
+ */
+function createExperimentInstances(ctx, element) {
+  const experiments = element.experiments || [];
+  
+  experiments.forEach(expId => {
+    const type = getExperimentType(expId);
+    let experiment = null;
+    
+    switch(type) {
+      case 'reaction':
+        experiment = new ReactionExperiment({
+          audioManager: audioManager
+        });
+        // Configure with element symbol and reaction type
+        if (element.symbol && (expId === 'water' || expId === 'flame')) {
+          experiment.configure(element.symbol, expId);
+        }
+        break;
+      case 'electrical':
+        experiment = new ElectricalExperiment({
+          audioManager: audioManager
+        });
+        break;
+      case 'electrochemical':
+        experiment = new ElectrochemicalExperiment(expId === 'battery' ? 'battery' : 
+                                                     expId === 'galvanic' ? 'galvanic' : 'electrolysis');
+        experiment.setAudioManager(audioManager);
+        break;
+      case 'nuclear':
+        experiment = new NuclearExperiment({
+          audioManager: audioManager,
+          hapticPulse: hapticCallback
+        });
+        experiment.setExperimentType(expId);
+        break;
+      case 'organic':
+        experiment = new OrganicExperiment();
+        experiment.setAudioManager(audioManager);
+        // Set visualization mode based on expId
+        if (expId === 'dna') {
+          experiment.setVisualizationMode('dna');
+        } else if (expId === 'protein') {
+          experiment.setVisualizationMode('protein');
+        } else if (expId === 'polymer') {
+          experiment.setVisualizationMode('polymer');
+        }
+        break;
+      case 'crystal':
+        experiment = new CrystalExperiment({
+          audioManager: audioManager
+        });
+        experiment.configure(expId === 'hexagonal' ? 'hexagonal' : 'cubic');
+        break;
+      default:
+        break;
+    }
+    
+    if (experiment) {
+      // Set haptic callback if available
+      if (experiment.setHapticCallback && hapticCallback) {
+        experiment.setHapticCallback(hapticCallback);
+      }
+      
+      experimentInstances[expId] = experiment;
+      
+      // Find the station for this experiment and render into it
+      const station = experimentStations.find(s => s.userData.experimentId === expId);
+      if (station && experiment.render) {
+        // Create a group to hold experiment visuals
+        const experimentGroup = new THREE.Group();
+        experimentGroup.name = 'experimentVisuals_' + expId;
+        station.add(experimentGroup);
+        experiment.render(experimentGroup);
+        station.userData.experimentInstance = experiment;
+      }
+      
+      console.log('[ElementRoom] Created experiment instance:', expId, 'type:', type);
+    }
+  });
 }
 
 var teleportFloorMesh;
@@ -367,6 +425,239 @@ function createBackButton(ctx) {
   backButton.position.set(0, 2.8, -4);
   backButton.name = 'backButton';
   scene.add(backButton);
+}
+
+/**
+ * Desktop mode: Check if VR is active
+ */
+function isVRMode(ctx) {
+  return ctx.vrMode === true;
+}
+
+/**
+ * Desktop mode: Handle mouse movement for experiment hover
+ */
+function handleDesktopMouseMove(ctx, event) {
+  if (isVRMode(ctx) || experimentStations.length === 0) {
+    return;
+  }
+  
+  var rect = ctx.renderer.domElement.getBoundingClientRect();
+  desktopMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  desktopMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  
+  // Raycast from camera through mouse position
+  desktopRaycaster.setFromCamera(desktopMouse, ctx.camera);
+  var intersects = desktopRaycaster.intersectObjects(experimentStations, false);
+  
+  // Reset previous hover state
+  if (hoveredStation && (!intersects.length || intersects[0].object !== hoveredStation)) {
+    hoveredStation.scale.setScalar(1);
+    hoveredStation.material.opacity = 0.6;
+    hoveredStation = null;
+  }
+  
+  // Set new hover state
+  if (intersects.length > 0) {
+    var station = intersects[0].object;
+    if (station !== hoveredStation) {
+      hoveredStation = station;
+      station.scale.setScalar(1.15);
+      station.material.opacity = 0.85;
+    }
+  }
+}
+
+/**
+ * Desktop mode: Handle mouse click for experiment trigger
+ */
+function handleDesktopClick(ctx, event) {
+  if (isVRMode(ctx) || experimentStations.length === 0) {
+    return;
+  }
+  
+  var rect = ctx.renderer.domElement.getBoundingClientRect();
+  desktopMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  desktopMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  
+  // Raycast from camera through mouse position
+  desktopRaycaster.setFromCamera(desktopMouse, ctx.camera);
+  var intersects = desktopRaycaster.intersectObjects(experimentStations, false);
+  
+  if (intersects.length > 0) {
+    var station = intersects[0].object;
+    triggerExperiment(ctx, station);
+  }
+}
+
+/**
+ * Desktop mode: Handle keyboard shortcut 'E' for experiment trigger
+ * Triggers the nearest experiment or cycles through available experiments
+ */
+function handleDesktopKey(ctx, event) {
+  if (isVRMode(ctx) || experimentStations.length === 0) {
+    return;
+  }
+  
+  // 'E' key to trigger nearest experiment
+  if (event.code === 'KeyE') {
+    event.preventDefault();
+    
+    // Find nearest experiment station to camera
+    var nearestStation = null;
+    var nearestDistance = Infinity;
+    
+    var cameraPosition = ctx.camera.position.clone();
+    
+    experimentStations.forEach(function(station) {
+      var distance = cameraPosition.distanceTo(station.position);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestStation = station;
+      }
+    });
+    
+    if (nearestStation && nearestDistance < 10) {
+      // Visual feedback - pulse effect
+      var originalScale = nearestStation.scale.x;
+      nearestStation.scale.setScalar(1.3);
+      setTimeout(function() {
+        if (nearestStation) {
+          nearestStation.scale.setScalar(originalScale);
+        }
+      }, 150);
+      
+      triggerExperiment(ctx, nearestStation);
+    }
+  }
+  
+  // 'R' key to reset all experiments
+  if (event.code === 'KeyR') {
+    event.preventDefault();
+    resetAllExperiments(ctx);
+  }
+}
+
+/**
+ * Trigger an experiment by station
+ */
+function triggerExperiment(ctx, station) {
+  var expId = station.userData.experimentId;
+  console.log('[ElementRoom] Desktop trigger experiment:', expId);
+  
+  // Get the experiment instance and start it
+  var experiment = experimentInstances[expId];
+  if (experiment) {
+    var currentState = experiment.state || experiment._state || 'IDLE';
+    
+    // Start the experiment if it's idle
+    if (currentState === 'IDLE') {
+      experiment.start();
+      // For ReactionExperiment, also drop the element
+      if (experiment.drop) {
+        experiment.drop();
+      }
+      console.log('[ElementRoom] Started experiment (desktop):', expId);
+      
+      // Visual feedback - highlight station
+      station.material.opacity = 1.0;
+      setTimeout(function() {
+        if (station.material) {
+          station.material.opacity = 0.6;
+        }
+      }, 300);
+    } else if (currentState === 'COMPLETED') {
+      // Reset and restart if completed
+      if (experiment.reset) {
+        experiment.reset();
+        console.log('[ElementRoom] Reset experiment (desktop):', expId);
+      }
+    }
+  } else {
+    console.warn('[ElementRoom] No experiment instance found for:', expId);
+  }
+}
+
+/**
+ * Reset all experiments
+ */
+function resetAllExperiments(ctx) {
+  console.log('[ElementRoom] Resetting all experiments');
+  Object.keys(experimentInstances).forEach(function(expId) {
+    var experiment = experimentInstances[expId];
+    if (experiment && experiment.reset) {
+      experiment.reset();
+    }
+  });
+  
+  // Reset station visuals
+  experimentStations.forEach(function(station) {
+    station.scale.setScalar(1);
+    station.material.opacity = 0.6;
+  });
+}
+
+/**
+ * Setup desktop mode event listeners
+ */
+function setupDesktopMode(ctx) {
+  if (desktopModeActive) {
+    return;
+  }
+  
+  desktopModeActive = true;
+  
+  // Create bound handlers for cleanup
+  boundDesktopMouseMoveHandler = function(event) {
+    handleDesktopMouseMove(ctx, event);
+  };
+  boundDesktopClickHandler = function(event) {
+    handleDesktopClick(ctx, event);
+  };
+  boundDesktopKeyHandler = function(event) {
+    handleDesktopKey(ctx, event);
+  };
+  
+  // Add event listeners
+  ctx.renderer.domElement.addEventListener('mousemove', boundDesktopMouseMoveHandler);
+  ctx.renderer.domElement.addEventListener('click', boundDesktopClickHandler);
+  window.addEventListener('keydown', boundDesktopKeyHandler);
+  
+  console.log('[ElementRoom] Desktop mode enabled - mouse and keyboard controls active');
+}
+
+/**
+ * Cleanup desktop mode event listeners
+ */
+function cleanupDesktopMode(ctx) {
+  if (!desktopModeActive) {
+    return;
+  }
+  
+  desktopModeActive = false;
+  
+  // Remove event listeners
+  if (boundDesktopMouseMoveHandler) {
+    ctx.renderer.domElement.removeEventListener('mousemove', boundDesktopMouseMoveHandler);
+    boundDesktopMouseMoveHandler = null;
+  }
+  if (boundDesktopClickHandler) {
+    ctx.renderer.domElement.removeEventListener('click', boundDesktopClickHandler);
+    boundDesktopClickHandler = null;
+  }
+  if (boundDesktopKeyHandler) {
+    window.removeEventListener('keydown', boundDesktopKeyHandler);
+    boundDesktopKeyHandler = null;
+  }
+  
+  // Reset hover state
+  if (hoveredStation) {
+    hoveredStation.scale.setScalar(1);
+    hoveredStation.material.opacity = 0.6;
+    hoveredStation = null;
+  }
+  
+  console.log('[ElementRoom] Desktop mode disabled');
 }
 
 export function enter(ctx, roomIndex, roomName) {
@@ -402,6 +693,29 @@ export function enter(ctx, roomIndex, roomName) {
   
   ctx.scene.add(scene);
   ctx.renderer.setClearColor(scene.background);
+  
+  // Setup haptic callback for experiments
+  if (ctx.hapticManager && ctx.hapticManager.pulse) {
+    hapticCallback = function(intensity) {
+      ctx.hapticManager.pulse(intensity, 100);
+    };
+  } else if (ctx.controllers && ctx.controllers.primary && ctx.controllers.primary.gamepad && ctx.controllers.primary.gamepad.hapticActuators) {
+    const actuator = ctx.controllers.primary.gamepad.hapticActuators[0];
+    if (actuator) {
+      hapticCallback = function(intensity) {
+        actuator.pulse(intensity, 100);
+      };
+    }
+  }
+  
+  // Update haptic callbacks on existing experiments
+  Object.keys(experimentInstances).forEach(function(expId) {
+    const experiment = experimentInstances[expId];
+    if (experiment && experiment.setHapticCallback && hapticCallback) {
+      experiment.setHapticCallback(hapticCallback);
+    }
+  });
+  
   ctx.raycontrol.activateState('elementExperiments');
   ctx.raycontrol.activateState('elementTeleport');
   ctx.raycontrol.activateState('elementInfoPanel');
@@ -409,15 +723,35 @@ export function enter(ctx, roomIndex, roomName) {
   ctx.raycontrol.addState('elementExperiments', {
     colliderMesh: experimentStations,
     controller: 'primary',
-    onHover: (intersection, active) => {
+    onHover: function(intersection, active) {
       const station = intersection.object;
       station.scale.setScalar(active ? 1.2 : 1);
     },
-    onHoverLeave: () => {},
-    onSelectStart: (intersection, e) => {
-      console.log('Experiment:', intersection.object.userData.experimentId);
+    onHoverLeave: function() {},
+    onSelectStart: function(intersection, e) {
+      const station = intersection.object;
+      const expId = station.userData.experimentId;
+      console.log('[ElementRoom] Experiment selected:', expId);
+      
+      // Get the experiment instance and start it
+      const experiment = experimentInstances[expId];
+      if (experiment) {
+        // Start the experiment if it's idle
+        if (experiment.state === 'IDLE' || experiment._state === 'IDLE') {
+          experiment.start();
+          // For ReactionExperiment, also drop the element
+          if (experiment.drop) {
+            experiment.drop();
+          }
+          // Trigger haptic feedback on start
+          if (hapticCallback) {
+            hapticCallback(0.5);
+          }
+          console.log('[ElementRoom] Started experiment:', expId);
+        }
+      }
     },
-    onSelectEnd: (intersection) => {}
+    onSelectEnd: function(intersection) {}
   });
 
   ctx.raycontrol.addState('elementInfoPanel', {
@@ -454,7 +788,7 @@ export function enter(ctx, roomIndex, roomName) {
     }
   });
 
-  ctx.raycontrol.addState('elementBackToLobby', {
+ctx.raycontrol.addState('elementBackToLobby', {
     colliderMesh: [backButton],
     controller: 'primary',
     onHover: (intersection, active) => {
@@ -469,17 +803,62 @@ export function enter(ctx, roomIndex, roomName) {
       ctx.goto = 0;
     }
   });
+  
+  // Setup desktop mode for non-VR fallback (mouse + keyboard controls)
+  setupDesktopMode(ctx);
 }
 
 export function exit(ctx) {
+  // Cleanup desktop mode event listeners first
+  cleanupDesktopMode(ctx);
+  
   ctx.raycontrol.deactivateState('elementExperiments');
   ctx.raycontrol.deactivateState('elementTeleport');
   ctx.raycontrol.deactivateState('elementInfoPanel');
   ctx.raycontrol.deactivateState('elementBackToLobby');
   ctx.scene.remove(scene);
+  
+  // Cleanup theme resources (lights, particles)
+  if (themeCleanup) {
+    themeCleanup();
+    themeCleanup = null;
+  }
+  
+  // Reset all experiment instances
+  var expIds = Object.keys(experimentInstances);
+  for (var i = 0; i < expIds.length; i++) {
+    var experiment = experimentInstances[expIds[i]];
+    if (experiment && experiment.reset) {
+      experiment.reset();
+    }
+    // Call dispose if available (for NuclearExperiment)
+    if (experiment && experiment.dispose) {
+      experiment.dispose();
+    }
+  }
+  experimentInstances = {};
+  
+  // Clear haptic callback
+  hapticCallback = null;
+  
+  // Performance: Clear cached references on room exit
+  _cachedElectrons = [];
+  _cachedNucleus = null;
+  _cachedShells = [];
+  _bgParticlePositions = null;
 }
 
 var experimentInteractions = [];
+
+// Performance: Cached electron/shell/nucleus references to avoid traversing children each frame
+var _cachedElectrons = [];
+var _cachedNucleus = null;
+var _cachedShells = [];
+var _bgParticlePositions = null;
+
+// Performance: Frame skip counter for non-critical updates
+var _frameCounter = 0;
+var _bgParticleUpdateInterval = 2; // Update background particles every N frames
 
 function createExperimentInteractions(ctx, element) {
   const experiments = element.experiments || [];
@@ -830,25 +1209,51 @@ function executeGeneralExperiment(ctx, expId, delta, time) {
 }
 
 export function execute(ctx, delta, time) {
+  // Performance: Increment frame counter for frame skipping
+  _frameCounter++;
+  var shouldUpdateBgParticles = (_frameCounter % _bgParticleUpdateInterval) === 0;
+  
   if (atomModel) {
-    atomModel.children.forEach(child => {
-      if (child.userData.electron) {
-        const data = child.userData;
-        data.angle += data.speed * delta;
-        child.position.x = Math.cos(data.angle) * data.shellRadius;
-        child.position.z = Math.sin(data.angle) * data.shellRadius;
-        
-        // Add subtle bobbing motion
-        child.position.y = Math.sin(time * 3 + data.angle) * 0.05;
-      } else if (child.userData.nucleus) {
-        child.rotation.y += delta * 0.3;
-        const pulse = 1 + Math.sin(time * 2) * 0.05;
-        child.scale.setScalar(pulse);
-      } else if (child.userData.shell) {
-        child.rotation.x = Math.PI / 2 + Math.sin(time + child.position.x * 5) * 0.05;
-        child.rotation.z += delta * 0.1;
+    // Performance: Cache electron references on first frame after atom model creation
+    if (_cachedElectrons.length === 0 && atomModel.children.length > 0) {
+      for (var i = 0; i < atomModel.children.length; i++) {
+        var child = atomModel.children[i];
+        if (child.userData.electron) {
+          _cachedElectrons.push(child);
+        } else if (child.userData.nucleus) {
+          _cachedNucleus = child;
+        } else if (child.userData.shell) {
+          _cachedShells.push(child);
+        }
       }
-    });
+    }
+    
+    // Performance: Use cached references instead of traversing all children
+    var electron, data;
+    for (var e = 0; e < _cachedElectrons.length; e++) {
+      electron = _cachedElectrons[e];
+      data = electron.userData;
+      data.angle += data.speed * delta;
+      electron.position.x = Math.cos(data.angle) * data.shellRadius;
+      electron.position.z = Math.sin(data.angle) * data.shellRadius;
+      // Add subtle bobbing motion
+      electron.position.y = Math.sin(time * 3 + data.angle) * 0.05;
+    }
+    
+    // Update nucleus if cached
+    if (_cachedNucleus) {
+      _cachedNucleus.rotation.y += delta * 0.3;
+      var pulse = 1 + Math.sin(time * 2) * 0.05;
+      _cachedNucleus.scale.setScalar(pulse);
+    }
+    
+    // Update shells
+    var shell;
+    for (var s = 0; s < _cachedShells.length; s++) {
+      shell = _cachedShells[s];
+      shell.rotation.x = Math.PI / 2 + Math.sin(time + shell.position.x * 5) * 0.05;
+      shell.rotation.z += delta * 0.1;
+    }
 
     // Slow rotation of entire atom model
     atomModel.rotation.y += delta * 0.1;
@@ -858,16 +1263,39 @@ export function execute(ctx, delta, time) {
     }
   }
 
-  // Animate background particles
-  if (backgroundParticles) {
-    const positions = backgroundParticles.geometry.attributes.position.array;
-    for (let i = 0; i < positions.length; i += 3) {
-      positions[i + 1] += Math.sin(time + i) * 0.001;
+  // Animate background particles with frame skipping for performance
+  if (backgroundParticles && shouldUpdateBgParticles) {
+    // Cache position array reference
+    if (!_bgParticlePositions) {
+      _bgParticlePositions = backgroundParticles.geometry.attributes.position.array;
+    }
+    var posLen = _bgParticlePositions.length;
+    for (var p = 0; p < posLen; p += 3) {
+      _bgParticlePositions[p + 1] += Math.sin(time + p) * 0.001;
     }
     backgroundParticles.geometry.attributes.position.needsUpdate = true;
+  }
+  
+  // Always rotate background particles (cheap operation)
+  if (backgroundParticles) {
     backgroundParticles.rotation.y += delta * 0.01;
   }
 
+  // Update experiment instances
+  var expKeys = Object.keys(experimentInstances);
+  for (var k = 0; k < expKeys.length; k++) {
+    var expId = expKeys[k];
+    var experiment = experimentInstances[expId];
+    if (experiment && experiment.update) {
+      experiment.update(delta);
+    }
+  }
+
+  // Performance: Early exit if no interactions
+  if (experimentInteractions.length === 0) {
+    return;
+  }
+  
   experimentInteractions.forEach(interaction => {
     interaction.execute(delta, time);
   });

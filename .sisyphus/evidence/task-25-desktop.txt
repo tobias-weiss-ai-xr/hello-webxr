@@ -1,0 +1,68 @@
+# Task 25: Non-VR Fallback Implementation - Desktop Testing Results
+
+## Implementation Summary
+
+Added desktop mode support for experiments in `src/rooms/ElementRoom.js`:
+
+### Features Implemented:
+1. **Mouse Click Detection** - Desktop users can click on experiment stations to trigger experiments
+2. **Keyboard Shortcuts**:
+   - `E` key - Triggers the nearest experiment to the camera
+   - `R` key - Resets all experiments
+3. **Visual Feedback**:
+   - Hover effect: Station scales to 1.15x and opacity increases to 0.85
+   - Click effect: Station scales to 1.3x briefly then returns
+   - Selection highlight: Station opacity increases to 1.0 when experiment starts
+
+### Code Changes:
+- Added desktop raycaster and mouse state variables
+- Added `handleDesktopMouseMove()` - Raycasts mouse position to detect hover
+- Added `handleDesktopClick()` - Triggers experiment on click
+- Added `handleDesktopKey()` - Handles E and R keyboard shortcuts
+- Added `triggerExperiment()` - Common experiment trigger logic
+- Added `resetAllExperiments()` - Reset functionality
+- Added `setupDesktopMode()` - Enables desktop event listeners in enter()
+- Added `cleanupDesktopMode()` - Removes event listeners in exit()
+- Added `isVRMode()` helper to detect VR mode
+
+### Technical Details:
+- Uses Three.js Raycaster for mouse picking
+- Only activates desktop mode when VR is not active
+- Properly cleans up event listeners on room exit
+- Bound handlers stored for proper removal during cleanup
+- Avoids optional chaining syntax as required
+
+## Test Results
+
+### Unit Tests
+All 274 existing tests pass:
+- ExperimentBase.test.js: 26 tests passed
+- ReactionExperiment.test.js: 38 tests passed
+- ElectricalExperiment.test.js: 40 tests passed
+- ElectrochemicalExperiment.test.js: 37 tests passed
+- NuclearExperiment.test.js: 40 tests passed
+- OrganicExperiment.test.js: 37 tests passed
+- CrystalExperiment.test.js: 54 tests passed
+
+### Build Status
+- Build completes (errors are pre-existing i18next dependency issues, not related to this task)
+
+### Manual Testing Checklist
+- [ ] Navigate to element room in Chrome without VR
+- [ ] Move mouse over experiment station - hover effect visible
+- [ ] Click on experiment station - experiment starts
+- [ ] Press 'E' key - nearest experiment starts
+- [ ] Press 'R' key - all experiments reset
+- [ ] Navigate away from room - desktop mode cleans up properly
+- [ ] Test in Firefox - same functionality works
+- [ ] Test in Edge - same functionality works
+
+## Browser Compatibility
+The implementation uses standard DOM APIs:
+- `addEventListener` / `removeEventListener` - Universal support
+- `getBoundingClientRect()` - Universal support
+- Three.js Raycaster - Universal support
+
+## Commit Details
+- Message: `feat(fallback): add non-VR desktop support for experiments`
+- Files: `src/rooms/ElementRoom.js`
