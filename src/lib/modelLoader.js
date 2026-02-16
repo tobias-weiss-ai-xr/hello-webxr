@@ -47,93 +47,453 @@ export function createPlaceholderModel(element) {
   let geo, mat, mesh;
 
   switch(element.symbol) {
-    case 'H':
-      geo = new THREE.SphereGeometry(0.3, 32, 32);
-      mat = new THREE.MeshStandardMaterial({color: element.color, metalness: 0.1, roughness: 0.8});
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
-    case 'C':
-      geo = new THREE.OctahedronGeometry(0.3, 1);
-      mat = new THREE.MeshStandardMaterial({color: 0x333333, metalness: 0.2, roughness: 0.6});
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
-    case 'Fe':
-      geo = new THREE.IcosahedronGeometry(0.3, 1);
-      mat = new THREE.MeshStandardMaterial({color: 0x4a4a4a, metalness: 0.8, roughness: 0.3});
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
-    case 'Au':
-      geo = new THREE.IcosahedronGeometry(0.3, 1);
-      mat = new THREE.MeshStandardMaterial({
-        color: 0xFFD700,
-        metalness: 0.9,
-        roughness: 0.1,
-        emissive: 0xFFD700,
-        emissiveIntensity: 0.1
-      });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
-    case 'U':
-      geo = new THREE.SphereGeometry(0.35, 32, 32);
-      mat = new THREE.MeshStandardMaterial({
-        color: 0x2d5a2d,
-        metalness: 0.7,
-        roughness: 0.4,
-        emissive: 0x00ff00,
-        emissiveIntensity: 0.2
-      });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
-    case 'Na':
-      geo = new THREE.SphereGeometry(0.3, 32, 32);
-      mat = new THREE.MeshStandardMaterial({
-        color: element.color,
-        metalness: 0.9,
-        roughness: 0.2
-      });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
-      group.add(mesh);
-      break;
-
+    // === NOBLE GASES (translucent, glowing) ===
     case 'He':
-      geo = new THREE.SphereGeometry(0.25, 32, 32);
+    case 'Ne':
+    case 'Ar':
+    case 'Kr':
+    case 'Xe':
+    case 'Rn':
+      geo = new THREE.SphereGeometry(0.28, 32, 32);
       mat = new THREE.MeshStandardMaterial({
         color: NOBLE_GAS_COLORS[element.symbol] || element.color,
         metalness: 0,
         roughness: 0.1,
         emissive: NOBLE_GAS_COLORS[element.symbol] || element.color,
-        emissiveIntensity: 0.15
+        emissiveIntensity: 0.2,
+        transparent: true,
+        opacity: 0.7
       });
       mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
       group.add(mesh);
       break;
 
-    default:
-      geo = new THREE.SphereGeometry(0.3, 32, 32);
+    // === ALKALI METALS (soft, silvery) ===
+    case 'Li':
+      geo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
       mat = new THREE.MeshStandardMaterial({
-        color: element.color,
-        metalness: element.group === 'metal' || element.group === 'transition' ? 0.7 : 0.1,
-        roughness: element.group === 'metal' || element.group === 'transition' ? 0.3 : 0.7
+        color: 0xc0c0c0,
+        metalness: 0.5,
+        roughness: 0.5
       });
       mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(0, 0, 0);
+      group.add(mesh);
+      break;
+
+    case 'Na':
+      geo = new THREE.SphereGeometry(0.32, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xe8e8e8,
+        metalness: 0.6,
+        roughness: 0.4
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'K':
+    case 'Rb':
+    case 'Cs':
+      geo = new THREE.SphereGeometry(0.35, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xdda0dd,
+        metalness: 0.5,
+        roughness: 0.5
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === ALKALINE EARTH (white/gray crystalline) ===
+    case 'Be':
+      geo = new THREE.OctahedronGeometry(0.28, 0);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xd4d4d4,
+        metalness: 0.3,
+        roughness: 0.6
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Mg':
+      geo = new THREE.CylinderGeometry(0.18, 0.18, 0.45, 6);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xd4d4d4,
+        metalness: 0.7,
+        roughness: 0.35
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Ca':
+    case 'Sr':
+    case 'Ba':
+      geo = new THREE.BoxGeometry(0.28, 0.38, 0.28);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xf5f5dc,
+        metalness: 0.25,
+        roughness: 0.65
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === NONMETALS (various) ===
+    case 'H':
+      geo = new THREE.SphereGeometry(0.25, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: element.color,
+        metalness: 0.1,
+        roughness: 0.8,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.08
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'B':
+      geo = new THREE.TetrahedronGeometry(0.3);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x8b7355,
+        metalness: 0.2,
+        roughness: 0.7
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'C':
+      geo = new THREE.OctahedronGeometry(0.32, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        metalness: 0.2,
+        roughness: 0.6,
+        transparent: true,
+        opacity: 0.85
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      // Inner glow
+      const cInner = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.18, 0),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 })
+      );
+      group.add(cInner);
+      break;
+
+    case 'N':
+      geo = new THREE.SphereGeometry(0.28, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x88ccff,
+        metalness: 0,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.5,
+        emissive: 0x88ccff,
+        emissiveIntensity: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'O':
+      geo = new THREE.SphereGeometry(0.28, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x4488ff,
+        metalness: 0,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.55,
+        emissive: 0x4488ff,
+        emissiveIntensity: 0.08
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Si':
+      geo = new THREE.OctahedronGeometry(0.3, 0);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x708090,
+        metalness: 0.35,
+        roughness: 0.5,
+        transparent: true,
+        opacity: 0.88
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'P':
+      geo = new THREE.TetrahedronGeometry(0.32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.1,
+        roughness: 0.7,
+        emissive: 0xffcccc,
+        emissiveIntensity: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'S':
+      geo = new THREE.OctahedronGeometry(0.28, 0);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xffff00,
+        metalness: 0.1,
+        roughness: 0.55
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === HALOGENS (colored gases/liquids) ===
+    case 'F':
+      geo = new THREE.SphereGeometry(0.26, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xffffaa,
+        metalness: 0,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.55
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Cl':
+      geo = new THREE.SphereGeometry(0.3, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x00ff00,
+        metalness: 0,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.5,
+        emissive: 0x00ff00,
+        emissiveIntensity: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Br':
+      // Liquid at room temperature
+      geo = new THREE.SphereGeometry(0.3, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x8b0000,
+        metalness: 0.2,
+        roughness: 0.25,
+        transparent: true,
+        opacity: 0.75
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'I':
+      geo = new THREE.BoxGeometry(0.22, 0.32, 0.14);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x4b0082,
+        metalness: 0.25,
+        roughness: 0.45,
+        emissive: 0x4b0082,
+        emissiveIntensity: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === TRANSITION METALS (metallic) ===
+    case 'Ti':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x878681,
+        metalness: 0.85,
+        roughness: 0.22
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Cr':
+      geo = new THREE.IcosahedronGeometry(0.26, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xcdc9c9,
+        metalness: 0.95,
+        roughness: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Fe':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x4a4a4a,
+        metalness: 0.78,
+        roughness: 0.32
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Cu':
+      geo = new THREE.CylinderGeometry(0.14, 0.14, 0.45, 16);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xb87333,
+        metalness: 0.88,
+        roughness: 0.22,
+        emissive: 0xb87333,
+        emissiveIntensity: 0.05
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = Math.PI / 4;
+      group.add(mesh);
+      break;
+
+    case 'Zn':
+      geo = new THREE.BoxGeometry(0.24, 0.38, 0.24);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x7b8793,
+        metalness: 0.78,
+        roughness: 0.32
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Ag':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xc0c0c0,
+        metalness: 0.95,
+        roughness: 0.05,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.02
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Pt':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xe5e4e2,
+        metalness: 0.95,
+        roughness: 0.06
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Au':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        metalness: 0.92,
+        roughness: 0.08,
+        emissive: 0xffd700,
+        emissiveIntensity: 0.1
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Hg':
+      // Liquid metal!
+      geo = new THREE.SphereGeometry(0.3, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xc0c0c0,
+        metalness: 0.98,
+        roughness: 0.02,
+        transparent: true,
+        opacity: 0.88
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'W':
+      geo = new THREE.CylinderGeometry(0.1, 0.1, 0.55, 8);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x5a5a5a,
+        metalness: 0.85,
+        roughness: 0.22
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === POST-TRANSITION / POOR METALS ===
+    case 'Al':
+      geo = new THREE.BoxGeometry(0.32, 0.45, 0.14);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0xc0c0c0,
+        metalness: 0.88,
+        roughness: 0.18
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    case 'Pb':
+      geo = new THREE.BoxGeometry(0.32, 0.32, 0.32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x4a4a4a,
+        metalness: 0.65,
+        roughness: 0.42
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === RADIOACTIVE ===
+    case 'U':
+      geo = new THREE.SphereGeometry(0.32, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x2d5a2d,
+        metalness: 0.65,
+        roughness: 0.42,
+        emissive: 0x00ff00,
+        emissiveIntensity: 0.25
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      // Glow ring
+      const uRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.018, 16, 32),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.45 })
+      );
+      uRing.rotation.x = Math.PI / 2;
+      group.add(uRing);
+      break;
+
+    case 'Pu':
+      geo = new THREE.IcosahedronGeometry(0.28, 1);
+      mat = new THREE.MeshStandardMaterial({
+        color: 0x3d3d3d,
+        metalness: 0.55,
+        roughness: 0.52,
+        emissive: 0x006600,
+        emissiveIntensity: 0.18
+      });
+      mesh = new THREE.Mesh(geo, mat);
+      group.add(mesh);
+      break;
+
+    // === DEFAULT (group-based fallback) ===
+    default:
+      geo = new THREE.SphereGeometry(0.28, 32, 32);
+      mat = new THREE.MeshStandardMaterial({
+        color: element.color,
+        metalness: element.group === 'metal' || element.group === 'transition' || element.group === 'alkali' || element.group === 'alkalineEarth' ? 0.68 : 0.12,
+        roughness: element.group === 'metal' || element.group === 'transition' ? 0.32 : 0.68
+      });
+      mesh = new THREE.Mesh(geo, mat);
       group.add(mesh);
   }
 
