@@ -12,6 +12,7 @@ import BillboardSystem from '../systems/BillboardSystem.js';
 
 import SystemsGroup from '../systems/SystemsGroup.js';
 import { VRButton } from '../lib/VRButton.js';
+import i18nManager from '../lib/I18nManager.js';
 import { slideshow } from '../lib/slideshow.js';
 import { loadAssets } from '../lib/assetManager.js';
 import RayControl from '../lib/RayControl.js';
@@ -46,6 +47,7 @@ export class App {
     this.setupECSY();
     this.setupScene();
     this.setupAudio();
+    i18nManager.init(); // Initialize i18n early (async, fire-and-forget)
     this.setupControllers();
     this.setupControls();
     this.setupAssets();

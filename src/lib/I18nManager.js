@@ -42,6 +42,11 @@ class I18nManager {
    * @returns {string} Translated string (or key if not found)
    */
   t(key, options = {}) {
+    // Return key if not initialized (defensive fallback)
+    if (!i18next.isInitialized) {
+      console.warn('[I18nManager] t() called before init() - returning key:', key);
+      return key;
+    }
     return i18next.t(key, options);
   }
 
