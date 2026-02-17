@@ -57,4 +57,62 @@ export class AudioManager {
     sound.play();
     return sound;
   }
+
+  /**
+   * Play experiment-related sounds based on type and event
+   * @param {string} experimentType - 'reaction', 'electrical', 'electrochemical', 'nuclear', 'organic', 'crystal'
+   * @param {string} eventType - 'start', 'progress', 'complete', 'error'
+   */
+  playExperimentSound(experimentType, eventType) {
+    // Map experiment types to sound patterns
+    // TODO: Add dedicated experiment sounds; currently using placeholders
+    const soundMap = {
+      reaction: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      },
+      electrical: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      },
+      electrochemical: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      },
+      nuclear: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      },
+      organic: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      },
+      crystal: {
+        start: 'teleport_a_snd',
+        progress: 'teleport_a_snd',
+        complete: 'teleport_b_snd',
+        error: 'teleport_b_snd'
+      }
+    };
+
+    // Use traditional null checking for Babel compatibility
+    const typeSounds = soundMap[experimentType];
+    const soundName = typeSounds ? typeSounds[eventType] : null;
+    if (soundName) {
+      this.playSound(soundName);
+    } else {
+      // Gracefully handle unknown experiment types or event types
+      console.debug(`No sound mapped for experiment '${experimentType}' event '${eventType}'`);
+    }
+  }
 }

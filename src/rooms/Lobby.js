@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
 import { createHelpPanel } from '../components/HelpPanel.js';
 import { ELEMENTS, EXPERIMENTAL_ROOMS, GROUP_COLORS, NOBLE_GAS_COLORS } from '../data/elements.js';
+import i18nManager from '../lib/I18nManager.js';
 
 var scene, atomCore, electronOrbits = [];
 var elementButtons = [], expButtons = [];

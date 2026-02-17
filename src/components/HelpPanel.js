@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Text, Position, ParentObject3D } from './index.js';
+import i18nManager from '../lib/I18nManager.js';
 
 /**
  * Create a help panel showing navigation controls
@@ -38,7 +39,7 @@ export function createHelpPanel(ctx, options = {}) {
   
   if (showDesktop) {
     lines.push('[Desktop]');
-    lines.push('N = Next room');
+    lines.push('N = ' + i18nManager.t('ui.nextRoom'));
     lines.push('0-9 = Jump to room');
     lines.push('WASD = Move camera');
     lines.push('');
@@ -48,7 +49,7 @@ export function createHelpPanel(ctx, options = {}) {
     lines.push('[VR Mode]');
     lines.push('Point + Click = Enter room');
     lines.push('Teleport pad = Move');
-    lines.push('Back button = Return to lobby');
+    lines.push('Back button = ' + i18nManager.t('ui.backToLobby'));
   }
 
   // Create text entity

@@ -1,0 +1,44 @@
+{
+  "experiment": {
+    "reaction": {
+      "title": "Chemical Reaction",
+      "instruction": "Combine elements to observe their chemical reactions and see what compounds they form."
+    },
+    "electrical": {
+      "title": "Electrical Conductivity",
+      "instruction": "Test how different elements conduct electricity and learn about conductors versus insulators."
+    },
+    "electrochemical": {
+      "title": "Electrochemical Cell",
+      "instruction": "Build an electrochemical cell and observe electron flow between electrodes."
+    },
+    "nuclear": {
+      "title": "Nuclear Reactions",
+      "instruction": "Explore nuclear fission and fusion processes with interactive atomic models."
+    },
+    "organic": {
+      "title": "Organic Chemistry",
+      "instruction": "Build organic molecules and learn about carbon-based compounds and their structures."
+    },
+    "crystal": {
+      "title": "Crystal Structures",
+      "instruction": "Examine how atoms arrange themselves in crystal lattices and discover different crystal systems."
+    }
+  },
+  "ui": {
+    "nextRoom": "Next Room",
+    "previousRoom": "Previous Room",
+    "backToLobby": "Back to Lobby",
+    "startExperiment": "Start Experiment",
+    "resetExperiment": "Reset Experiment"
+  },
+  "element": {
+    "info": {
+      "atomicNumber": "Atomic Number",
+      "mass": "Atomic Mass",
+      "group": "Group",
+      "period": "Period",
+      "block": "Block"
+    }
+  }
+}

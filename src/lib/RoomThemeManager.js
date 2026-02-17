@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * RoomThemeManager - Centralized theme registry for VR rooms
  * Maps element themes to visual configurations
@@ -197,7 +199,7 @@ class RoomThemeManager {
     }
 
     // Check aliases
-    const aliasKey = themeName?.toLowerCase();
+    var aliasKey = themeName && themeName.toLowerCase();
     if (this.aliases[aliasKey]) {
       const primaryTheme = this.registry[this.aliases[aliasKey]];
       return { 
@@ -211,24 +213,118 @@ class RoomThemeManager {
   }
 
   /**
-   * Apply theme to a Three.js scene (placeholder implementation)
+   * Apply theme to a Three.js scene
    * @param {THREE.Scene} scene - Three.js scene to theme
    * @param {string} themeName - Theme to apply
    * @param {Object} elementData - Optional element data for customization
-   * @returns {Object} Applied theme configuration
+   * @returns {Object} { theme, cleanup } - Applied theme and cleanup function
    */
-  applyTheme(scene, themeName, elementData = null) {
+  applyTheme(scene, themeName, elementData) {
     const theme = this.getTheme(themeName);
+    var addedObjects = [];
     
-    // Placeholder - actual implementation in Wave 3
-    // Will set background, lights, particles, floor
-    console.log(`[RoomThemeManager] Theme "${theme.name}" applied (placeholder)`);
+    // Set scene background
+    scene.background = new THREE.Color(theme.backgroundColor);
     
-    if (elementData) {
-      console.log(`[RoomThemeManager] Element: ${elementData.symbol || 'unknown'}`);
+    // Add ambient light
+    var ambientConfig = theme.lightingPreset.ambient;
+    var ambientLight = new THREE.AmbientLight(
+      ambientConfig.color,
+      ambientConfig.intensity
+    );
+    scene.add(ambientLight);
+    addedObjects.push(ambientLight);
+    
+    // Add point lights from preset
+    var pointLights = theme.lightingPreset.pointLights || [];
+    for (var i = 0; i < pointLights.length; i++) {
+      var lightConfig = pointLights[i];
+      var pointLight = new THREE.PointLight(
+        lightConfig.color,
+        lightConfig.intensity,
+        lightConfig.distance
+      );
+      pointLight.position.set(
+        lightConfig.position[0],
+        lightConfig.position[1],
+        lightConfig.position[2]
+      );
+      scene.add(pointLight);
+      addedObjects.push(pointLight);
     }
     
-    return theme;
+    // Create themed background particles
+    var particles = this.createParticles(theme, elementData);
+    if (particles) {
+      scene.add(particles);
+      addedObjects.push(particles);
+    }
+    
+    console.log('[RoomThemeManager] Theme "' + theme.name + '" applied');
+    if (elementData) {
+      console.log('[RoomThemeManager] Element: ' + (elementData.symbol || 'unknown'));
+    }
+    
+    // Return theme and cleanup function
+    var self = this;
+    return {
+      theme: theme,
+      particles: particles,
+      cleanup: function() {
+        for (var j = 0; j < addedObjects.length; j++) {
+          scene.remove(addedObjects[j]);
+          if (addedObjects[j].geometry) {
+            addedObjects[j].geometry.dispose();
+          }
+          if (addedObjects[j].material) {
+            addedObjects[j].material.dispose();
+          }
+        }
+        addedObjects = [];
+      }
+    };
+  }
+  
+  /**
+   * Create themed particles for background atmosphere
+   * Performance: Reduced from 200 to 150 particles per room for VR optimization
+   * @param {Object} theme - Theme configuration
+   * @param {Object} elementData - Optional element data for color override
+   * @returns {THREE.Points} Particle system
+   */
+  createParticles(theme, elementData) {
+    // Performance: Reduced particle count for VR (150 instead of 200)
+    var particleCount = 150;
+    var geometry = new THREE.BufferGeometry();
+    var positions = new Float32Array(particleCount * 3);
+    
+    for (var i = 0; i < particleCount; i++) {
+      var i3 = i * 3;
+      var radius = 3 + Math.random() * 7;
+      var theta = Math.random() * Math.PI * 2;
+      var y = 0.5 + Math.random() * 4;
+      
+      positions[i3] = Math.cos(theta) * radius;
+      positions[i3 + 1] = y;
+      positions[i3 + 2] = Math.sin(theta) * radius;
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Use element color if available, otherwise theme particle color
+    var particleColor = theme.particleColor;
+    if (elementData && elementData.color) {
+      particleColor = elementData.color;
+    }
+    
+    var material = new THREE.PointsMaterial({
+      size: 0.04,
+      color: particleColor,
+      transparent: true,
+      opacity: 0.5
+    });
+    
+    return new THREE.Points(geometry, material);
   }
 
   /**

@@ -1,0 +1,44 @@
+{
+  "experiment": {
+    "reaction": {
+      "title": "Chemische Reaktion",
+      "instruction": "Kombinieren Sie Elemente, um ihre chemischen Reaktionen zu beobachten und zu sehen, welche Verbindungen entstehen."
+    },
+    "electrical": {
+      "title": "Elektrische Leitfähigkeit",
+      "instruction": "Testen Sie, wie verschiedene Elemente Strom leiten, und lernen Sie über Leiter und Isolatoren."
+    },
+    "electrochemical": {
+      "title": "Elektrochemische Zelle",
+      "instruction": "Bauen Sie eine elektrochemische Zelle und beobachten Sie den Elektronenfluss zwischen den Elektroden."
+    },
+    "nuclear": {
+      "title": "Kernreaktionen",
+      "instruction": "Erkunden Sie Kernspaltung und Kernfusion mit interaktiven Atommodellen."
+    },
+    "organic": {
+      "title": "Organische Chemie",
+      "instruction": "Bauen Sie organische Moleküle und lernen Sie über Kohlenstoffverbindungen und ihre Strukturen."
+    },
+    "crystal": {
+      "title": "Kristallstrukturen",
+      "instruction": "Untersuchen Sie, wie sich Atome in Kristallgittern anordnen und entdecken Sie verschiedene Kristallsysteme."
+    }
+  },
+  "ui": {
+    "nextRoom": "Nächster Raum",
+    "previousRoom": "Vorheriger Raum",
+    "backToLobby": "Zurück zur Lobby",
+    "startExperiment": "Experiment starten",
+    "resetExperiment": "Experiment zurücksetzen"
+  },
+  "element": {
+    "info": {
+      "atomicNumber": "Ordnungszahl",
+      "mass": "Atommasse",
+      "group": "Gruppe",
+      "period": "Periode",
+      "block": "Block"
+    }
+  }
+}
