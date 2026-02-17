@@ -91,7 +91,7 @@ export function setup(ctx) {
   scene.userData.electronOrbits = electronOrbits;
   scene.userData.glowRing = glowRing;
 
-  // Create help panel showing controls
+  // Create help panel
   helpPanel = createHelpPanel(ctx, {
     position: {x: 5, y: 3, z: -5},
     showDesktop: true,

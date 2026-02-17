@@ -109,10 +109,86 @@ export class SceneManager {
 
   render() {
     const delta = this.clock.getDelta();
-    
+
+    // Debug: Check for undefined materials before render (only log once per unique issue)
+    if (!this._materialCheckDone) {
+      let issueCount = 0;
+      this.scene.traverse((obj) => {
+        if (obj.isMesh || obj.isSkinnedMesh) {
+          // Check for missing material
+          if (!obj.material) {
+            console.error('[SceneManager] Mesh without material:', {
+              name: obj.name || '(unnamed)',
+              type: obj.type,
+              uuid: obj.uuid,
+              parent: obj.parent?.name || '(no parent)',
+              position: obj.position.toArray(),
+              object: obj
+            });
+            issueCount++;
+          }
+          // Check for array of materials with undefined entries
+          else if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat, idx) => {
+              if (!mat) {
+                console.error('[SceneManager] Mesh material[' + idx + '] is undefined:', {
+                  name: obj.name || '(unnamed)',
+                  type: obj.type,
+                  uuid: obj.uuid,
+                  parent: obj.parent?.name || '(no parent)',
+                  materialCount: obj.material.length,
+                  object: obj
+                });
+                issueCount++;
+              }
+            });
+          }
+          // Check for material missing uniforms (shader material issue)
+          else if (obj.material.isShaderMaterial && !obj.material.uniforms) {
+            console.error('[SceneManager] ShaderMaterial without uniforms:', {
+              name: obj.name || '(unnamed)',
+              type: obj.type,
+              uuid: obj.uuid,
+              material: obj.material
+            });
+            issueCount++;
+          }
+        }
+        // Check Line objects too
+        if (obj.isLine && !obj.material) {
+          console.error('[SceneManager] Line without material:', {
+            name: obj.name || '(unnamed)',
+            type: obj.type,
+            uuid: obj.uuid,
+            parent: obj.parent?.name || '(no parent)',
+            object: obj
+          });
+          issueCount++;
+        }
+        // Check Points objects (particle systems)
+        if (obj.isPoints && !obj.material) {
+          console.error('[SceneManager] Points without material:', {
+            name: obj.name || '(unnamed)',
+            type: obj.type,
+            uuid: obj.uuid,
+            parent: obj.parent?.name || '(no parent)',
+            object: obj
+          });
+          issueCount++;
+        }
+      });
+
+      if (issueCount === 0) {
+        console.log('[SceneManager] Material check passed - all objects have materials');
+      } else {
+        console.error(`[SceneManager] Found ${issueCount} material issue(s)`);
+      }
+      this._materialCheckDone = true;
+    }
+
     // Update frustum culling
     this.scene.updateMatrixWorld(true);
-    
+
     this.renderer.render(this.scene, this.camera);
   }
 

@@ -95,13 +95,13 @@ async function setupElement(ctx, elementSymbol) {
   scene = new THREE.Scene();
   console.log('[ElementRoom] Scene created:', scene);
 
-  // Apply theme using RoomThemeManager
+  // Apply theme based on element
   var themeResult = roomThemeManager.applyTheme(scene, elementData.theme || 'default', elementData);
   themeCleanup = themeResult.cleanup;
   backgroundParticles = themeResult.particles;
   
   // Store theme for floor creation
-  var theme = themeResult.theme;
+  var theme = null;
   var themeColor = elementData.color;
 
   createFloor(ctx, themeColor, theme);
@@ -396,6 +396,7 @@ function createExperimentInstances(ctx, element) {
         station.add(experimentGroup);
         experiment.render(experimentGroup);
         station.userData.experimentInstance = experiment;
+        console.log('[ElementRoom] Experiment rendered for:', expId);
       }
       
       console.log('[ElementRoom] Created experiment instance:', expId, 'type:', type);

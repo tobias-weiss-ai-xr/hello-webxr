@@ -21,7 +21,10 @@ export default class BillboardSystem extends System {
         object3D.lookAt(cameraPosition);
       }
 
-      object3D.material.opacity = opacity;
+      // Only set opacity if object has a material (Groups/Object3D may not)
+      if (object3D.material) {
+        object3D.material.opacity = opacity;
+      }
       // panels text parent
       if (entity.hasComponent(Children)) {
         entity.getComponent(Children).value.forEach(children => {

@@ -29,8 +29,18 @@ export class SDFTextSystem extends System {
     textMesh.overflowWrap = textComponent.overflowWrap;
     textMesh.whiteSpace = textComponent.whiteSpace;
     textMesh.maxWidth = textComponent.maxWidth;
-    textMesh.material.opacity = textComponent.opacity;
-    textMesh.sync();
+
+    // Troika TextMesh creates material asynchronously after sync()
+    // Set opacity via sync callback to ensure material exists
+    if (textComponent.opacity !== undefined) {
+      textMesh.sync(() => {
+        if (textMesh.material) {
+          textMesh.material.opacity = textComponent.opacity;
+        }
+      });
+    } else {
+      textMesh.sync();
+    }
   }
 
   execute(delta, time) {
