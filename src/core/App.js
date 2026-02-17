@@ -39,6 +39,13 @@ export class App {
     this.debug = false;
     this.handedness = 'right';
     this.context = {};
+
+    // Smooth movement state
+    this.moveState = { forward: false, backward: false, left: false, right: false };
+    this.velocity = new THREE.Vector3();
+    this.moveSpeed = 5.0;        // units per second
+    this.acceleration = 12.0;    // how fast to reach max speed
+    this.deceleration = 10.0;    // how fast to stop
   }
 
   init() {
@@ -135,32 +142,84 @@ export class App {
         this.controls.lock();
       }
     });
-    document.body.addEventListener('keydown', (ev) => this.handleDebugKeys(ev));
+    document.body.addEventListener('keydown', (ev) => this.onKeyDown(ev));
+    document.body.addEventListener('keyup', (ev) => this.onKeyUp(ev));
   }
 
-handleDebugKeys(ev) {
+  onKeyDown(ev) {
+    // Handle number keys (0-9) for direct room navigation
+    const room = parseInt(ev.key);
+    if (!isNaN(room) && room >= 0 && room < this.roomManager.roomNames.length && !ev.metaKey) {
+      this.roomManager.enterRoom(room);
+      return;
+    }
+
+    // Handle other keys
     switch(ev.code) {
       case 'KeyN': // N or n key - next room
         this.roomManager.enterRoom((this.roomManager.getCurrentRoomIndex() + 1) % this.roomManager.roomNames.length);
         break;
       case 'KeyW':
-        this.controls.moveForward(0.2);
-        break;
-      case 'KeyA':
-        this.controls.moveRight(-0.2);
+      case 'ArrowUp':
+        this.moveState.forward = true;
         break;
       case 'KeyS':
-        this.controls.moveForward(-0.2);
+      case 'ArrowDown':
+        this.moveState.backward = true;
+        break;
+      case 'KeyA':
+      case 'ArrowLeft':
+        this.moveState.left = true;
         break;
       case 'KeyD':
-        this.controls.moveRight(0.2);
+      case 'ArrowRight':
+        this.moveState.right = true;
         break;
     }
+  }
 
-    // Handle number keys (0-9) for direct room navigation
-    const room = parseInt(ev.key);
-    if (!isNaN(room) && room >= 0 && room < this.roomManager.roomNames.length && !ev.metaKey) {
-      this.roomManager.enterRoom(room);
+  onKeyUp(ev) {
+    switch(ev.code) {
+      case 'KeyW':
+      case 'ArrowUp':
+        this.moveState.forward = false;
+        break;
+      case 'KeyS':
+      case 'ArrowDown':
+        this.moveState.backward = false;
+        break;
+      case 'KeyA':
+      case 'ArrowLeft':
+        this.moveState.left = false;
+        break;
+      case 'KeyD':
+      case 'ArrowRight':
+        this.moveState.right = false;
+        break;
+    }
+  }
+
+  updateMovement(delta) {
+    if (!this.controls || !this.controls.isLocked) return;
+
+    // Calculate target velocity based on input
+    const targetVelocity = new THREE.Vector3();
+
+    if (this.moveState.forward) targetVelocity.z = -this.moveSpeed;
+    if (this.moveState.backward) targetVelocity.z = this.moveSpeed;
+    if (this.moveState.left) targetVelocity.x = -this.moveSpeed;
+    if (this.moveState.right) targetVelocity.x = this.moveSpeed;
+
+    // Smooth acceleration/deceleration
+    const isMoving = targetVelocity.length() > 0;
+    const lerpFactor = isMoving ? this.acceleration : this.deceleration;
+    this.velocity.x = THREE.Math.lerp(this.velocity.x, targetVelocity.x, lerpFactor * delta);
+    this.velocity.z = THREE.Math.lerp(this.velocity.z, targetVelocity.z, lerpFactor * delta);
+
+    // Apply movement
+    if (this.velocity.length() > 0.01) {
+      this.controls.moveRight(this.velocity.x * delta);
+      this.controls.moveForward(-this.velocity.z * delta);
     }
   }
 
@@ -290,6 +349,9 @@ handleDebugKeys(ev) {
   animate() {
     const delta = this.clock.getDelta();
     const elapsedTime = this.clock.elapsedTime;
+
+    // Smooth desktop movement
+    this.updateMovement(delta);
 
     this.ecsyWorld.execute(delta, elapsedTime);
     this.controllers.updateBoundingBoxes();
