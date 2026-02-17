@@ -22,7 +22,8 @@ export class SDFTextSystem extends System {
     textMesh.anchor[0] = anchorMapping[textComponent.anchor];
     textMesh.anchor[1] = baselineMapping[textComponent.baseline];
     textMesh.color = textComponent.color;
-    textMesh.font = textComponent.font;
+    // Use fallback font if Google Fonts URL fails to load
+    textMesh.font = textComponent.font || '/assets/fonts/Roboto-Regular.ttf';
     textMesh.fontSize = textComponent.fontSize;
     textMesh.letterSpacing = textComponent.letterSpacing || 0;
     textMesh.lineHeight = textComponent.lineHeight || null;
@@ -53,8 +54,22 @@ export class SDFTextSystem extends System {
       textMesh.name = 'textMesh';
       textMesh.anchor = [0, 0];
       textMesh.renderOrder = 1; //brute-force fix for ugly antialiasing, see issue #67
+
+      // Add error handling for font loading failures
+      textMesh.addEventListener('error', (err) => {
+        console.error('[SDFTextSystem] TextMesh error:', err);
+      });
+
       this.updateText(textMesh, textComponent);
-      e.addComponent(Object3D, {value: textMesh});
+
+      // Only add to entity after initial sync completes to ensure material exists
+      textMesh.sync(() => {
+        if (textMesh.material) {
+          e.addComponent(Object3D, {value: textMesh});
+        } else {
+          console.warn('[SDFTextSystem] TextMesh created without material, skipping:', textComponent.text?.substring(0, 20));
+        }
+      });
     });
 
     entities.removed.forEach(e => {
