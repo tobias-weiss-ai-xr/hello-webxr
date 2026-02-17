@@ -97,6 +97,13 @@ export default class RayControl extends EventDispatcher {
     this._sort();
   }
 
+  removeState(name) {
+    // First deactivate the state
+    this.deactivateState(name);
+    // Then delete it from states object
+    delete this.states[name];
+  }
+
   addController(controller, inputSource) {
     let controllerData = {
       controller: controller,

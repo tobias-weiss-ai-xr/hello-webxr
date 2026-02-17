@@ -813,10 +813,11 @@ export function exit(ctx) {
   // Cleanup desktop mode event listeners first
   cleanupDesktopMode(ctx);
   
-  ctx.raycontrol.deactivateState('elementExperiments');
-  ctx.raycontrol.deactivateState('elementTeleport');
-  ctx.raycontrol.deactivateState('elementInfoPanel');
-  ctx.raycontrol.deactivateState('elementBackToLobby');
+  // Remove RayControl states to prevent "already exist" warnings when re-entering
+  ctx.raycontrol.removeState('elementExperiments');
+  ctx.raycontrol.removeState('elementTeleport');
+  ctx.raycontrol.removeState('elementInfoPanel');
+  ctx.raycontrol.removeState('elementBackToLobby');
   ctx.scene.remove(scene);
   
   // Cleanup theme resources (lights, particles)
