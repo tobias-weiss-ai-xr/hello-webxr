@@ -22,7 +22,7 @@ module.exports = {
     rules: [
       {
         test: /\.(js|mjs)$/,
-        exclude: /node_modules\/(?!i18next|i18next-browser-languagedetector)/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader'
         }
