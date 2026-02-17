@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   mode: 'development',
   entry: './src/index.js',
@@ -10,21 +12,27 @@ module.exports = {
     port: 8080,
     compress: true,
     hot: true,
-    contentBase: __dirname,
-    publicPath: '/',
+    static: {
+      directory: __dirname
+    },
     historyApiFallback: true
   },
   devtool: 'source-map',
   module: {
     rules: [
-    {
-      test: /\.(js|mjs)$/,
-      exclude: /(node_modules)/,
-      use: { loader: 'babel-loader' }
-    }
-  ]
+      {
+        test: /\.(js|mjs)$/,
+        exclude: /node_modules\/(?!i18next|i18next-browser-languagedetector)/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   },
   watchOptions: {
-    ignored: [/node_modules/]
+    ignored: ['**/node_modules/**']
+  },
+  resolve: {
+    extensions: ['.js', '.mjs']
   }
 };
