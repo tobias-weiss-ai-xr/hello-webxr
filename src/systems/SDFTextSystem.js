@@ -22,8 +22,8 @@ export class SDFTextSystem extends System {
     textMesh.anchor[0] = anchorMapping[textComponent.anchor];
     textMesh.anchor[1] = baselineMapping[textComponent.baseline];
     textMesh.color = textComponent.color;
-    // Use fallback font if Google Fonts URL fails to load
-    textMesh.font = textComponent.font || '/assets/fonts/Roboto-Regular.ttf';
+    // Use troika default font if not specified
+    textMesh.font = textComponent.font;
     textMesh.fontSize = textComponent.fontSize;
     textMesh.letterSpacing = textComponent.letterSpacing || 0;
     textMesh.lineHeight = textComponent.lineHeight || null;
