@@ -142,7 +142,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Macht 78% der Atmosphäre aus. Essentiell für Proteine und DNA.',
     theme: 'atmosphere',
-    experiments: ['liquid', 'haberbosch', 'fertilizer'],
+    experiments: ['liquid', 'haberbosch', 'fertilizer', 'explosives', 'n2o', 'ammonia'],
     electronConfiguration: [2, 5]
   },
 
@@ -176,7 +176,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.halogen,
     description: 'Reaktivstes aller Elemente. Wird in Teflon und Zahncreme verwendet.',
     theme: 'protection',
-    experiments: ['reaction', 'teflon'],
+    experiments: ['reaction', 'teflon', 'dental', 'uranium', 'cryogenic', 'plasma'],
     electronConfiguration: [2, 7]
   },
 
@@ -193,7 +193,7 @@ export const ELEMENTS = [
     color: NOBLE_GAS_COLORS.Ne,
     description: 'Leuchtet bei elektrischer Entladung orange-rot. Symbol der Stadtbeleuchtung.',
     theme: 'lights',
-    experiments: ['neon', 'laser'],
+    experiments: ['neon', 'laser', 'ionthruster', 'cryogenic', 'coolant', 'spectroscopy'],
     electronConfiguration: [2, 8]
   },
 
@@ -430,7 +430,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Reaktiv Metall, in der Natur oft als Ion. Wesentlich für biologische Prozesse.',
     theme: 'biological',
-    experiments: ['water', 'flame', 'banane'],
+    experiments: ['water', 'flame', 'banane', 'neuralsignals', 'fertilizer', 'explosives'],
     electronConfiguration: [2, 8, 8, 1]
   },
 
@@ -590,7 +590,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metal,
     description: 'Schmilzt in der Hand bei Raumtemperatur. Für Halbleiter und Hochtemperaturthermometer.',
     theme: 'semiconductor',
-    experiments: ['schmelzen', 'halbleiter', 'thermometer'],
+    experiments: ['schmelzen', 'halbleiter', 'thermometer', 'led', 'solar', 'highvacuum'],
     electronConfiguration: [2, 8, 18, 3]
   },
 
@@ -606,7 +606,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metalloid,
     description: 'Halbleiter für Transistoren und Optoelektronik. Silizium-Alternative.',
     theme: 'semiconductor',
-    experiments: ['halbleiter', 'transistor', 'faser'],
+    experiments: ['halbleiter', 'transistor', 'faser', 'infrared', 'fiber', 'solar'],
     electronConfiguration: [2, 8, 18, 4]
   },
 
@@ -622,7 +622,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metalloid,
     description: 'Sehr giftiges Halbmetall. Historisch in Tapeten und Farben verwendet.',
     theme: 'toxic',
-    experiments: ['gift', 'historisch', 'semiconductor'],
+    experiments: ['gift', 'historisch', 'semiconductor', 'pesticide', 'medicine', 'photovoltaic'],
     electronConfiguration: [2, 8, 18, 5]
   },
 
@@ -686,7 +686,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Weiches, hochreaktives Metall. Für Atomuhren und Feuerwerk.',
     theme: 'pyrotechnics',
-    experiments: ['atomuhr', 'feuerwerk', 'reaktion'],
+    experiments: ['atomuhr', 'feuerwerk', 'reaktion', 'photodetector', 'ionthruster', 'vacuum'],
     electronConfiguration: [2, 8, 18, 8, 1]
   },
 
@@ -702,7 +702,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkalineEarth,
     description: 'Für rote Feuerwerke und Magnete. Radioaktiv (Strontium-90).',
     theme: 'pyrotechnics',
-    experiments: ['feuerwerk', 'magnet', 'radioaktiv'],
+    experiments: ['feuerwerk', 'magnet', 'radioaktiv', 'cathoderay', 'glow', 'glass'],
     electronConfiguration: [2, 8, 18, 8, 2]
   },
 
@@ -766,7 +766,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Extrem hartes Metall. Für Hochtemperaturanwendungen und Schmierstoffe.',
     theme: 'industry',
-    experiments: ['hochtemperatur', 'schmiermittel', 'stahl'],
+    experiments: ['hochtemperatur', 'schmiermittel', 'stahl', 'catalyst', 'alloy', 'nuclear'],
     electronConfiguration: [2, 8, 18, 13, 1]
   },
 
@@ -862,7 +862,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Giftiges Metall. Für NiCd-Batterien, Pigmente und galvanische Elemente.',
     theme: 'toxic',
-    experiments: ['batterie', 'pigment', 'toxisch'],
+    experiments: ['batterie', 'pigment', 'toxisch', 'solar', 'led', 'corrosion'],
     electronConfiguration: [2, 8, 18, 18, 2]
   },
 
@@ -1006,7 +1006,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Weiches, duktils Metall. Für Hybridauto-Batterien und Zündsteine.',
     theme: 'technology',
-    experiments: ['batterie', 'zündsteine', 'optik'],
+    experiments: ['batterie', 'zündsteine', 'optik', 'catalyst', 'glass', 'magnet'],
     electronConfiguration: [2, 8, 18, 18, 9, 2]
   },
 
@@ -1022,7 +1022,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Häufigstes Lanthanoid. Für Ferrocer-Feuerzeuge und Autokatalysatoren.',
     theme: 'technology',
-    experiments: ['feuerzeuge', 'katalysator', 'selbstreinigend'],
+    experiments: ['feuerzeuge', 'katalysator', 'selbstreinigend', 'glass', 'battery', 'polish'],
     electronConfiguration: [2, 8, 18, 19, 9, 2]
   },
 
@@ -1038,7 +1038,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Für Magnetlegierungen und Grüne Farbe. Wichtig für Hightech-Legierungen.',
     theme: 'technology',
-    experiments: ['magnet', 'grün', 'legierung'],
+    experiments: ['magnet', 'grün', 'legierung', 'alloy', 'glass', 'laser'],
     electronConfiguration: [2, 8, 18, 21, 8, 2]
   },
 
@@ -1052,9 +1052,9 @@ export const ELEMENTS = [
     block: 'f',
     groupNumber: 3,
     color: GROUP_COLORS.lanthanide,
-    description: 'Stärkste Permanentmagnete. Für Kopfhörer, Windturbinen und Festplatten.',
+    description: 'Für starke Magnete und Lasertechnologie. Wichtiger Bestandteil moderner Technologien.',
     theme: 'technology',
-    experiments: ['magnet', 'kopfhörer', 'windturbine'],
+    experiments: ['magnet', 'laser', 'audiophile', 'windturbine', 'speakers', 'alloy'],
     electronConfiguration: [2, 8, 18, 22, 8, 2]
   },
 
@@ -1086,7 +1086,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Für Permanentmagnete und Kernreaktor-Steuerstäbe.',
     theme: 'nuclear',
-    experiments: ['magnet', 'reaktor', 'absorber'],
+    experiments: ['magnet', 'reaktor', 'absorber', 'coke', 'laser', 'alloy'],
     electronConfiguration: [2, 8, 18, 24, 8, 2]
   },
 
@@ -1102,7 +1102,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Rot phosphoreszierend in Euro-Scheinen. Für Sicherheit und Lasermaterialien.',
     theme: 'security',
-    experiments: ['phosphoreszenz', 'euro', 'laser'],
+    experiments: ['phosphoreszenz', 'euro', 'laser', 'display', 'magnet', 'glass'],
     electronConfiguration: [2, 8, 18, 25, 8, 2]
   },
 
@@ -1118,7 +1118,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Höchste Neutronenabsorption. Für MRT-Kontrastmittel und Kernreaktorsteuerung.',
     theme: 'medical',
-    experiments: ['mrt', 'reaktor', 'absorber'],
+    experiments: ['mrt', 'reaktor', 'absorber', 'cooling', 'encryption', 'magnet'],
     electronConfiguration: [2, 8, 18, 25, 9, 2]
   },
 
@@ -1134,7 +1134,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Weiches Lanthanoid. Für Phosphorleuchtstoffe und Elektromotore.',
     theme: 'technology',
-    experiments: ['phosphor', 'magnet', 'motor'],
+    experiments: ['phosphor', 'magnet', 'motor', 'display', 'alloy', 'fuelcell'],
     electronConfiguration: [2, 8, 18, 27, 8, 2]
   },
 
@@ -1148,9 +1148,9 @@ export const ELEMENTS = [
     block: 'f',
     groupNumber: 3,
     color: GROUP_COLORS.lanthanide,
-    description: 'Hochwertiges Lanthanoid. Für Kernreaktorsteuerstäbe und Magnetlegierungen.',
-    theme: 'nuclear',
-    experiments: ['reaktor', 'magnet', 'legierung'],
+    description: 'Für Permanentmagnete und Natrium-Dampflampen. Wichtig für grüne Technik.',
+    theme: 'technology',
+    experiments: ['magnet', 'lampe', 'nuklear', 'windturbine', 'laser', 'alloy'],
     electronConfiguration: [2, 8, 18, 28, 8, 2]
   },
 
