@@ -782,7 +782,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Erstes künstliche Element. Radioaktiv. In der medizinischen Bildgebung verwendet.',
     theme: 'nuclear',
-    experiments: ['künstlich', 'medizin', 'radioaktiv'],
+    experiments: ['künstlich', 'medizin', 'radioaktiv', 'imaging', 'cancer', 'detector'],
     electronConfiguration: [2, 8, 18, 13, 2]
   },
 
@@ -798,7 +798,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Seltenes, aber wichtiges Metall. Für Elektronikkontakte und Katalysatoren.',
     theme: 'technology',
-    experiments: ['katalysator', 'kontakte', 'legierung'],
+    experiments: ['katalysator', 'kontakte', 'legierung', 'disc', 'nuclear', 'alloy'],
     electronConfiguration: [2, 8, 18, 15, 1]
   },
 
@@ -814,7 +814,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Sehr wertvolles Übergangsmetall. Für Katalysatoren, Schmuck und Thermoelemente.',
     theme: 'technology',
-    experiments: ['katalysator', 'schmuck', 'thermo'],
+    experiments: ['katalysator', 'schmuck', 'thermo', 'mirror', 'coating', 'alloy'],
     electronConfiguration: [2, 8, 18, 16, 1]
   },
 
@@ -830,7 +830,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Wertvolles Platin-Metall. Für Katalysatoren, Schmuck und Wasserstofffilter.',
     theme: 'technology',
-    experiments: ['katalysator', 'schmuck', 'wasserstoff'],
+    experiments: ['katalysator', 'schmuck', 'wasserstoff', 'hydrogen', 'electronics', 'medical'],
     electronConfiguration: [2, 8, 18, 18]
   },
 
