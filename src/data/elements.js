@@ -718,7 +718,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Seltenes Erdelement. Für LEDs, Supraleiter und Laser.',
     theme: 'technology',
-    experiments: ['led', 'laser', 'supraleiter'],
+    experiments: ['led', 'laser', 'supraleiter', 'phosphor', 'magnet', 'ceramic'],
     electronConfiguration: [2, 8, 18, 9, 2]
   },
 
@@ -734,7 +734,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Korrosionsbeständiges Metall. Für Kernelemente und medizinische Implantate.',
     theme: 'nuclear',
-    experiments: ['kernelement', 'implantat', 'keramik'],
+    experiments: ['kernelement', 'implantat', 'keramik', 'fuelcladding', 'alloy', 'biomedical'],
     electronConfiguration: [2, 8, 18, 10, 2]
   },
 
@@ -750,7 +750,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Supraleiter bei niedrigen Temperaturen. Für Beschleunigermagnete und Hochspannungstechnik.',
     theme: 'technology',
-    experiments: ['supraleiter', 'magnet', 'hochspannung'],
+    experiments: ['supraleiter', 'magnet', 'hochspannung', 'alloy', 'catalyst', 'electronics'],
     electronConfiguration: [2, 8, 18, 12, 1]
   },
 
@@ -974,7 +974,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Weiches, hochreaktives Metall. Schmilzt in der Hand. Präzisesste Zeitnormal.',
     theme: 'precision',
-    experiments: ['schmelzen', 'atomuhr', 'explosion'],
+    experiments: ['schmelzen', 'atomuhr', 'explosion', 'photoelectric', 'ionthruster', 'nightvision'],
     electronConfiguration: [2, 8, 18, 18, 8, 1]
   },
 
@@ -990,7 +990,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkalineEarth,
     description: 'Für medizinische Kontrastmittel und grüne Feuerwerke. Schwerkresistent.',
     theme: 'medical',
-    experiments: ['kontrastmittel', 'feuerwerk', 'magnet'],
+    experiments: ['kontrastmittel', 'feuerwerk', 'magnet', 'glass', 'detector', 'catalyst'],
     electronConfiguration: [2, 8, 18, 18, 8, 2]
   },
 
@@ -1070,7 +1070,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Künstliches, radioaktives Element. Für Kernbatterien in Raumfahrzeugen.',
     theme: 'space',
-    experiments: ['künstlich', 'kernbatterie', 'radioaktiv'],
+    experiments: ['künstlich', 'kernbatterie', 'radioaktiv', 'luminescent', 'spacecraft', 'power'],
     electronConfiguration: [2, 8, 18, 23, 8, 2]
   },
 
@@ -1166,7 +1166,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Besitzt höchstes magnetisches Moment aller Elemente. Für Laser und Hochleistungsmagnete.',
     theme: 'technology',
-    experiments: ['laser', 'magnet', 'hochleistung'],
+    experiments: ['laser', 'magnet', 'hochleistung', 'nuclear', 'medical', 'alloy'],
     electronConfiguration: [2, 8, 18, 29, 8, 2]
   },
 
@@ -1182,7 +1182,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Für Glasfaser-Verstärker und optische Verstärker. Rosarotes Leuchten.',
     theme: 'technology',
-    experiments: ['glasfaser', 'optik', 'laser'],
+    experiments: ['glasfaser', 'optik', 'laser', 'telecom', 'amplifier', 'medical'],
     electronConfiguration: [2, 8, 18, 30, 8, 2]
   },
 
@@ -1198,7 +1198,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Für medizinische Röntgenanlagen. Röntgen-Kontrastmittel.',
     theme: 'medical',
-    experiments: ['röntgen', 'medizin', 'laser'],
+    experiments: ['röntgen', 'medizin', 'laser', 'portable', 'xray', 'alloy'],
     electronConfiguration: [2, 8, 18, 31, 8, 2]
   },
 
@@ -1214,7 +1214,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.lanthanide,
     description: 'Für Stahllegierungen und Röntgenanlagen. Rote Lumineszenz.',
     theme: 'industry',
-    experiments: ['legierung', 'röntgen', 'luminiszenz'],
+    experiments: ['legierung', 'röntgen', 'luminiszenz', 'atomicclock', 'steel', 'nuclear'],
     electronConfiguration: [2, 8, 18, 32, 8, 2]
   },
 
@@ -1486,7 +1486,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Instabil, radioaktiv. Nie makroskopisch beobachtet. Hypothetische Wasserreaktion.',
     theme: 'theoretical',
-    experiments: ['instabil', 'halbwertszeit', 'theoretisch'],
+    experiments: ['instabil', 'halbwertszeit', 'theoretisch', 'decay', 'detection', 'synthesis'],
     electronConfiguration: [2, 8, 18, 32, 18, 8, 1]
   },
 
@@ -1502,7 +1502,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkalineEarth,
     description: 'Hochradioaktiv, luminiszierendes Metall. Leuchtet im Dunkeln. Für historische Lampen.',
     theme: 'historical',
-    experiments: ['leuchten', 'historisch', 'radioaktiv'],
+    experiments: ['leuchten', 'historisch', 'radioaktiv', 'cancer', 'luminiscent', 'medical'],
     electronConfiguration: [2, 8, 18, 32, 18, 8, 2]
   },
 
@@ -1518,7 +1518,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Namensgeber der Actinoide. Radioaktiv. Ausgangsstoff für Urananreicherung.',
     theme: 'nuclear',
-    experiments: ['urananreicherung', 'strahlung', 'zerfall'],
+    experiments: ['urananreicherung', 'strahlung', 'zerfall', 'detector', 'medical', 'nuclear'],
     electronConfiguration: [2, 8, 18, 32, 18, 9, 2]
   },
 
@@ -1662,7 +1662,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Entdeckt 1952 im Fallout der H-Bombe Ivy Mike. In Gedenken an Einstein.',
     theme: 'history',
-    experiments: ['historisch', 'h-bombe', 'memorial'],
+    experiments: ['historisch', 'h-bombe', 'memorial', 'isotope', 'synthesis', 'research'],
     electronConfiguration: [2, 8, 18, 32, 29, 8, 2]
   },
 
@@ -1678,7 +1678,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Enrico Fermi. Für theoretische Kernreaktoren.',
     theme: 'research',
-    experiments: ['reaktor', 'theoretisch', 'nuklearphysik'],
+    experiments: ['reaktor', 'theoretisch', 'nuklearphysik', 'isotope', 'synthesis', 'detector'],
     electronConfiguration: [2, 8, 18, 32, 30, 8, 2]
   },
 
@@ -1694,7 +1694,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. In Gedenken an Mendelejew. Ehemaliges Element 101.',
     theme: 'history',
-    experiments: ['historisch', 'periodensystem', 'tradition'],
+    experiments: ['historisch', 'periodensystem', 'tradition', 'synthesis', 'isotope', 'research'],
     electronConfiguration: [2, 8, 18, 32, 31, 8, 2]
   },
 
@@ -1710,7 +1710,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Benannt nach Alfred Nobel. Für wissenschaftliche Anerkennung.',
     theme: 'history',
-    experiments: ['auszeichnung', 'nobelpreis', 'forschung'],
+    experiments: ['auszeichnung', 'nobelpreis', 'forschung', 'synthesis', 'isotope', 'detection'],
     electronConfiguration: [2, 8, 18, 32, 32, 8, 2]
   },
 
@@ -1726,7 +1726,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Letztes natürliches Element. Namensgeber: Ernest Lawrence. Entdeckung der Lanthanoide.',
     theme: 'discovery',
-    experiments: ['entdeckung', 'synchrotron', 'teilchenbeschleuniger'],
+    experiments: ['entdeckung', 'synchrotron', 'teilchenbeschleuniger', 'synthesis', 'isotope', 'research'],
     electronConfiguration: [2, 8, 18, 32, 32, 8, 3]
   },
 
@@ -1742,7 +1742,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Ernest Rutherford. Entdeckung des Atomkerns.',
     theme: 'research',
-    experiments: ['kernphysik', 'teilchen', 'reaktor'],
+    experiments: ['kernphysik', 'teilchen', 'reaktor', 'synthesis', 'isotope', 'detector'],
     electronConfiguration: [2, 8, 18, 32, 32, 10, 2]
   },
 
@@ -1758,7 +1758,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Stadt Dubna. Forschungszentrum Russlands.',
     theme: 'research',
-    experiments: ['forschung', 'kernchemie', 'instabil']
+    experiments: ['forschung', 'kernchemie', 'instabil', 'synthesis', 'isotope', 'detector'],
+    electronConfiguration: [2, 8, 18, 32, 32, 11, 2]
   },
 
   {
@@ -1773,7 +1774,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Glenn Seaborg. Forschungszentrum USA.',
     theme: 'research',
-    experiments: ['forschung', 'chemie', 'synthese']
+    experiments: ['forschung', 'chemie', 'synthese', 'isotope', 'detector', 'nuclear'],
+    electronConfiguration: [2, 8, 18, 32, 32, 12, 2]
   },
 
   {
@@ -1788,7 +1790,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Niels Bohr. Quantenmechanik-Revolution.',
     theme: 'science',
-    experiments: ['quantenmechanik', 'theoretisch', 'modell']
+    experiments: ['quantenmechanik', 'theoretisch', 'modell', 'synthesis', 'isotope', 'physics'],
+    electronConfiguration: [2, 8, 18, 32, 32, 13, 2]
   },
 
   {
@@ -1803,7 +1806,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Hessen (Bundesland). Erste deutsche Entdeckung.',
     theme: 'discovery',
-    experiments: ['entdeckung', 'deutsch', 'teilchen']
+    experiments: ['entdeckung', 'deutsch', 'teilchen', 'synthesis', 'isotope', 'physics'],
+    electronConfiguration: [2, 8, 18, 32, 32, 16, 2]
   },
 
   {
@@ -1818,7 +1822,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Lise Meitner. Entdeckung der Kernspaltung.',
     theme: 'history',
-    experiments: ['kernspaltung', 'uran', 'geschichte']
+    experiments: ['kernspaltung', 'uran', 'geschichte', 'synthesis', 'isotope', 'detector'],
+    electronConfiguration: [2, 8, 18, 32, 32, 17, 2]
   },
 
   {
@@ -1833,7 +1838,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Darmstadt. GSI Teilchenbeschleuniger.',
     theme: 'research',
-    experiments: ['teilchenbeschleuniger', 'schwerionen', 'synthese']
+    experiments: ['teilchenbeschleuniger', 'schwerionen', 'synthese', 'isotope', 'detector', 'radioactive'],
+    electronConfiguration: [2, 8, 18, 32, 32, 18, 2]
   },
 
   {
@@ -1848,7 +1854,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Wilhelm Röntgen. Für medizinische Bildgebung.',
     theme: 'medical',
-    experiments: ['röntgen', 'medizin', 'synthese']
+    experiments: ['röntgen', 'medizin', 'synthese', 'isotope', 'detector', 'imaging'],
+    electronConfiguration: [2, 8, 18, 32, 32, 19, 2]
   },
 
   {
@@ -1863,7 +1870,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Nikolaus Kopernikus. Revolution des Weltbilds.',
     theme: 'history',
-    experiments: ['astronomie', 'revolution', 'universum']
+    experiments: ['astronomie', 'revolution', 'universum', 'synthesis', 'isotope', 'physics'],
+    electronConfiguration: [2, 8, 18, 32, 32, 20, 2]
   },
 
   {
@@ -1878,7 +1886,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Japan. Für Elementsynthese-Forschung.',
     theme: 'research',
-    experiments: ['synthese', 'element', 'forschung']
+    experiments: ['synthese', 'element', 'forschung', 'isotope', 'detector', 'physics'],
+    electronConfiguration: [2, 8, 18, 32, 32, 21, 2]
   },
 
   {
@@ -1893,7 +1902,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Georgij Flerow. Für theoretische Physik.',
     theme: 'science',
-    experiments: ['theoretisch', 'modell', 'stabilität']
+    experiments: ['theoretisch', 'modell', 'stabilität', 'synthesis', 'isotope', 'island'],
+    electronConfiguration: [2, 8, 18, 32, 32, 22, 2]
   },
 
   {
@@ -1908,7 +1918,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Moskau. Dubiose Entdeckungsgeschichte.',
     theme: 'history',
-    experiments: ['dubios', 'synthese', 'wissenschaft']
+    experiments: ['dubios', 'synthese', 'wissenschaft', 'isotope', 'detector', 'superheavy'],
+    electronConfiguration: [2, 8, 18, 32, 32, 23, 2]
   },
 
   {
@@ -1923,7 +1934,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Lawrence Livermore National Laboratory. Element 116.',
     theme: 'research',
-    experiments: ['element116', 'kernreaktor', 'synthese']
+    experiments: ['element116', 'kernreaktor', 'synthese', 'isotope', 'detector', 'superheavy'],
+    electronConfiguration: [2, 8, 18, 32, 32, 24, 2]
   },
 
   {
@@ -1938,7 +1950,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Tennessee (USA). Superheavy-Elemente-Forschung.',
     theme: 'research',
-    experiments: ['superheavy', 'inselfstabilität', 'synthese']
+    experiments: ['superheavy', 'inselfstabilität', 'synthese', 'isotope', 'detector', 'halogenanalogue'],
+    electronConfiguration: [2, 8, 18, 32, 32, 25, 2]
   },
 
   {
@@ -1953,7 +1966,8 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Schwerstes natürliches Element. Namensgeber: Yuri Oganessian. Insel der Stabilität gesucht.',
     theme: 'discovery',
-    experiments: ['inselfstabilität', 'insel', 'theoretisch']
+    experiments: ['inselfstabilität', 'insel', 'theoretisch', 'synthesis', 'isotope', 'noblelike'],
+    electronConfiguration: [2, 8, 18, 32, 32, 26, 2]
   }
 ];
 
