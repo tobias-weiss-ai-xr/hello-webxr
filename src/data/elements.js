@@ -846,7 +846,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Bester elektrischer Leiter aller Metalle. Für Schmuck, Elektronik und Fotografie.',
     theme: 'precious',
-    experiments: ['elektrisch', 'schmuck', 'fotografie'],
+    experiments: ['elektrisch', 'schmuck', 'fotografie', 'antibacterial', 'mirror', 'electronics'],
     electronConfiguration: [2, 8, 18, 18, 1]
   },
 
@@ -878,7 +878,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metal,
     description: 'Weiches Metall. Für ITO-Schichten (Touchscreens), Transistoren und Lötzinn.',
     theme: 'semiconductor',
-    experiments: ['touchscreen', 'lötinn', 'halbleiter'],
+    experiments: ['touchscreen', 'lötinn', 'halbleiter', 'solar', 'led', 'transparent'],
     electronConfiguration: [2, 8, 18, 18, 3]
   },
 
@@ -894,7 +894,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metal,
     description: 'Historisch wichtiges Metall. Für Lötlegierungen, Bronze und Konservendosen.',
     theme: 'history',
-    experiments: ['löten', 'bronze', 'konserven'],
+    experiments: ['löten', 'bronze', 'konserven', 'alloy', 'coating', 'nanomaterial'],
     electronConfiguration: [2, 8, 18, 18, 4]
   },
 
@@ -910,7 +910,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metalloid,
     description: 'Halbmetall mit ungewöhnlichen Eigenschaften. Für Flammhemmer und Legierungen.',
     theme: 'industry',
-    experiments: ['flammhemmer', 'legierung', 'halbleiter'],
+    experiments: ['flammhemmer', 'legierung', 'halbleiter', 'fireproof', 'polymer', 'electronics'],
     electronConfiguration: [2, 8, 18, 18, 5]
   },
 
@@ -926,7 +926,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metalloid,
     description: 'Seltenes, seltenes Halbmetall. Für Solarzellen und Legierungen.',
     theme: 'semiconductor',
-    experiments: ['solarzelle', 'legierung', 'cdte'],
+    experiments: ['solarzelle', 'legierung', 'cdte', 'infrared', 'thermoelectric', 'phasechange'],
     electronConfiguration: [2, 8, 18, 18, 6]
   },
 
@@ -942,7 +942,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.halogen,
     description: 'Wichtigstes Spurenelement für Schilddrüse. Dunkle Substanz mit charakteristischem Geruch.',
     theme: 'biological',
-    experiments: ['schilddrüse', 'antiseptik', 'sublimation'],
+    experiments: ['schilddrüse', 'antiseptik', 'sublimation', 'medical', 'contrast', 'nutrition'],
     electronConfiguration: [2, 8, 18, 18, 7]
   },
 
@@ -958,7 +958,7 @@ export const ELEMENTS = [
     color: NOBLE_GAS_COLORS.Xe,
     description: 'Schweres Edelgas. Für Ionentriebwerke, Narkose und Blitzlichtlampen.',
     theme: 'space',
-    experiments: ['ionentrieb', 'narkose', 'laser'],
+    experiments: ['ionentrieb', 'narkose', 'laser', 'deepsea', 'flash', 'medical'],
     electronConfiguration: [2, 8, 18, 18, 8]
   },
 
