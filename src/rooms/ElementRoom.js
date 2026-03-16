@@ -30,6 +30,8 @@ var orbitTrails = [];
 var backButton;
 var helpPanel;
 var themeCleanup = null;
+var comparisonRoom = null;  // Element symbol for comparison room
+var comparisonActive = false;
 
 // Experiment instances storage - maps expId to experiment instance
 var experimentInstances = {};
@@ -216,6 +218,36 @@ function createAtomModel(ctx, element) {
       };
 
       atomModel.add(electron);
+    }
+
+    // Add shell label (K, L, M, N, etc.)
+    const shellLetters = ['K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+    if (shellIndex < shellLetters.length) {
+      const labelEntity = ctx.world.createEntity();
+      const labelGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8);
+      const labelMat = new THREE.MeshBasicMaterial({
+        color: element.color,
+        transparent: true,
+        opacity: 0.8
+      });
+      const label = new THREE.Mesh(labelGeo, labelMat);
+      label.rotation.x = Math.PI / 2;
+      label.position.set(shellRadius + 0.8, (shellIndex - 1) * 0.6, 0);
+      label.userData.shellLabel = true;
+      atomModel.add(label);
+
+      // Add text label using troika-three-text
+      labelEntity
+        .addComponent(Text, {
+          text: shellLetters[shellIndex],
+          color: element.color,
+          fontSize: 0.5,
+          anchor: 'center',
+          baseline: 'middle',
+          textAlign: 'center'
+        })
+        .addComponent(ParentObject3D, {value: label})
+        .addComponent(Position, {x: 0, y: 0.2, z: 0.15});
     }
   });
 
@@ -818,6 +850,7 @@ export function exit(ctx) {
   ctx.raycontrol.removeState('elementTeleport');
   ctx.raycontrol.removeState('elementInfoPanel');
   ctx.raycontrol.removeState('elementBackToLobby');
+  ctx.raycontrol.removeState('elementCompare');
   ctx.scene.remove(scene);
   
   // Cleanup theme resources (lights, particles)
@@ -825,6 +858,10 @@ export function exit(ctx) {
     themeCleanup();
     themeCleanup = null;
   }
+  
+  // Reset comparison mode
+  comparisonRoom = null;
+  comparisonActive = false;
   
   // Reset all experiment instances
   var expIds = Object.keys(experimentInstances);
@@ -1208,6 +1245,140 @@ function executeCrystalExperiment(ctx, expId, delta, time) {
 }
 
 function executeGeneralExperiment(ctx, expId, delta, time) {
+}
+
+function createCompareButton(ctx) {
+  if (!elementData) return;
+
+  const compareGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.3, 16);
+  const compareMat = new THREE.MeshBasicMaterial({
+    color: 0xFFC107,
+    transparent: true,
+    opacity: 0.7
+  });
+  const compareBtn = new THREE.Mesh(compareGeo, compareMat);
+  compareBtn.position.set(4, 0.5, -3.5);
+  compareBtn.name = 'compareBtn';
+  scene.add(compareBtn);
+
+  // Text label
+  const textEntity = ctx.world.createEntity();
+  textEntity
+    .addComponent(Text, {
+      text: compareActive ? 'Deactivate\nComparison' : 'Enable\nComparison',
+      color: '#ffffff',
+      fontSize: 0.08,
+      anchor: 'center',
+      baseline: 'middle',
+      textAlign: 'center'
+    })
+    .addComponent(ParentObject3D, {value: compareBtn})
+    .addComponent(Position, {x: 0, y: -0.2, z: 0.2});
+
+  // Create comparison selector panel
+  comparisonSelectorPanel = createComparisonSelector(ctx);
+
+  ctx.raycontrol.addState('elementCompare', {
+    colliderMesh: compareBtn,
+    onSelectStart: () => {
+      compareActive = !compareActive;
+      comparisonActive = compareActive;
+      if (compareActive) {
+        showComparisonSelector(ctx);
+      } else if (comparisonSelectorPanel) {
+        scene.remove(comparisonSelectorPanel);
+        comparisonSelectorPanel = null;
+      }
+    }
+  });
+}
+
+var comparisonSelectorPanel = null;
+
+function createComparisonSelector(ctx) {
+  const panelGeo = new THREE.BoxGeometry(4, 5, 0.1);
+  const panelMat = new THREE.MeshBasicMaterial({
+    color: 0x2a2a3a,
+    transparent: true,
+    opacity: 0.95
+  });
+  const panel = new THREE.Mesh(panelGeo, panelMat);
+  panel.position.set(-3, 0.5, 0);
+  scene.add(panel);
+
+  const titleGeo = new THREE.PlaneGeometry(3.8, 0.6);
+  const titleMat = new THREE.MeshBasicMaterial({color: 0xFFC107});
+  const titlePlate = new THREE.Mesh(titleGeo, titleMat);
+  titlePlate.position.set(0, 2.45, 0.06);
+  titlePlate.name = 'compareTitlePlate';
+  panel.add(titlePlate);
+
+  const titleTextEntity = ctx.world.createEntity();
+  titleTextEntity
+    .addComponent(Text, {
+      text: 'Room Comparison Mode',
+      color: '#ffffff',
+      fontSize: 0.15,
+      anchor: 'center',
+      baseline: 'middle',
+      textAlign: 'center'
+    })
+    .addComponent(ParentObject3D, {value: titlePlate})
+    .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+  const descPlate = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.6, 0.4),
+    new THREE.MeshBasicMaterial({color: 0x1a1a2a})
+  );
+  descPlate.position.set(0, -2.2, 0.06);
+  descPlate.name = 'compareClosePlate';
+  panel.add(descPlate);
+
+  const closeTextEntity = ctx.world.createEntity();
+  closeTextEntity
+    .addComponent(Text, {
+      text: 'Press ESC or click Back to close',
+      color: '#cccccc',
+      fontSize: 0.08,
+      anchor: 'center',
+      baseline: 'middle',
+      textAlign: 'center'
+    })
+    .addComponent(ParentObject3D, {value: descPlate})
+    .addComponent(Position, {x: 0, y: 0, z: 0.01});
+
+  return panel;
+}
+
+function showComparisonSelector(ctx) {
+  ctx.raycontrol.addState('compareSelector', {
+    colliderMesh: scene.children,
+    onSelectStart: (intersection, e) => {
+      if (intersection.object.name === 'compareBtn') return; // Allow toggling
+
+      // Find selected element from raycast
+      const elementSymbol = intersection.object.userData.elementSymbol;
+      if (elementSymbol) {
+        comparisonRoom = elementSymbol;
+        const selectedEl = ELEMENTS.find(e => e.symbol === elementSymbol);
+        if (selectedEl) {
+          infoPanelMesh.userData.compareRoomSymbol = elementSymbol;
+          infoPanelMesh.userData.compareRoomData = selectedEl;
+
+          // Update info panel to show both elements
+          const combinedText = `${elementData.symbol} - ${elementData.name}\n\nvs.\n\n${elementSymbol} - ${selectedEl.name}\n\nAtomic Numbers:\n${elementData.atomicNumber} vs. ${selectedEl.atomicNumber}\n\nElectron Configurations:\n${elementData.electronConfiguration.join(', ')} vs. ${selectedEl.electronConfiguration.join(', ')}`;
+
+          const titleEntity = infoPanelMesh.userData.textEntities[0];
+          if (titleEntity && titleEntity.hasComponent(Text)) {
+            titleEntity.getComponent(Text).text = combinedText;
+          }
+        }
+        scene.remove(comparisonSelectorPanel);
+        comparisonSelectorPanel = null;
+        comparisonActive = false;
+      }
+    }
+  });
 }
 
 export function execute(ctx, delta, time) {

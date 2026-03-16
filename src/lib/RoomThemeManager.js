@@ -226,6 +226,15 @@ class RoomThemeManager {
     // Set scene background
     scene.background = new THREE.Color(theme.backgroundColor);
     
+    // Optional: Add depth fog based on element group
+    if (elementData) {
+      const fogDensity = this.calculateFogDensity(elementData);
+      if (fogDensity > 0) {
+        scene.fog = new THREE.FogExp2(theme.backgroundColor, fogDensity);
+        addedObjects.fog = true;
+      }
+    }
+    
     // Add ambient light
     var ambientConfig = theme.lightingPreset.ambient;
     var ambientLight = new THREE.AmbientLight(
@@ -260,16 +269,24 @@ class RoomThemeManager {
       addedObjects.push(particles);
     }
     
+    // Create element-specific particles
+    var elementParticles = this.createElementParticles(theme, elementData);
+    if (elementParticles) {
+      scene.add(elementParticles);
+      addedObjects.push(elementParticles);
+    }
+    
     console.log('[RoomThemeManager] Theme "' + theme.name + '" applied');
     if (elementData) {
       console.log('[RoomThemeManager] Element: ' + (elementData.symbol || 'unknown'));
     }
     
-    // Return theme and cleanup function
+    // Return theme, cleanup function, and particle objects
     var self = this;
     return {
       theme: theme,
       particles: particles,
+      elementParticles: elementParticles,
       cleanup: function() {
         for (var j = 0; j < addedObjects.length; j++) {
           scene.remove(addedObjects[j]);
@@ -279,6 +296,10 @@ class RoomThemeManager {
           if (addedObjects[j].material) {
             addedObjects[j].material.dispose();
           }
+        }
+        // Dispose fog if present
+        if (scene.fog) {
+          scene.fog = null;
         }
         addedObjects = [];
       }
@@ -326,14 +347,327 @@ class RoomThemeManager {
     
     return new THREE.Points(geometry, material);
   }
+  
+  /**
+   * Create element-specific particle effects
+   * @param {Object} theme - Theme configuration
+   * @param {Object} elementData - Element data for customization
+   * @returns {THREE.Points|null} Element particle system or null
+   */
+   createElementParticles(theme, elementData) {
+     if (!elementData) return null;
+     
+     const elementGroup = elementData.group;
+     const atomicNumber = elementData.atomicNumber;
+     
+     // Element-specific particle behaviors
+     if (elementGroup === 'alkali' || elementGroup === 'alkalineEarth') {
+       // Reactive metals: explosive, fast-moving particles
+       return this.createExplosiveParticles(elementData);
+     } else if (elementGroup === 'nobleGas') {
+       // Noble gases: calm, floating particles
+       return this.createCalmFloatingParticles(elementData);
+     } else if (elementGroup === 'halogen') {
+       // Halogens: swirling, gas-like particles
+       return this.createGaseousParticles(elementData);
+     } else if (elementGroup === 'transition') {
+       // Transition metals: dense, metallic particles
+       return this.createMetallicParticles(elementData);
+     } else if (elementGroup === 'lanthanide' || elementGroup === 'actinide') {
+       // Rare earths: mysterious, glowing particles + radioactivity
+       return this.createMysticalParticles(elementData);
+     } else if (elementGroup === 'nonmetal' || elementGroup === 'metalloid') {
+       // Non-metals: organic, flowing particles
+       return this.createOrganicParticles(elementData);
+     }
+     
+     return null;
+   }
+  
+   // Alkali metals: explosive particle effect
+   createExplosiveParticles(elementData) {
+     const particleCount = 50;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     const velocities = [];
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       // Start from center outward
+       const radius = Math.random() * 2;
+       const theta = Math.random() * Math.PI * 2;
+       
+       positions[i3] = Math.cos(theta) * radius;
+       positions[i3 + 1] = (Math.random() - 0.5) * 2;
+       positions[i3 + 2] = Math.sin(theta) * radius;
+       
+       velocities.push({
+         x: (Math.random() - 0.5) * 0.2,
+         y: (Math.random() - 0.5) * 0.2,
+         z: (Math.random() - 0.5) * 0.2
+       });
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     geometry.userData.velocities = velocities;
+     
+     const particleColor = new THREE.Color(elementData.color);
+     const material = new THREE.PointsMaterial({
+       size: 0.06,
+       color: particleColor,
+       transparent: true,
+       opacity: 0.7,
+       blending: THREE.AdditiveBlending
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
+  
+   // Noble gases: calm floating particles
+   createCalmFloatingParticles(elementData) {
+     const particleCount = 80;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     const drift = [];
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       const radius = 3 + Math.random() * 5;
+       const theta = Math.random() * Math.PI * 2;
+       const y = -2 + Math.random() * 4;
+       
+       positions[i3] = Math.cos(theta) * radius;
+       positions[i3 + 1] = y;
+       positions[i3 + 2] = Math.sin(theta) * radius;
+       
+       drift.push({
+         x: (Math.random() - 0.5) * 0.005,
+         y: (Math.random() - 0.5) * 0.002,
+         z: (Math.random() - 0.5) * 0.005
+       });
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     geometry.userData.drift = drift;
+     
+     const material = new THREE.PointsMaterial({
+       size: 0.03,
+       color: elementData.color,
+       transparent: true,
+       opacity: 0.4,
+       blending: THREE.AdditiveBlending
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
+  
+   // Halogens: swirling gaseous particles
+   createGaseousParticles(elementData) {
+     const particleCount = 100;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     const swirls = [];
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       const radius = 2 + Math.random() * 3;
+       const theta = (i / particleCount) * Math.PI * 2;
+       const y = (Math.random() - 0.5) * 3;
+       const swirlAngle = (i / particleCount) * Math.PI * 4;
+       
+       positions[i3] = Math.cos(theta + swirlAngle) * radius;
+       positions[i3 + 1] = y + Math.sin(theta * 5) * 0.5;
+       positions[i3 + 2] = Math.sin(theta + swirlAngle) * radius;
+       
+       swirls.push({
+         angle: theta,
+         speed: 0.5 + Math.random() * 0.5,
+         radius: radius
+       });
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     geometry.userData.swirls = swirls;
+     
+     const material = new THREE.PointsMaterial({
+       size: 0.04,
+       color: elementData.color,
+       transparent: true,
+       opacity: 0.5,
+       blending: THREE混合Blending
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
+  
+   // Transition metals: dense metallic particles
+   createMetallicParticles(elementData) {
+     const particleCount = 60;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       const radius = 2 + Math.random() * 4;
+       const theta = Math.random() * Math.PI * 2;
+       const y = (Math.random() - 0.5) * 2;
+       
+       positions[i3] = Math.cos(theta) * radius;
+       positions[i3 + 1] = y;
+       positions[i3 + 2] = Math.sin(theta) * radius;
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     
+     const material = new THREE.PointsMaterial({
+       size: 0.05,
+       color: elementData.color,
+       transparent: true,
+       opacity: 0.6,
+       metalness: 0.8,
+       roughness: 0.2
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
+  
+   // Mystical particles for rare earths and actinides
+   createMysticalParticles(elementData) {
+     const particleCount = 90;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     const pulses = [];
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       const radius = 1.5 + Math.random() * 3.5;
+       const theta = Math.random() * Math.PI * 2;
+       const phi = Math.acos(2 * Math.random() - 1);
+       const r = Math.cbrt(Math.random()) * radius;
+       
+       const x = r * Math.sin(phi) * Math.cos(theta);
+       const y = r * Math.sin(phi) * Math.sin(theta);
+       const z = r * Math.cos(phi);
+       
+       positions[i3] = x;
+       positions[i3 + 1] = y;
+       positions[i3 + 2] = z;
+       
+       pulses.push({
+         startTime: Math.random() * 10,
+         duration: 2 + Math.random() * 3
+       });
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     geometry.userData.pulses = pulses;
+     
+     const material = new THREE.PointsMaterial({
+       size: 0.04,
+       color: 0x88ff88,
+       transparent: true,
+       opacity: 0.6,
+       blending: THREE.AdditiveBlending
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
+  
+   // Organic particles for non-metals
+   createOrganicParticles(elementData) {
+     const particleCount = 70;
+     const geometry = new THREE.BufferGeometry();
+     const positions = new Float32Array(particleCount * 3);
+     const curves = [];
+     
+     for (let i = 0; i < particleCount; i++) {
+       const i3 = i * 3;
+       const curveProgress = i / particleCount;
+       const radius = 2 + Math.sin(curveProgress * Math.PI * 4) * 1.5;
+       const theta = curveProgress * Math.PI * 2 * 3;
+       const y = Math.sin(curveProgress * Math.PI * 2) * 1.5;
+       
+       positions[i3] = Math.cos(theta) * radius;
+       positions[i3 + 1] = y;
+       positions[i3 + 2] = Math.sin(theta) * radius;
+       
+       curves.push({
+         phase: curveProgress * Math.PI * 2,
+         speed: 0.01 + Math.random() * 0.01
+       });
+     }
+     
+     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+     geometry.userData.curves = curves;
+     
+     const material = new THREE.PointsMaterial({
+       size: 0.045,
+       color: elementData.color,
+       transparent: true,
+       opacity: 0.55,
+       blending: THREE.NormalBlending
+     });
+     
+     const particles = new THREE.Points(geometry, material);
+     return particles;
+   }
 
   /**
-   * Register a custom theme
-   * @param {string} name - Theme name
-   * @param {Object} config - Theme configuration
-   * @returns {boolean} Success status
+   * Calculate fog density based on element properties
+   * @param {Object} elementData - Element data
+   * @returns {number} Fog density value
    */
-  registerTheme(name, config) {
+  calculateFogDensity(elementData) {
+    const elementGroup = elementData.group;
+    const atomicNumber = elementData.atomicNumber;
+    
+    // Elements with higher atomic numbers get more intense fog (atmospheric depth feel)
+    let baseDensity = 0.005 + (atomicNumber * 0.0001);
+    
+    // Group-specific modifications
+    switch (elementGroup) {
+      case 'nobleGas':
+        // Noble gases: thin, wispy fog
+        baseDensity *= 0.5;
+        break;
+      case 'halogen':
+        // Halogens: slightly denser
+        baseDensity *= 1.5;
+        break;
+      case 'alkali':
+      case 'alkalineEarth':
+        // Reactive metals: visible reaction atmosphere
+        baseDensity *= 1.8;
+        break;
+      case 'actinide':
+      case 'lanthanide':
+        // Rare/actinide elements: mysterious dark fog
+        baseDensity = 0.02 + (Math.random() * 0.005);
+        break;
+      case 'transition':
+        // Transition metals: moderate density
+        baseDensity *= 1.2;
+        break;
+      default:
+        break;
+    }
+    
+    // Cap at reasonable maximum
+    return Math.min(baseDensity, 0.05);
+  }
+
+  /**
+    * Register a custom theme
+    * @param {string} name - Theme name
+    * @param {Object} config - Theme configuration
+    * @returns {boolean} Success status
+    */
+   registerTheme(name, config) {
     if (!name || typeof name !== 'string') {
       console.warn('[RoomThemeManager] Invalid theme name');
       return false;

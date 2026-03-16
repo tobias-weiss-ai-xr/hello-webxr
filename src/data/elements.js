@@ -40,7 +40,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Das häufigste Element im Universum. Bildet 75% der Masse der Sonne.',
     theme: 'cosmic',
-    experiments: ['knallgas', 'fusion', 'fuelcell'],
+    experiments: ['knallgas', 'fusion', 'fuelcell', 'waterformation', 'organicbond'],
     electronConfiguration: [1]
   },
 
@@ -57,7 +57,7 @@ export const ELEMENTS = [
     color: NOBLE_GAS_COLORS.He,
     description: 'Das zweithäufigste Element im Universum. Wurde zuerst im Sonnenspektrum entdeckt.',
     theme: 'solar',
-    experiments: ['superfluid', 'voiceshift'],
+    experiments: ['superfluid', 'voiceshift', 'balloonlift', 'cryogenic', 'spectroscopy'],
     electronConfiguration: [2]
   },
 
@@ -74,7 +74,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Das leichteste Metall. Wichtiger Bestandteil von Lithium-Ionen-Batterien.',
     theme: 'energy',
-    experiments: ['waterReaction', 'battery'],
+    experiments: ['waterReaction', 'battery', 'thermalexpansion', 'rockweathering', 'neuropsychology'],
     electronConfiguration: [2, 1]
   },
 
@@ -125,7 +125,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Das Element des Lebens. Grundbaustein aller organischen Verbindungen.',
     theme: 'life',
-    experiments: ['diamond', 'graphite', 'dna'],
+    experiments: ['diamond', 'graphite', 'dna', 'carbonation', 'coalformation', 'graphene', 'fullerene'],
     electronConfiguration: [2, 4]
   },
 
@@ -159,7 +159,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Zweithäufigstes Element im Universum. Notwendig für Atmung und Verbrennung.',
     theme: 'breath',
-    experiments: ['combustion', 'ozone', 'photosynthesis'],
+    experiments: ['combustion', 'ozone', 'photosynthesis', 'hypoxia', 'oxidation', 'peroxide'],
     electronConfiguration: [2, 6]
   },
 
@@ -210,7 +210,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkali,
     description: 'Silberglänzendes Metall, butterweich. Basis für Speisesalz (NaCl).',
     theme: 'kitchen',
-    experiments: ['water', 'flame', 'saltcrystal'],
+    experiments: ['water', 'flame', 'saltcrystal', 'neuralsignals', 'oilrefining', 'heattransfer'],
     electronConfiguration: [2, 8, 1]
   },
 
@@ -227,7 +227,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkalineEarth,
     description: 'Blendend weißes Licht beim Verbrennen. Kommt in Chlorophyll vor.',
     theme: 'light',
-    experiments: ['flash', 'chlorophyll', 'alloy'],
+    experiments: ['flash', 'chlorophyll', 'alloy', 'antacid', 'airbag', 'photosynthesis'],
     electronConfiguration: [2, 8, 2]
   },
 
@@ -244,7 +244,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metal,
     description: 'Das häufigste Metall der Erdkruste. Leicht und korrosionsbeständig.',
     theme: 'industry',
-    experiments: ['hallheroult', 'thermit', 'foil'],
+    experiments: ['hallheroult', 'thermit', 'foil', 'aircraft', 'cans', 'anodizing'],
     electronConfiguration: [2, 8, 3]
   },
 
@@ -261,7 +261,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.metalloid,
     description: 'Zweithäufigstes Element der Erdkruste. Basis aller modernen Elektronik.',
     theme: 'silicon',
-    experiments: ['transistor', 'solar', 'sand'],
+    experiments: ['transistor', 'solar', 'sand', 'chipmanufacturing', 'silicone', 'semiconductor', 'photoetching'],
     electronConfiguration: [2, 8, 4]
   },
 
@@ -278,7 +278,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Glüht weiß im Dunkeln. Wichtiger Bestandteil von DNA und ATP.',
     theme: 'fire',
-    experiments: ['white', 'red', 'match'],
+    experiments: ['white', 'red', 'match', 'fertilizer', 'dna', 'matchhead'],
     electronConfiguration: [2, 8, 5]
   },
 
@@ -295,7 +295,7 @@ export const ELEMENTS = [
     color: 0xFFC107,
     description: 'Gelbes Element mit charakteristischem Geruch. Kommt in Vulkanen vor.',
     theme: 'volcano',
-    experiments: ['burning', 'gunpowder', 'bromo'],
+    experiments: ['burning', 'gunpowder', 'bromo', 'acidrain', 'vulcano', 'sulfation'],
     electronConfiguration: [2, 8, 6]
   },
 
@@ -312,7 +312,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.halogen,
     description: 'Grün-gelbes Giftgas. Wird zur Wasserdesinfektion verwendet.',
     theme: 'swimming',
-    experiments: ['disinfection', 'salt', 'gas'],
+    experiments: ['disinfection', 'salt', 'gas', 'bleach', 'plastics', 'toxicology'],
     electronConfiguration: [2, 8, 7]
   },
 
@@ -329,7 +329,7 @@ export const ELEMENTS = [
     color: NOBLE_GAS_COLORS.Ar,
     description: 'Häufigstes Edelgas (1% Atmosphäre). Wird für WIG-Schweißen verwendet.',
     theme: 'welding',
-    experiments: ['plasma', 'inert'],
+    experiments: ['plasma', 'inert', 'lightbulb', 'deepsea', 'star'],
     electronConfiguration: [2, 8, 8]
   },
 
@@ -346,7 +346,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.alkalineEarth,
     description: 'Bauknochen des Lebens. Fünft-häufigstes Element der Erdkruste.',
     theme: 'skeleton',
-    experiments: ['burning', 'bones', 'limestone'],
+    experiments: ['burning', 'bones', 'limestone', 'teeth', 'bloodclot', 'limemaking'],
     electronConfiguration: [2, 8, 8, 2]
   },
 
@@ -363,7 +363,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Wichtigstes Metall der Menschheit. Grundbaustein von Stahl und Hämoglobin.',
     theme: 'forge',
-    experiments: ['magnet', 'rust', 'steel'],
+    experiments: ['magnet', 'rust', 'steel', 'bloodoxygen', 'coreplanet', 'meteorite', 'hemoglobin'],
     electronConfiguration: [2, 8, 14, 2]
   },
 
@@ -397,7 +397,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Edelstes Metall. Einziges gelbes Metall (relativistische Effekte).',
     theme: 'treasure',
-    experiments: ['ductility', 'alloys', 'electroplating'],
+    experiments: ['ductility', 'alloys', 'electroplating', 'electronics', 'dentistry', 'cathodeparticles', 'relativistic'],
     electronConfiguration: [2, 8, 18, 32, 18, 1]
   },
 
@@ -414,7 +414,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Schwerstes häufiges natürliches Element. Basis für Kernenergie.',
     theme: 'nuclear',
-    experiments: ['fission', 'decay', 'fluorescence'],
+    experiments: ['fission', 'decay', 'fluorescence', 'enrichment', 'uraniumglass', 'radiation', 'breederreactor'],
     electronConfiguration: [2, 8, 18, 32, 21, 9, 2]
   },
 
@@ -462,7 +462,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Seltenes Übergangsmetall. Wird in Sportgeräten und Hochleistungslegierungen verwendet.',
     theme: 'aerospace',
-    experiments: ['alloy', 'magnetic', 'sport'],
+    experiments: ['alloy', 'magnetic', 'sport', 'aerospace', 'lightweight', 'uvfilter'],
     electronConfiguration: [2, 8, 9, 2]
   },
 
@@ -478,7 +478,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Korrosionsbeständiges Metall mit hohem Schmelzpunkt. Für Luft- und Raumfahrtindustrie.',
     theme: 'aerospace',
-    experiments: ['biokompatibilität', 'legierung', 'oxid'],
+    experiments: ['biokompatibilität', 'legierung', 'oxid', 'aircraft', 'medical', 'pigment'],
     electronConfiguration: [2, 8, 10, 2]
   },
 
@@ -494,7 +494,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Hartes, grau-weißes Metall. Für Werkzeugstahl und Titanlegierungen.',
     theme: 'industry',
-    experiments: ['stahl', 'legierung', 'katalysator'],
+    experiments: ['stahl', 'legierung', 'katalysator', 'battery', 'corrosion', 'steel'],
     electronConfiguration: [2, 8, 11, 2]
   },
 
@@ -510,7 +510,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Glänzendes, korrosionsbeständiges Metall. Basis von Edelstahl und Verchromung.',
     theme: 'industry',
-    experiments: ['edelstahl', 'verchromung', 'pigment'],
+    experiments: ['edelstahl', 'verchromung', 'pigment', 'stainless', 'chrome', 'cancer'],
     electronConfiguration: [2, 8, 13, 1]
   },
 
@@ -524,9 +524,9 @@ export const ELEMENTS = [
     block: 'd',
     groupNumber: 7,
     color: GROUP_COLORS.transition,
-    description: 'Wichtig für Stahlherstellung. Bioelement für Photosynthese.',
+    description: 'Schweres, graues Metall. Wichtig für Stahlhärte und生物学.',
     theme: 'industry',
-    experiments: ['stahl', 'photosynthese', 'batterie'],
+    experiments: ['härten', 'stahl', 'manganes', 'battery', 'photosynthesis', 'alloy'],
     electronConfiguration: [2, 8, 13, 2]
   },
 
@@ -542,7 +542,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Blau-graues, ferromagnetisches Metall. Für Supraleger, Magnete und Lithium-Ionen-Batterien.',
     theme: 'technology',
-    experiments: ['magnet', 'batterie', 'legierung'],
+    experiments: ['magnet', 'batterie', 'legierung', 'pigment', 'vitamin', 'recycling'],
     electronConfiguration: [2, 8, 15, 2]
   },
 
@@ -558,7 +558,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Silbrig-weißes, korrosionsbeständiges Metall. Münzmetall und für Legierungen.',
     theme: 'technology',
-    experiments: ['münzen', 'legierung', 'katalysator'],
+    experiments: ['münzen', 'legierung', 'katalysator', 'alloy', 'battery', 'plating'],
     electronConfiguration: [2, 8, 16, 2]
   },
 
@@ -574,7 +574,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.transition,
     description: 'Reaktionsfreies Metall. Für galvanische Zellen, Verzinkung und Zink-Legierungen.',
     theme: 'technology',
-    experiments: ['galvanik', 'verzinkung', 'batterie'],
+    experiments: ['galvanik', 'verzinkung', 'batterie', 'immune', 'antiseptic', 'alloy'],
     electronConfiguration: [2, 8, 18, 2]
   },
 
@@ -638,7 +638,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.nonmetal,
     description: 'Wichtiges Spurenelement. Halbleiter und für Glühbirren.',
     theme: 'semiconductor',
-    experiments: ['glühbirne', 'photovoltaik', 'toxisch'],
+    experiments: ['glühbirne', 'photovoltaik', 'toxisch', 'antioxidant', 'photography', 'solar'],
     electronConfiguration: [2, 8, 18, 6]
   },
 
@@ -654,7 +654,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.halogen,
     description: 'Einziges flüssige Nichtmetall bei Raumtemperatur. Rote Farbe, stechender Geruch.',
     theme: 'liquid',
-    experiments: ['flüssig', 'flammmittel', 'giftig'],
+    experiments: ['flüssig', 'flammmittel', 'giftig', 'bromide', 'medicinal', 'drilling'],
     electronConfiguration: [2, 8, 18, 7]
   },
 
@@ -670,7 +670,7 @@ export const ELEMENTS = [
     color: NOBLE_GAS_COLORS.Kr,
     description: 'Edelgas mit hoher Dichte. Für Blitzlichtlampen und Laser.',
     theme: 'lighting',
-    experiments: ['laser', 'neon', 'isoliert'],
+    experiments: ['laser', 'neon', 'isoliert', 'illuminator', 'planetary', 'deepfreeze'],
     electronConfiguration: [2, 8, 18, 8]
   },
 
