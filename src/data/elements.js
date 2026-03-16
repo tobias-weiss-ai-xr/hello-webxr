@@ -1534,7 +1534,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Für Flüssigsalzreaktoren. Sicherer und abundanter als Uran. Mythologisch benannt.',
     theme: 'nuclear',
-    experiments: ['flüssigsalzreaktor', 'sicherheit', 'kernenergie'],
+    experiments: ['flüssigsalzreaktor', 'sicherheit', 'kernenergie', 'waste', 'mining', 'fuel'],
     electronConfiguration: [2, 8, 18, 32, 18, 10, 2]
   },
 
@@ -1550,7 +1550,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Selteneres, radioaktives Element. Für Kernreaktor-Forschung.',
     theme: 'research',
-    experiments: ['forschung', 'kernreaktor', 'urananreicherung'],
+    experiments: ['forschung', 'kernreaktor', 'urananreicherung', 'detector', 'dating', 'waste'],
     electronConfiguration: [2, 8, 18, 32, 20, 9, 2]
   },
 
@@ -1566,7 +1566,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Erste in Atomversuchen produziert. Für Plutonium-Herstellung.',
     theme: 'nuclear',
-    experiments: ['künstlich', 'plutonium', 'reaktor'],
+    experiments: ['künstlich', 'plutonium', 'reaktor', 'detector', 'space', 'fuelcycle'],
     electronConfiguration: [2, 8, 18, 32, 22, 9, 2]
   },
 
@@ -1582,7 +1582,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Tödlichste Substanz. Mikrogramm können töten. Für Kernwaffen und Raumfahrt-RTGs.',
     theme: 'nuclear',
-    experiments: ['kernwaffen', 'raumfahrt', 'gefahr'],
+    experiments: ['kernwaffen', 'raumfahrt', 'gefahr', 'rtg', 'breeder', 'isotope'],
     electronConfiguration: [2, 8, 18, 32, 24, 8, 2]
   },
 
@@ -1598,7 +1598,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Entdeckt in H-Bomben-Fallout (Ivy Mike 1952). Für Rauchdetektoren.',
     theme: 'space',
-    experiments: ['rauchdetektor', 'h-bombe', 'spuren'],
+    experiments: ['rauchdetektor', 'h-bombe', 'spuren', 'detector', 'smoke', 'spacecraft'],
     electronConfiguration: [2, 8, 18, 32, 25, 8, 2]
   },
 
@@ -1614,7 +1614,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Namensgeber: Pierre und Marie Curie. Für Raumschiff-RTGs.',
     theme: 'space',
-    experiments: ['raumfahrt', 'curie', 'kernenergie'],
+    experiments: ['raumfahrt', 'curie', 'kernenergie', 'rtg', 'spacecraft', 'detector'],
     electronConfiguration: [2, 8, 18, 32, 25, 9, 2]
   },
 
@@ -1630,7 +1630,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Sehr kurzlebig. Für wissenschaftliche Forschung.',
     theme: 'research',
-    experiments: ['forschung', 'kernchemie', 'instabil'],
+    experiments: ['forschung', 'kernchemie', 'instabil', 'synthesis', 'detector', 'isotope'],
     electronConfiguration: [2, 8, 18, 32, 27, 8, 2]
   },
 
@@ -1646,7 +1646,7 @@ export const ELEMENTS = [
     color: GROUP_COLORS.actinide,
     description: 'Künstliches Element. Für Neutronenquellen und Elementsynthese.',
     theme: 'nuclear',
-    experiments: ['neutronenquelle', 'synthese', 'zerfall'],
+    experiments: ['neutronenquelle', 'synthese', 'zerfall', 'detector', 'nuclear', 'superheavy'],
     electronConfiguration: [2, 8, 18, 32, 28, 8, 2]
   },
 
