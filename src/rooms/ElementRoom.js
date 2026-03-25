@@ -6,6 +6,7 @@ import { AudioManager } from '../core/AudioManager.js';
 import { createElementDisplay } from '../lib/modelLoader.js';
 import roomThemeManager from '../lib/RoomThemeManager.js';
 import i18nManager from '../lib/I18nManager.js';
+import RoomComparisonManager from '../lib/RoomComparisonManager.js';
 
 // Experiment classes
 import ReactionExperiment from '../experiments/ReactionExperiment.js';
@@ -30,6 +31,7 @@ var orbitTrails = [];
 var backButton;
 var helpPanel;
 var themeCleanup = null;
+var comparisonManager = null;
 
 // Experiment instances storage - maps expId to experiment instance
 var experimentInstances = {};
@@ -111,6 +113,7 @@ async function setupElement(ctx, elementSymbol) {
   createExperimentInstances(ctx, elementData);
   createTeleportZone(ctx);
   createBackButton(ctx);
+  createComparisonButton(ctx);
 
   // Create help panel
   helpPanel = createHelpPanel(ctx, {
@@ -441,6 +444,92 @@ function createBackButton(ctx) {
   backButton.position.set(0, 2.8, -4);
   backButton.name = 'backButton';
   scene.add(backButton);
+}
+
+function createComparisonButton(ctx) {
+  const compareBtn = RoomComparisonManager.createCompareButton(scene, {x: 0, y: 3.2, z: -4}, 0x4a90e2);
+  
+  comparisonManager = {
+    active: false,
+    currentElement: elementData,
+    selectedElement: null,
+    compareButton: compareBtn,
+    selectorPanel: null
+  };
+  
+  // Add RayControl state for comparison button
+  ctx.raycontrol.addState('elementCompare', {
+    colliderMesh: [compareBtn],
+    controller: 'primary',
+    onHover: (intersection, active) => {
+      compareBtn.scale.setScalar(active ? 1.1 : 1);
+      compareBtn.material.opacity = active ? 1.0 : 0.8;
+    },
+    onHoverLeave: () => {
+      compareBtn.scale.setScalar(1);
+      compareBtn.material.opacity = 0.8;
+    },
+    onSelectStart: (intersection, e) => {
+      toggleComparisonMode(ctx);
+    }
+  });
+}
+
+function toggleComparisonMode(ctx) {
+  comparisonManager.active = !comparisonManager.active;
+  
+  if (comparisonManager.active) {
+    showComparisonSelector(ctx);
+  } else if (comparisonManager.selectorPanel) {
+    cleanupSelectorPanel(ctx);
+  }
+}
+
+function showComparisonSelector(ctx) {
+  comparisonManager.selectorPanel = RoomComparisonManager.createSelectorPanel(
+    ctx,
+    scene,
+    ELEMENTS
+  );
+  
+  // Add RayControl for element selection
+  ctx.raycontrol.addState('compareSelector', {
+    colliderMesh: comparisonManager.selectorPanel.children,
+    controller: 'primary',
+    onSelectStart: (intersection, e) => {
+      const elementSymbol = intersection.object.userData.elementSymbol;
+      if (elementSymbol && elementSymbol !== currentElementSymbol) {
+        handleElementSelection(ctx, elementSymbol);
+      } else if (intersection.object.userData.closePanel) {
+        cleanupSelectorPanel(ctx);
+        comparisonManager.active = false;
+      }
+    }
+  });
+}
+
+function handleElementSelection(ctx, elementSymbol) {
+  const selectedEl = ELEMENTS.find(e => e.symbol.toLowerCase() === elementSymbol.toLowerCase());
+  if (!selectedEl) return;
+  
+  comparisonManager.selectedElement = selectedEl;
+  
+  // Update info panel to show comparison
+  RoomComparisonManager.updateInfoPanel(infoPanelMesh, comparisonManager.currentElement, selectedEl);
+  
+  // Close selector panel
+  cleanupSelectorPanel(ctx);
+  comparisonManager.active = false;
+}
+
+function cleanupSelectorPanel(ctx) {
+  if (comparisonManager && comparisonManager.selectorPanel) {
+    RoomComparisonManager.cleanup(scene, comparisonManager);
+    comparisonManager.selectorPanel = null;
+  }
+  
+  // Remove selector RayControl state
+  ctx.raycontrol.removeState('compareSelector');
 }
 
 /**
@@ -834,6 +923,7 @@ export function exit(ctx) {
   ctx.raycontrol.removeState('elementInfoPanel');
   ctx.raycontrol.removeState('elementBackToLobby');
   ctx.raycontrol.removeState('elementCompare');
+  ctx.raycontrol.removeState('compareSelector');
   ctx.scene.remove(scene);
   
   // Cleanup theme resources (lights, particles)
@@ -842,9 +932,18 @@ export function exit(ctx) {
     themeCleanup = null;
   }
   
-  // Reset comparison mode
-  comparisonRoom = null;
-  comparisonActive = false;
+  // Cleanup comparison mode
+  if (comparisonManager) {
+    RoomComparisonManager.cleanup(scene, comparisonManager);
+    
+    // Remove comparison button from scene
+    if (comparisonManager.compareButton) {
+      scene.remove(comparisonManager.compareButton);
+      comparisonManager.compareButton = null;
+    }
+    
+    comparisonManager = null;
+  }
   
   // Reset all experiment instances
   var expIds = Object.keys(experimentInstances);
