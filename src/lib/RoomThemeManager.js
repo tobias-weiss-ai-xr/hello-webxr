@@ -496,7 +496,7 @@ class RoomThemeManager {
        color: elementData.color,
        transparent: true,
        opacity: 0.5,
-       blending: THREE混合Blending
+        blending: THREE.AdditiveBlending
      });
      
      const particles = new THREE.Points(geometry, material);
