@@ -11,14 +11,14 @@ const DRACO_LIB_PATH = 'src/vendor/';
 function getLoadedCount(assets) {
   let count = 0;
   for (var i in assets) {
-    if (assets[i].loading !== true) { count ++; }
+    if (!assets[i] || assets[i].loading !== true) { count ++; }
   }
   return count;
 }
 
 function allAssetsLoaded(assets) {
   for (var i in assets) {
-    if (assets[i].loading === true) { return false; }
+    if (assets[i] && assets[i].loading === true) { return false; }
   }
   return true;
 }
@@ -86,12 +86,9 @@ export function loadAssets(renderer, basePath, assets, onComplete, onProgress, d
     },
     (e) => {
       console.error('Error loading asset', assetPath, e);
-      // For audio files, set to null to allow graceful degradation
-      if (ext === 'ogg') {
-        assets[assetId] = null;
-        assets[assetId].loading = false;
-        if (onComplete && allAssetsLoaded(assets)) { onComplete(); }
-      }
+      // Mark failed assets as null so the app can continue (graceful degradation)
+      assets[assetId] = null;
+      if (onComplete && allAssetsLoaded(assets)) { onComplete(); }
     }
     );
   }

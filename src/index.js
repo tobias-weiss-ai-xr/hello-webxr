@@ -312,6 +312,8 @@ export function init() {
     var currentElementRoom = null;
     var currentExpRoom = null;
 
+    context.room = initialRoom;
+
     if (roomName) {
       console.log('URL parameter roomName:', roomName);
 

@@ -1,0 +1,64 @@
+import { test, expect } from '@playwright/test';
+
+async function waitForApp(page) {
+  await page.waitForFunction(
+    () => (window as any).context?.renderer && (window as any).context?.room !== undefined,
+    { timeout: 30000 }
+  );
+}
+
+test.describe('Room Navigation', () => {
+  test('lobby loads by default (room 0)', async ({ page }) => {
+    await page.goto('/');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(0);
+  });
+
+  test('camera spawns at expected position', async ({ page }) => {
+    await page.goto('/');
+    await waitForApp(page);
+
+    const pos = await page.evaluate(() => {
+      const rig = (window as any).context.cameraRig;
+      return rig ? { x: rig.position.x, y: rig.position.y, z: rig.position.z } : null;
+    });
+
+    expect(pos).not.toBeNull();
+    expect(Math.abs(pos!.x)).toBeLessThan(1);
+    expect(Math.abs(pos!.z)).toBeLessThan(10);
+  });
+
+  test('navigating to hydrogen room via URL param', async ({ page }) => {
+    await page.goto('/?room=H');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(1);
+  });
+
+  test('navigating to gold room via URL param', async ({ page }) => {
+    await page.goto('/?room=Au');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(22);
+  });
+
+  test('invalid room param falls back to lobby', async ({ page }) => {
+    await page.goto('/?room=nonexistent');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(0);
+  });
+
+  test('navigating to lobby via URL param', async ({ page }) => {
+    await page.goto('/?room=0');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(0);
+  });
+});
