@@ -96,7 +96,7 @@ function createInfoPanel(element, index, total) {
   group.add(pedestal);
 
   // Icon placeholder (simple geometric shape representing element)
-  const iconGeo = new THREE.SphereGeometry(0.3, 16, 16);
+  const iconGeo = new THREE.SphereGeometry(0.3, 8, 8);
   const iconMat = new THREE.MeshStandardMaterial({
     color: element.color,
     emissive: element.color,
@@ -186,14 +186,14 @@ export function setup(ctx) {
   scene = new THREE.Scene();
 
   // Floor - large circular platform
-  const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 64);
+  const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 32);
   const floorMat = new THREE.MeshStandardMaterial({color: 0x1a1a2e, metalness: 0.2, roughness: 0.8});
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.position.y = -0.1;
   scene.add(floor);
 
   // Decorative floor ring
-  const ringGeo = new THREE.RingGeometry(9.5, 10, 64);
+  const ringGeo = new THREE.RingGeometry(9.5, 10, 32);
   const ringMat = new THREE.MeshBasicMaterial({ 
     color: 0x4a90e2, 
     transparent: true, 
@@ -206,14 +206,14 @@ export function setup(ctx) {
   scene.add(floorRing);
 
   // Center platform
-  const centerGeo = new THREE.CylinderGeometry(3, 3, 0.3, 32);
+  const centerGeo = new THREE.CylinderGeometry(3, 3, 0.3, 16);
   const centerMat = new THREE.MeshStandardMaterial({color: 0x2a2a4a, metalness: 0.3, roughness: 0.7});
   const center = new THREE.Mesh(centerGeo, centerMat);
   center.position.y = 0.15;
   scene.add(center);
 
   // Center title column
-  const columnGeo = new THREE.CylinderGeometry(0.5, 0.6, 3, 16);
+  const columnGeo = new THREE.CylinderGeometry(0.5, 0.6, 3, 8);
   const columnMat = new THREE.MeshStandardMaterial({color: 0x3a3a5a, metalness: 0.4, roughness: 0.6});
   const column = new THREE.Mesh(columnGeo, columnMat);
   column.position.y = 1.5;
@@ -291,7 +291,7 @@ export function setup(ctx) {
   });
 
   // Ceiling dome
-  const domeGeo = new THREE.SphereGeometry(10, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeGeo = new THREE.SphereGeometry(10, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
   const domeMat = new THREE.MeshBasicMaterial({
     color: 0x0a0a1a,
     side: THREE.DoubleSide

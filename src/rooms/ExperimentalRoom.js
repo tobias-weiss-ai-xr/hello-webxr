@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { Text, Position, ParentObject3D } from '../components/index.js';
 import { createHelpPanel } from '../components/HelpPanel.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import { loadMoleculeModel, createCrystalLattice, optimizeModelForVR } from '../lib/modelLoader.js';
@@ -633,7 +633,7 @@ export function enter(ctx) {
     },
     onHoverLeave: () => {},
     onSelectStart: (intersection, e) => {
-      console.log('Experiment:', intersection.object.userData.experimentId);
+      // Experiment interaction triggered
     },
     onSelectEnd: (intersection) => {}
   });

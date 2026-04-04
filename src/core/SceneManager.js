@@ -108,8 +108,6 @@ export class SceneManager {
   }
 
   render() {
-    const delta = this.clock.getDelta();
-
     // Debug: Check for undefined materials before render (only log once per unique issue)
     if (!this._materialCheckDone) {
       let issueCount = 0;
@@ -178,9 +176,7 @@ export class SceneManager {
         }
       });
 
-      if (issueCount === 0) {
-        console.log('[SceneManager] Material check passed - all objects have materials');
-      } else {
+      if (issueCount > 0) {
         console.error(`[SceneManager] Found ${issueCount} material issue(s)`);
       }
       this._materialCheckDone = true;

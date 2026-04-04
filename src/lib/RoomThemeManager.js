@@ -276,11 +276,6 @@ class RoomThemeManager {
       addedObjects.push(elementParticles);
     }
     
-    console.log('[RoomThemeManager] Theme "' + theme.name + '" applied');
-    if (elementData) {
-      console.log('[RoomThemeManager] Element: ' + (elementData.symbol || 'unknown'));
-    }
-    
     // Return theme, cleanup function, and particle objects
     var self = this;
     return {
@@ -315,7 +310,7 @@ class RoomThemeManager {
    */
   createParticles(theme, elementData) {
     // Performance: Reduced particle count for VR (150 instead of 200)
-    var particleCount = 150;
+    var particleCount = 50;
     var geometry = new THREE.BufferGeometry();
     var positions = new Float32Array(particleCount * 3);
     
@@ -386,7 +381,7 @@ class RoomThemeManager {
   
    // Alkali metals: explosive particle effect
    createExplosiveParticles(elementData) {
-     const particleCount = 50;
+      const particleCount = 20;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      const velocities = [];
@@ -426,7 +421,7 @@ class RoomThemeManager {
   
    // Noble gases: calm floating particles
    createCalmFloatingParticles(elementData) {
-     const particleCount = 80;
+      const particleCount = 30;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      const drift = [];
@@ -465,7 +460,7 @@ class RoomThemeManager {
   
    // Halogens: swirling gaseous particles
    createGaseousParticles(elementData) {
-     const particleCount = 100;
+      const particleCount = 40;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      const swirls = [];
@@ -505,7 +500,7 @@ class RoomThemeManager {
   
    // Transition metals: dense metallic particles
    createMetallicParticles(elementData) {
-     const particleCount = 60;
+      const particleCount = 25;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      
@@ -537,7 +532,7 @@ class RoomThemeManager {
   
    // Mystical particles for rare earths and actinides
    createMysticalParticles(elementData) {
-     const particleCount = 90;
+      const particleCount = 30;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      const pulses = [];
@@ -580,7 +575,7 @@ class RoomThemeManager {
   
    // Organic particles for non-metals
    createOrganicParticles(elementData) {
-     const particleCount = 70;
+      const particleCount = 25;
      const geometry = new THREE.BufferGeometry();
      const positions = new Float32Array(particleCount * 3);
      const curves = [];
@@ -687,7 +682,6 @@ class RoomThemeManager {
       ...config
     };
 
-    console.log(`[RoomThemeManager] Registered theme: ${name}`);
     return true;
   }
 

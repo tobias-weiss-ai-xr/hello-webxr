@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { Text, Position, ParentObject3D } from '../components/index.js';
 import { createHelpPanel } from '../components/HelpPanel.js';
-import { ELEMENTS, EXPERIMENTAL_ROOMS, GROUP_COLORS, NOBLE_GAS_COLORS } from '../data/elements.js';
+import { ELEMENTS, EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import i18nManager from '../lib/I18nManager.js';
 
 var scene, atomCore, electronOrbits = [];
@@ -13,11 +13,14 @@ var starField;
 var ambientParticles;
 var helpPanel;
 
+var _lobbyFrameCounter = 0;
+var _lobbyParticleUpdateInterval = 3;
+
 const ATOM_RADIUS = 0.8;
 const ORBIT_RADIUS = 4;
 const ELECTRON_SPEED = 0.5;
-const STAR_COUNT = 500;
-const PARTICLE_COUNT = 100;
+const STAR_COUNT = 200;
+const PARTICLE_COUNT = 50;
 
 export function setup(ctx) {
   scene = new THREE.Scene();
@@ -28,7 +31,7 @@ export function setup(ctx) {
   createStarfield(ctx);
   createAmbientParticles(ctx);
 
-  const floorGeo = new THREE.CylinderGeometry(15, 15, 0.2, 64);
+  const floorGeo = new THREE.CylinderGeometry(15, 15, 0.2, 32);
   const floorMat = new THREE.MeshStandardMaterial({ 
     color: 0x1a1a2e,
     metalness: 0.3,
@@ -39,7 +42,7 @@ export function setup(ctx) {
   scene.add(floor);
 
   // Add floor glow ring
-  const ringGeo = new THREE.RingGeometry(14.5, 15, 64);
+  const ringGeo = new THREE.RingGeometry(14.5, 15, 32);
   const ringMat = new THREE.MeshBasicMaterial({ 
     color: 0x4a90e2, 
     transparent: true, 
@@ -173,7 +176,7 @@ function createAmbientParticles(ctx) {
 function createAtomNucleus(ctx) {
   const coreGroup = new THREE.Group();
 
-  const coreGeo = new THREE.SphereGeometry(ATOM_RADIUS, 32, 32);
+  const coreGeo = new THREE.SphereGeometry(ATOM_RADIUS, 16, 16);
   const coreMat = new THREE.MeshBasicMaterial({
     color: 0x4a90e2,
     transparent: true,
@@ -183,7 +186,7 @@ function createAtomNucleus(ctx) {
   atomCore.position.y = 1.6;
   coreGroup.add(atomCore);
 
-  const glowGeo = new THREE.SphereGeometry(ATOM_RADIUS * 1.5, 32, 32);
+  const glowGeo = new THREE.SphereGeometry(ATOM_RADIUS * 1.5, 16, 16);
   const glowMat = new THREE.MeshBasicMaterial({
     color: 0x4a90e2,
     transparent: true,
@@ -214,7 +217,7 @@ function createElectronOrbits(ctx) {
     orbit.position.y = 1.6;
     scene.add(orbit);
 
-    const electronGeo = new THREE.SphereGeometry(0.1, 16, 16);
+    const electronGeo = new THREE.SphereGeometry(0.1, 8, 8);
     const electronMat = new THREE.MeshBasicMaterial({color: 0xffffff});
     const electron = new THREE.Mesh(electronGeo, electronMat);
 
@@ -279,7 +282,7 @@ function createElementButtons(ctx) {
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
 
-    const buttonGeo = new THREE.SphereGeometry(0.25, 16, 16);
+    const buttonGeo = new THREE.SphereGeometry(0.25, 8, 8);
     const buttonMat = new THREE.MeshBasicMaterial({
       color: element.color,
       transparent: true,
@@ -473,6 +476,9 @@ export function exit(ctx) {
 }
 
 export function execute(ctx, delta, time) {
+  _lobbyFrameCounter++;
+  var shouldUpdateParticles = (_lobbyFrameCounter % _lobbyParticleUpdateInterval) === 0;
+
   if (atomCore) {
     atomCore.material.opacity = 0.6 + Math.sin(time * 2) * 0.2;
     atomCore.scale.setScalar(1 + Math.sin(time * 3) * 0.05);
@@ -491,23 +497,21 @@ export function execute(ctx, delta, time) {
     periodicTableMesh.position.y = 2 + Math.sin(time * 0.5) * 0.2;
   }
 
-  elementButtons.forEach((button, i) => {
-    button.position.y = 1.6 + Math.sin(time * 2 + i * 0.5) * 0.1;
-  });
-
-  // Animate starfield rotation
+  // Animate starfield rotation (cheap - every frame)
   if (starField) {
     starField.rotation.y += delta * 0.01;
   }
 
-  // Animate ambient particles
-  if (ambientParticles) {
+  // Animate ambient particles with frame-skipping for performance
+  if (ambientParticles && shouldUpdateParticles) {
     const positions = ambientParticles.geometry.attributes.position.array;
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const i3 = i * 3;
       positions[i3 + 1] += Math.sin(time + i) * 0.002;
     }
     ambientParticles.geometry.attributes.position.needsUpdate = true;
+  }
+  if (ambientParticles) {
     ambientParticles.rotation.y += delta * 0.02;
   }
 

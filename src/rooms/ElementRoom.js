@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Text, Position, ParentObject3D, Object3D, Children } from '../components/index.js';
+import { Text, Position, ParentObject3D } from '../components/index.js';
 import { createHelpPanel } from '../components/HelpPanel.js';
-import { ELEMENTS, GROUP_COLORS } from '../data/elements.js';
+import { ELEMENTS } from '../data/elements.js';
 import { AudioManager } from '../core/AudioManager.js';
 import { createElementDisplay } from '../lib/modelLoader.js';
 import roomThemeManager from '../lib/RoomThemeManager.js';
@@ -16,8 +16,6 @@ import NuclearExperiment from '../experiments/NuclearExperiment.js';
 import OrganicExperiment from '../experiments/OrganicExperiment.js';
 import CrystalExperiment from '../experiments/CrystalExperiment.js';
 
-console.log('[ElementRoom] Module loaded, ELEMENTS:', typeof ELEMENTS, 'has ELEMENTS:', 'ELEMENTS' in {ELEMENTS, GROUP_COLORS});
-
 var scene;
 var elementData;
 var atomModel;
@@ -27,7 +25,6 @@ var audioManager;
 var setupCalled = false;
 var currentElementSymbol = null;
 var backgroundParticles;
-var orbitTrails = [];
 var backButton;
 var helpPanel;
 var themeCleanup = null;
@@ -43,7 +40,6 @@ var hapticCallback = null;
 var desktopRaycaster = new THREE.Raycaster();
 var desktopMouse = new THREE.Vector2();
 var hoveredStation = null;
-var selectedStation = null;
 var desktopModeActive = false;
 var boundDesktopMouseMoveHandler = null;
 var boundDesktopClickHandler = null;
@@ -54,12 +50,8 @@ var boundDesktopKeyHandler = null;
  * Does NOT create scene (scene is created per-element in enter())
  */
 export function setup(ctx) {
-  console.log('[ElementRoom] Global setup called');
-  // Just initialize audio manager globally
   audioManager = new AudioManager(ctx);
-  audioManager.init().then(() => {
-    console.log('[ElementRoom] Audio manager initialized');
-  });
+  audioManager.init();
   setupCalled = true;
 }
 
@@ -68,9 +60,6 @@ export function setup(ctx) {
  * Called from enter() when navigating to an element room
  */
 async function setupElement(ctx, elementSymbol) {
-  console.log('[ElementRoom] setupElement called for:', elementSymbol);
-  console.log('[ElementRoom] ELEMENTS available:', typeof ELEMENTS, 'length:', ELEMENTS ? ELEMENTS.length : 'N/A');
-  
   // Reset state for new element
   scene = null;
   elementData = null;
@@ -78,7 +67,6 @@ async function setupElement(ctx, elementSymbol) {
   infoPanelMesh = null;
   experimentStations = [];
   backgroundParticles = null;
-  orbitTrails = [];
   backButton = null;
   helpPanel = null;
   themeCleanup = null;
@@ -87,7 +75,6 @@ async function setupElement(ctx, elementSymbol) {
   experimentInstances = {};
   
   elementData = ELEMENTS.find(e => e.symbol.toLowerCase() === elementSymbol.toLowerCase());
-  console.log('[ElementRoom] elementData found:', !!elementData, elementData);
   if (!elementData) {
     console.error('[ElementRoom] Element not found:', elementSymbol);
     return false;
@@ -95,7 +82,6 @@ async function setupElement(ctx, elementSymbol) {
 
   currentElementSymbol = elementSymbol;
   scene = new THREE.Scene();
-  console.log('[ElementRoom] Scene created:', scene);
 
   // Apply theme based on element
   var themeResult = roomThemeManager.applyTheme(scene, elementData.theme || 'default', elementData);
@@ -128,7 +114,6 @@ async function setupElement(ctx, elementSymbol) {
   scene.userData.atomModel = atomModel;
   scene.userData.elementData = elementData;
 
-  console.log('[ElementRoom] Setup complete for:', elementSymbol);
   return true;
 }
 
@@ -136,7 +121,7 @@ function createFloor(ctx, themeColor, theme) {
   // Use theme floor color if available, otherwise derive from element color
   var floorColor = theme ? theme.floorColor : new THREE.Color(themeColor).multiplyScalar(0.1);
   
-  const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 64);
+  const floorGeo = new THREE.CylinderGeometry(10, 10, 0.2, 32);
   const floorMat = new THREE.MeshStandardMaterial({
     color: floorColor,
     metalness: 0.2,
@@ -147,7 +132,7 @@ function createFloor(ctx, themeColor, theme) {
   scene.add(floor);
 
   // Add decorative floor ring
-  const ringGeo = new THREE.RingGeometry(9.5, 10, 64);
+  const ringGeo = new THREE.RingGeometry(9.5, 10, 32);
   const ringMat = new THREE.MeshBasicMaterial({ 
     color: themeColor, 
     transparent: true, 
@@ -165,7 +150,7 @@ function createAtomModel(ctx, element) {
   atomModel.position.y = 2;
   atomModel.scale.set(1.5, 1.5, 1.5);
 
-  const nucleusGeo = new THREE.SphereGeometry(0.5, 32, 32);
+  const nucleusGeo = new THREE.SphereGeometry(0.5, 16, 16);
   const nucleusMat = new THREE.MeshStandardMaterial({
     color: element.color,
     metalness: 0.5,
@@ -185,7 +170,7 @@ function createAtomModel(ctx, element) {
     const shellRadius = 1.0 + shellIndex * 0.6;
 
     // Create shell ring (torus)
-    const shellGeo = new THREE.TorusGeometry(shellRadius, 0.02, 16, 64);
+    const shellGeo = new THREE.TorusGeometry(shellRadius, 0.02, 8, 32);
     const shellMat = new THREE.MeshBasicMaterial({
       color: element.color,
       transparent: true,
@@ -200,7 +185,7 @@ function createAtomModel(ctx, element) {
     // Place electrons around this shell
     for (let i = 0; i < electronCount; i++) {
       const angle = (i / electronCount) * Math.PI * 2;
-      const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
+      const electronGeo = new THREE.SphereGeometry(0.08, 8, 8);
       const electronMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: 0xffffff,
@@ -241,7 +226,6 @@ function createAtomModel(ctx, element) {
 }
 
 function createInfoPanel(ctx, element) {
-  console.log('[ElementRoom] createInfoPanel called, ctx.world:', !!ctx.world);
   if (!ctx.world) {
     console.error('[ElementRoom] ctx.world is not available!');
     return;
@@ -272,7 +256,6 @@ function createInfoPanel(ctx, element) {
   descPlate.name = 'descPlate';
   infoPanelMesh.add(descPlate);
 
-  console.log('[ElementRoom] Creating title text entity');
   const titleTextEntity = ctx.world.createEntity();
   titleTextEntity
     .addComponent(Text, {
@@ -286,7 +269,6 @@ function createInfoPanel(ctx, element) {
     .addComponent(ParentObject3D, {value: titlePlate})
     .addComponent(Position, {x: 0, y: 0, z: 0.01});
   
-  console.log('[ElementRoom] Creating desc text entity');
   const descTextEntity = ctx.world.createEntity();
   descTextEntity
     .addComponent(Text, {
@@ -303,7 +285,6 @@ function createInfoPanel(ctx, element) {
     .addComponent(Position, {x: 0, y: 1.2, z: 0.01});
 
   infoPanelMesh.userData.textEntities = [titleTextEntity, descTextEntity];
-  console.log('[ElementRoom] Text entities created:', infoPanelMesh.userData.textEntities.length);
 }
 
 function createExperimentStations(ctx, element) {
@@ -315,7 +296,7 @@ function createExperimentStations(ctx, element) {
     const x = Math.cos(angle) * stationRadius;
     const z = Math.sin(angle) * stationRadius;
 
-    const stationGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
+    const stationGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 12);
     const stationMat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(element.color).multiplyScalar(0.8),
       transparent: true,
@@ -326,7 +307,7 @@ function createExperimentStations(ctx, element) {
     station.userData.experimentId = expId;
     station.userData.element = element;
 
-    const iconGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const iconGeo = new THREE.SphereGeometry(0.2, 8, 8);
     const iconMat = new THREE.MeshBasicMaterial({color: 0xffffff});
     const icon = new THREE.Mesh(iconGeo, iconMat);
     icon.position.set(0, 0.6, 0);
@@ -414,10 +395,8 @@ function createExperimentInstances(ctx, element) {
         station.add(experimentGroup);
         experiment.render(experimentGroup);
         station.userData.experimentInstance = experiment;
-        console.log('[ElementRoom] Experiment rendered for:', expId);
       }
       
-      console.log('[ElementRoom] Created experiment instance:', expId, 'type:', type);
     }
   });
 }
@@ -648,7 +627,6 @@ function handleDesktopKey(ctx, event) {
  */
 function triggerExperiment(ctx, station) {
   var expId = station.userData.experimentId;
-  console.log('[ElementRoom] Desktop trigger experiment:', expId);
   
   // Get the experiment instance and start it
   var experiment = experimentInstances[expId];
@@ -662,7 +640,6 @@ function triggerExperiment(ctx, station) {
       if (experiment.drop) {
         experiment.drop();
       }
-      console.log('[ElementRoom] Started experiment (desktop):', expId);
       
       // Visual feedback - highlight station
       station.material.opacity = 1.0;
@@ -675,7 +652,6 @@ function triggerExperiment(ctx, station) {
       // Reset and restart if completed
       if (experiment.reset) {
         experiment.reset();
-        console.log('[ElementRoom] Reset experiment (desktop):', expId);
       }
     }
   } else {
@@ -687,7 +663,6 @@ function triggerExperiment(ctx, station) {
  * Reset all experiments
  */
 function resetAllExperiments(ctx) {
-  console.log('[ElementRoom] Resetting all experiments');
   Object.keys(experimentInstances).forEach(function(expId) {
     var experiment = experimentInstances[expId];
     if (experiment && experiment.reset) {
@@ -727,8 +702,6 @@ function setupDesktopMode(ctx) {
   ctx.renderer.domElement.addEventListener('mousemove', boundDesktopMouseMoveHandler);
   ctx.renderer.domElement.addEventListener('click', boundDesktopClickHandler);
   window.addEventListener('keydown', boundDesktopKeyHandler);
-  
-  console.log('[ElementRoom] Desktop mode enabled - mouse and keyboard controls active');
 }
 
 /**
@@ -761,13 +734,9 @@ function cleanupDesktopMode(ctx) {
     hoveredStation.material.opacity = 0.6;
     hoveredStation = null;
   }
-  
-  console.log('[ElementRoom] Desktop mode disabled');
 }
 
 export function enter(ctx, roomIndex, roomName) {
-  console.log('[ElementRoom] enter called, roomIndex:', roomIndex, 'roomName:', roomName);
-  
   // Determine element symbol from room name or index
   let elementSymbol = roomName;
   if (!elementSymbol && roomIndex !== undefined) {
@@ -778,11 +747,8 @@ export function enter(ctx, roomIndex, roomName) {
     }
   }
   
-  console.log('[ElementRoom] Entering element room for:', elementSymbol);
-  
   // Check if we need to setup for a different element
   if (elementSymbol && elementSymbol !== currentElementSymbol) {
-    console.log('[ElementRoom] New element detected, setting up:', elementSymbol);
     // Clean up previous scene if exists
     if (scene) {
       ctx.scene.remove(scene);
@@ -821,10 +787,6 @@ export function enter(ctx, roomIndex, roomName) {
     }
   });
   
-  ctx.raycontrol.activateState('elementExperiments');
-  ctx.raycontrol.activateState('elementTeleport');
-  ctx.raycontrol.activateState('elementInfoPanel');
-
   ctx.raycontrol.addState('elementExperiments', {
     colliderMesh: experimentStations,
     controller: 'primary',
@@ -836,7 +798,6 @@ export function enter(ctx, roomIndex, roomName) {
     onSelectStart: function(intersection, e) {
       const station = intersection.object;
       const expId = station.userData.experimentId;
-      console.log('[ElementRoom] Experiment selected:', expId);
       
       // Get the experiment instance and start it
       const experiment = experimentInstances[expId];
@@ -852,12 +813,11 @@ export function enter(ctx, roomIndex, roomName) {
           if (hapticCallback) {
             hapticCallback(0.5);
           }
-          console.log('[ElementRoom] Started experiment:', expId);
         }
       }
     },
     onSelectEnd: function(intersection) {}
-  });
+  }, true);
 
   ctx.raycontrol.addState('elementInfoPanel', {
     colliderMesh: [infoPanelMesh],
@@ -874,7 +834,7 @@ export function enter(ctx, roomIndex, roomName) {
       const descComp = panel.userData.textEntities[1].getComponent(Text);
       descComp.fontSize = 0.05;
     }
-  });
+  }, true);
 
   ctx.raycontrol.addState('elementTeleport', {
     colliderMesh: teleportFloorMesh,
@@ -891,9 +851,9 @@ export function enter(ctx, roomIndex, roomName) {
     onSelectEnd: (intersection) => {
       ctx.teleport.onSelectEnd(intersection.point);
     }
-  });
+  }, true);
 
-ctx.raycontrol.addState('elementBackToLobby', {
+  ctx.raycontrol.addState('elementBackToLobby', {
     colliderMesh: [backButton],
     controller: 'primary',
     onHover: (intersection, active) => {
@@ -907,7 +867,7 @@ ctx.raycontrol.addState('elementBackToLobby', {
     onSelectStart: (intersection, e) => {
       ctx.goto = 0;
     }
-  });
+  }, true);
   
   // Setup desktop mode for non-VR fallback (mouse + keyboard controls)
   setupDesktopMode(ctx);
@@ -969,8 +929,6 @@ export function exit(ctx) {
   _bgParticlePositions = null;
 }
 
-var experimentInteractions = [];
-
 // Performance: Cached electron/shell/nucleus references to avoid traversing children each frame
 var _cachedElectrons = [];
 var _cachedNucleus = null;
@@ -981,23 +939,6 @@ var _bgParticlePositions = null;
 var _frameCounter = 0;
 var _bgParticleUpdateInterval = 2; // Update background particles every N frames
 
-function createExperimentInteractions(ctx, element) {
-  const experiments = element.experiments || [];
-
-  experiments.forEach(expId => {
-    const interaction = {
-      id: expId,
-      type: getExperimentType(expId),
-      setup: () => setupExperiment(ctx, expId, element),
-      execute: (delta, time) => executeExperiment(ctx, expId, delta, time)
-    };
-
-    experimentInteractions.push(interaction);
-  });
-
-  scene.userData.experimentInteractions = experimentInteractions;
-}
-
 function getExperimentType(expId) {
   if (['water', 'flame'].includes(expId)) return 'reaction';
   if (['electric', 'magnetic'].includes(expId)) return 'electrical';
@@ -1006,327 +947,6 @@ function getExperimentType(expId) {
   if (['protein', 'dna', 'polymer'].includes(expId)) return 'organic';
   if (['crystal', 'lattice'].includes(expId)) return 'crystal';
   return 'general';
-}
-
-function setupExperiment(ctx, expId, element) {
-  const type = getExperimentType(expId);
-  const station = experimentStations.find(s => s.userData.experimentId === expId);
-
-  if (!station) return;
-
-  switch(type) {
-    case 'reaction':
-      setupReactionExperiment(station, element, expId);
-      break;
-    case 'electrical':
-      setupElectricalExperiment(station, element, expId);
-      break;
-    case 'electrochemical':
-      setupElectrochemicalExperiment(station, element, expId);
-      break;
-    case 'nuclear':
-      setupNuclearExperiment(station, element, expId);
-      break;
-    case 'organic':
-      setupOrganicExperiment(station, element, expId);
-      break;
-    case 'crystal':
-      setupCrystalExperiment(station, element, expId);
-      break;
-    default:
-      setupGeneralExperiment(station, element, expId);
-      break;
-  }
-}
-
-function setupReactionExperiment(station, element, expId) {
-  const isAlkali = ['alkali', 'alkalineEarth'].includes(element.group);
-
-  if (expId === 'water' && isAlkali) {
-    station.userData.waterLevel = 0;
-    station.userData.reactionState = 'idle';
-
-    const waterGeo = new THREE.CylinderGeometry(1, 1, 3, 32);
-    const waterMat = new THREE.MeshBasicMaterial({
-      color: 0x4a90e2,
-      transparent: true,
-      opacity: 0.5
-    });
-    const water = new THREE.Mesh(waterGeo, waterMat);
-    water.position.set(0, 1.5, 0.8);
-    water.name = 'water';
-    station.add(water);
-
-    station.userData.reactionMeshes = [water];
-  }
-
-  if (expId === 'flame' && isAlkali) {
-    station.userData.flameIntensity = 0;
-    station.userData.flameMeshes = [];
-
-    for (let i = 0; i < 3; i++) {
-      const flameGeo = new THREE.ConeGeometry(0.1, 0.5, 16);
-      const flameMat = new THREE.MeshBasicMaterial({
-        color: element.group === 'alkali' ? 0xFF6B6B : element.color,
-        transparent: true,
-        opacity: 0.7
-      });
-      const flame = new THREE.Mesh(flameGeo, flameMat);
-      flame.position.set(-0.3 + i * 0.3, 0.5, 0);
-      flame.name = `flame_${i}`;
-      station.add(flame);
-      station.userData.flameMeshes.push(flame);
-    }
-  }
-}
-
-function setupElectricalExperiment(station, element, expId) {
-  if (expId === 'conductivity') {
-    station.userData.conductivity = 0;
-    station.userData.circuitActive = false;
-
-    const wireGeo = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
-    const wireMat = new THREE.MeshBasicMaterial({color: element.color});
-    const wire = new THREE.Mesh(wireGeo, wireMat);
-    wire.position.set(0, 1.2, 0);
-    wire.rotation.x = Math.PI / 2;
-    station.add(wire);
-
-    station.userData.electricalMeshes = [wire];
-  }
-}
-
-function setupElectrochemicalExperiment(station, element, expId) {
-  if (expId === 'battery') {
-    station.userData.batteryLevel = 1.0;
-    station.userData.dischargeRate = 0.001;
-
-    const batteryGeo = new THREE.BoxGeometry(0.6, 1, 0.4);
-    const batteryMat = new THREE.MeshBasicMaterial({
-      color: element.color,
-      transparent: true,
-      opacity: 0.8
-    });
-    const battery = new THREE.Mesh(batteryGeo, batteryMat);
-    battery.position.set(0, 1.5, 0);
-    battery.name = 'battery';
-    station.add(battery);
-
-    const chargeBarGeo = new THREE.BoxGeometry(0.5, 0.1, 0.05);
-    const chargeBarMat = new THREE.MeshBasicMaterial({color: 0x00ff00});
-    const chargeBar = new THREE.Mesh(chargeBarGeo, chargeBarMat);
-    chargeBar.position.set(0, 2.1, 0);
-    station.add(chargeBar);
-
-    station.userData.batteryMeshes = [battery, chargeBar];
-  }
-}
-
-function setupNuclearExperiment(station, element, expId) {
-  if (expId === 'fission' && element.group === 'actinide') {
-    station.userData.fissionActive = false;
-    station.userData.particles = [];
-
-    const coreGeo = new THREE.SphereGeometry(0.3, 32, 32);
-    const coreMat = new THREE.MeshBasicMaterial({
-      color: 0x4A69BD,
-      transparent: true,
-      opacity: 0.8
-    });
-    const core = new THREE.Mesh(coreGeo, coreMat);
-    core.position.set(0, 1.8, 0);
-    core.name = 'nucleus';
-    station.add(core);
-
-    station.userData.nuclearMeshes = [core];
-  }
-}
-
-function setupOrganicExperiment(station, element, expId) {
-  if (expId === 'dna') {
-    station.userData.dnaRotating = true;
-    station.userData.rotationSpeed = 0.5;
-
-    const helixGroup = new THREE.Group();
-
-    const points = [];
-    for (let i = 0; i < 100; i++) {
-      const t = i / 100;
-      const angle = t * Math.PI * 2 * 3;
-      const y = (t - 0.5) * 2;
-      const x = Math.cos(angle) * 0.3;
-      const z = Math.sin(angle) * 0.3;
-      points.push(new THREE.Vector3(x, y + 1.2, z));
-    }
-
-    const curve = new THREE.CatmullRomCurve3(points);
-    const tubeGeo = new THREE.TubeGeometry(curve, 100, 0.1, 8, false);
-    const tubeMat = new THREE.MeshBasicMaterial({color: element.color});
-    const helix = new THREE.Mesh(tubeGeo, tubeMat);
-    helixGroup.add(helix);
-    helixGroup.position.set(0, 1.5, 0);
-    helixGroup.name = 'dna';
-    station.add(helixGroup);
-
-    station.userData.organicMeshes = [helixGroup];
-  }
-}
-
-function setupCrystalExperiment(station, element, expId) {
-  if (expId === 'lattice') {
-    station.userData.latticeAnimating = false;
-    station.userData.highlightedAtom = null;
-
-    const latticeGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5, 3, 3, 3);
-    const latticeMat = new THREE.MeshBasicMaterial({
-      color: element.color,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.4
-    });
-    const lattice = new THREE.Mesh(latticeGeo, latticeMat);
-    lattice.position.set(0, 1.5, 0);
-    lattice.name = 'lattice';
-    station.add(lattice);
-
-    const atomGeo = new THREE.SphereGeometry(0.1, 16, 16);
-    const atomMat = new THREE.MeshBasicMaterial({color: 0xffffff});
-    const atoms = [];
-
-    for (let x = 0; x < 2; x++) {
-      for (let y = 0; y < 2; y++) {
-        for (let z = 0; z < 2; z++) {
-          const atom = new THREE.Mesh(atomGeo, atomMat);
-          atom.position.set((x - 0.5) * 0.7, (y - 0.5) * 0.7, (z - 0.5) * 0.7);
-          atom.name = `atom_${x}_${y}_${z}`;
-          atoms.push(atom);
-          lattice.add(atom);
-        }
-      }
-    }
-
-    station.userData.crystalMeshes = [lattice, ...atoms];
-  }
-}
-
-function setupGeneralExperiment(station, element, expId) {
-  station.userData.experimentActive = false;
-  station.userData.experimentProgress = 0;
-}
-
-function executeExperiment(ctx, expId, delta, time) {
-  const type = getExperimentType(expId);
-
-  switch(type) {
-    case 'reaction':
-      executeReactionExperiment(ctx, expId, delta, time);
-      break;
-    case 'electrical':
-      executeElectricalExperiment(ctx, expId, delta, time);
-      break;
-    case 'electrochemical':
-      executeElectrochemicalExperiment(ctx, expId, delta, time);
-      break;
-    case 'nuclear':
-      executeNuclearExperiment(ctx, expId, delta, time);
-      break;
-    case 'organic':
-      executeOrganicExperiment(ctx, expId, delta, time);
-      break;
-    case 'crystal':
-      executeCrystalExperiment(ctx, expId, delta, time);
-      break;
-    default:
-      executeGeneralExperiment(ctx, expId, delta, time);
-      break;
-  }
-}
-
-function executeReactionExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId) return;
-
-    if (expId === 'water' && station.userData.reactionState === 'active') {
-      station.userData.reactionState = 'active';
-      audioManager.playSound('water_sizzle', 1);
-    }
-
-    if (expId === 'flame' && station.userData.flameIntensity < 1) {
-      station.userData.reactionState = 'active';
-      audioManager.playSound('flame', 0.7);
-    }
-  });
-}
-
-function executeElectricalExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId) return;
-
-    if (expId === 'conductivity' && station.userData.circuitActive) {
-      station.userData.conductivity += delta * 0.1;
-
-      const wire = station.userData.electricalMeshes[0];
-      if (station.userData.conductivity >= 1) {
-        wire.material.color.setHex(0x00ff00);
-      } else {
-        wire.material.color.setHex(0xffffff);
-      }
-    }
-  });
-}
-
-function executeElectrochemicalExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId) return;
-
-    if (expId === 'battery') {
-      station.userData.batteryLevel -= station.userData.dischargeRate;
-
-      if (station.userData.batteryLevel <= 0) {
-        station.userData.batteryLevel = 0;
-      }
-
-      const chargeBar = station.userData.batteryMeshes[1];
-      chargeBar.scale.x = station.userData.batteryLevel;
-    }
-  });
-}
-
-function executeNuclearExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId || !station.userData.fissionActive) return;
-
-    if (expId === 'fission') {
-      const core = station.userData.nuclearMeshes[0];
-      core.material.opacity = 0.5 + Math.sin(time * 5) * 0.3;
-      core.rotation.y += delta * 2;
-    }
-  });
-}
-
-function executeOrganicExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId) return;
-
-    if (expId === 'dna') {
-      const helixGroup = station.userData.organicMeshes[0];
-      helixGroup.rotation.y += delta * station.userData.rotationSpeed;
-    }
-  });
-}
-
-function executeCrystalExperiment(ctx, expId, delta, time) {
-  experimentStations.forEach(station => {
-    if (station.userData.experimentId !== expId) return;
-
-    if (expId === 'lattice' && !station.userData.latticeAnimating) return;
-
-    const lattice = station.userData.crystalMeshes[0];
-    lattice.rotation.y += delta * 0.3;
-  });
-}
-
-function executeGeneralExperiment(ctx, expId, delta, time) {
 }
 
 export function execute(ctx, delta, time) {
@@ -1411,13 +1031,4 @@ export function execute(ctx, delta, time) {
       experiment.update(delta);
     }
   }
-
-  // Performance: Early exit if no interactions
-  if (experimentInteractions.length === 0) {
-    return;
-  }
-  
-  experimentInteractions.forEach(interaction => {
-    interaction.execute(delta, time);
-  });
 }

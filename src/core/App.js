@@ -238,8 +238,7 @@ export class App {
       (loadProgress) => {
         document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
           -(282 - Math.floor(loadProgress / loadTotal * 282)));
-      },
-      this.debug
+      }
     );
   }
 
