@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function waitForApp(page) {
   await page.waitForFunction(
-    () => (window as any).context?.renderer && (window as any).context?.room !== undefined,
+    () => (window as any).context?.engine && (window as any).context?.room !== undefined,
     { timeout: 30000 }
   );
 }
@@ -21,8 +21,8 @@ test.describe('Room Navigation', () => {
     await waitForApp(page);
 
     const pos = await page.evaluate(() => {
-      const rig = (window as any).context.cameraRig;
-      return rig ? { x: rig.position.x, y: rig.position.y, z: rig.position.z } : null;
+      const c = (window as any).context.camera;
+      return c ? { x: c.position.x, y: c.position.y, z: c.position.z } : null;
     });
 
     expect(pos).not.toBeNull();

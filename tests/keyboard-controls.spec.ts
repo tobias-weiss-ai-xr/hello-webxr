@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function waitForApp(page) {
   await page.waitForFunction(
-    () => (window as any).context?.renderer && (window as any).context?.room !== undefined,
+    () => (window as any).context?.engine && (window as any).context?.room !== undefined,
     { timeout: 30000 }
   );
 }
@@ -32,7 +32,6 @@ test.describe('Keyboard Controls', () => {
   test('WASD keys change camera position', async ({ page }) => {
     await page.goto('/');
     await waitForApp(page);
-    await page.click('body');
 
     const before = await page.evaluate(() => {
       const c = (window as any).context.camera;

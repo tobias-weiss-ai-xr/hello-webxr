@@ -6,8 +6,6 @@ const NON_CRITICAL_ERRORS = [
   'Removing unpermitted',
   'getExtension',
   'GL_INVALID',
-  'WebGL',
-  'context',
   'DepthTest',
   'Content Security Policy',
   'google-analytics',
@@ -41,24 +39,22 @@ test.describe('Application Loading', () => {
 
     await page.waitForFunction(() => {
       const ctx = (window as any).context;
-      return ctx && ctx.renderer && ctx.scene && ctx.camera && ctx.room !== undefined;
+      return ctx && ctx.engine && ctx.scene && ctx.camera && ctx.room !== undefined;
     }, { timeout: 30000 });
 
     const context = await page.evaluate(() => {
       const ctx = (window as any).context;
       return {
-        hasRenderer: !!ctx.renderer,
+        hasEngine: !!ctx.engine,
         hasScene: !!ctx.scene,
         hasCamera: !!ctx.camera,
-        hasRaycontrol: !!ctx.raycontrol,
         room: ctx.room,
       };
     });
 
-    expect(context.hasRenderer).toBe(true);
+    expect(context.hasEngine).toBe(true);
     expect(context.hasScene).toBe(true);
     expect(context.hasCamera).toBe(true);
-    expect(context.hasRaycontrol).toBe(true);
     expect(context.room).toBe(0);
   });
 
@@ -69,7 +65,7 @@ test.describe('Application Loading', () => {
     });
 
     await page.goto('/');
-    await page.waitForFunction(() => (window as any).context?.renderer, { timeout: 30000 });
+    await page.waitForFunction(() => (window as any).context?.engine, { timeout: 30000 });
     await page.waitForTimeout(2000);
 
     const critical = filterCriticalErrors(errors);
@@ -88,16 +84,5 @@ test.describe('Application Loading', () => {
     });
 
     expect(isValid).toBe(true);
-  });
-
-  test('animation loop is running after loading', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).context?.renderer, { timeout: 30000 });
-
-    const hasAnimationLoop = await page.evaluate(() => {
-      return (window as any).context.renderer.info.render !== undefined;
-    });
-
-    expect(hasAnimationLoop).toBe(true);
   });
 });
