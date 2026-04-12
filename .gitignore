@@ -64,6 +64,13 @@ typings/
 # next.js build output
 .next
 
+# Build output
+dist/
+
+# Vite/webpack hot update artifacts
+*.hot-update.json
+*.hot-update.js
+
 #bundle.js
 #bundle.js.map
 
