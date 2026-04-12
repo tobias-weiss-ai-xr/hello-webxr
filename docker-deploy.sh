@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Docker deployment script for hello-webxr
-# Rebuild and deploy the Docker container with fixed code
-
+# Docker deployment script for hello-webxr (Babylon.js + Vite)
 set -e
 
 echo "=== Rebuilding hello-webxr Docker image ==="
@@ -30,17 +28,12 @@ sleep 3
 if docker ps | grep -q hello-webxr; then
   echo "✅ Container is running!"
   echo ""
-  echo "=== Testing deployment ==="
-  echo "Checking bundle.js in container..."
-  docker exec hello-webxr ls -lh /usr/share/nginx/html/bundle.js
-  echo ""
-  echo "Site should be available at: https://chemie-lernen.org/pse-in-vr/"
+  echo "Site available at: https://pse.chemie-lernen.org"
   echo ""
   echo "=== Next steps ==="
   echo "1. Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)"
-  echo "2. Open https://chemie-lernen.org/pse-in-vr/"
-  echo "3. Check console - 'classList' error should be gone"
-  echo "4. Loading screen should disappear and app should start"
+  echo "2. Open https://pse.chemie-lernen.org"
+  echo "3. Verify loading screen disappears and 3D scene appears"
 else
   echo "❌ Container failed to start!"
   echo "Check logs with: docker compose logs"
