@@ -11,8 +11,10 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          babylon: ['@babylonjs/core', '@babylonjs/gui', '@babylonjs/loaders']
+        manualChunks(id: string) {
+          if (id.includes('@babylonjs')) {
+            return 'babylon';
+          }
         }
       }
     }
