@@ -1,8 +1,6 @@
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader.js';
 import type { Scene } from '@babylonjs/core/scene.js';
 
-// Ensure GLTF loader is registered
-// @ts-ignore - side-effect import for GLTF loader registration
 import '@babylonjs/loaders/glTF';
 
 export interface AssetManifest {

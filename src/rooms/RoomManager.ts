@@ -1,5 +1,4 @@
 import type { AppContext, RoomModule } from '../types/index.js';
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 
 export const ROOM_LOBBY = 0;
 export const ROOM_ELEMENTS_START = 1;
@@ -7,13 +6,13 @@ export const ROOM_ELEMENTS_START = 1;
 export class RoomManager {
   private rooms: (RoomModule | null)[] = [];
   private setupCalledRooms = new Set<number>();
-  private _roomRoot: TransformNode;
+  private _roomMeshes: import('@babylonjs/core').AbstractMesh[] = [];
+  private _roomTransformNodes: import('@babylonjs/core').TransformNode[] = [];
   private _currentRoomIndex = 0;
 
   constructor(
     private scene: import('@babylonjs/core').Scene
   ) {
-    this._roomRoot = new TransformNode('roomRoot', this.scene);
   }
 
   get currentRoomIndex(): number {
@@ -24,16 +23,22 @@ export class RoomManager {
     return this.rooms.length;
   }
 
-  get roomRootNode(): TransformNode {
-    return this._roomRoot;
-  }
-
   registerRoom(index: number, room: RoomModule): void {
     this.rooms[index] = room;
   }
 
   getRoom(index: number): RoomModule | null {
     return this.rooms[index] ?? null;
+  }
+
+  /** Track a mesh created by a room for later disposal */
+  trackMesh(mesh: import('@babylonjs/core').AbstractMesh): void {
+    this._roomMeshes.push(mesh);
+  }
+
+  /** Track a TransformNode created by a room for later disposal */
+  trackNode(node: import('@babylonjs/core').TransformNode): void {
+    this._roomTransformNodes.push(node);
   }
 
   setupRoom(index: number, ctx: AppContext, param?: string): void {
@@ -48,15 +53,17 @@ export class RoomManager {
     }
   }
 
+  /** Dispose all room-created meshes and nodes */
+  private disposeRoomContent(): void {
+    this._roomMeshes.forEach(m => m.dispose());
+    this._roomTransformNodes.forEach(n => n.dispose());
+    this._roomMeshes = [];
+    this._roomTransformNodes = [];
+  }
+
   enterRoom(index: number, ctx: AppContext, param?: string): void {
     const room = this.rooms[index];
     if (!room) return;
-
-    // Dispose all children of roomRoot (previous room's meshes)
-    this._roomRoot.getChildMeshes().forEach(m => m.dispose());
-    this._roomRoot.getChildTransformNodes().forEach(n => {
-      if (n !== this._roomRoot) n.dispose();
-    });
 
     this._currentRoomIndex = index;
     room.enter(ctx, param);
@@ -66,5 +73,6 @@ export class RoomManager {
     const room = this.rooms[index];
     if (!room) return;
     room.exit(ctx);
+    this.disposeRoomContent();
   }
 }

@@ -5,11 +5,9 @@ import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 
-import type { AppContext } from '../types/index.js';
+import type { AppContext, ExperimentalRoomData } from '../types/index.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
-import { ROOM_LOBBY, ROOM_ELEMENTS_START } from './RoomManager.js';
-import { ELEMENTS } from '../data/elements.js';
-import type { ExperimentalRoomData } from '../types/index.js';
+import { ROOM_LOBBY } from './RoomManager.js';
 
 const ROOM_COLORS: Record<string, Color3> = {
   reaction_lab: new Color3(1, 0.42, 0.42),
@@ -33,9 +31,10 @@ function makeMat(scene: import('@babylonjs/core').Scene, name: string, color: Co
   return m;
 }
 
-var ui: AdvancedDynamicTexture;
-var roomData: ExperimentalRoomData | undefined;
-var animatedMeshes: import('@babylonjs/core').Mesh[] = [];
+let ui: AdvancedDynamicTexture;
+let roomData: ExperimentalRoomData | undefined;
+let animatedMeshes: import('@babylonjs/core').Mesh[] = [];
+let trackedMeshes: import('@babylonjs/core').AbstractMesh[] = [];
 
 export function setup(ctx: AppContext, roomId?: string): void {
   if (!roomId) return;
@@ -44,6 +43,7 @@ export function setup(ctx: AppContext, roomId?: string): void {
 
   ui = AdvancedDynamicTexture.CreateFullscreenUI('expRoomUI');
   animatedMeshes = [];
+  trackedMeshes = [];
 
   const themeColor = ROOM_COLORS[roomData.id] || new Color3(0.16, 0.16, 0.23);
   ctx.scene.clearColor = new Color4(themeColor.r * 0.1, themeColor.g * 0.1, themeColor.b * 0.1, 1);
@@ -59,8 +59,9 @@ export function setup(ctx: AppContext, roomId?: string): void {
 function createFloor(ctx: AppContext, themeColor: Color3): void {
   const floor = MeshBuilder.CreateCylinder('expFloor', { diameter: 20, height: 0.2, tessellation: 64 }, ctx.scene);
   floor.position.y = -0.1;
-  floor.parent = ctx.roomRoot;
   floor.material = makeMat(ctx.scene, 'expFloorMat', themeColor.scale(0.1), { unlit: true });
+  ctx.trackMesh(floor);
+  trackedMeshes.push(floor);
 }
 
 function createRoomSpecificSetup(ctx: AppContext, roomId: string, themeColor: Color3): void {
@@ -82,18 +83,21 @@ function createRoomSpecificSetup(ctx: AppContext, roomId: string, themeColor: Co
 function createAlchemistWorkshop(ctx: AppContext): void {
   const table = MeshBuilder.CreateBox('alchemistTable', { width: 4, height: 1, depth: 2 }, ctx.scene);
   table.position.set(0, 0.5, 0);
-  table.parent = ctx.roomRoot;
   table.material = makeMat(ctx.scene, 'tableMat', new Color3(0.29, 0.29, 0.29), { unlit: true });
+  ctx.trackMesh(table);
+  trackedMeshes.push(table);
 
   const bunsen = MeshBuilder.CreateCylinder('bunsen', { diameterTop: 0.2, diameterBottom: 0.3, height: 0.8, tessellation: 16 }, ctx.scene);
   bunsen.position.set(-1.2, 1.3, -0.5);
-  bunsen.parent = ctx.roomRoot;
   bunsen.material = makeMat(ctx.scene, 'bunsenMat', new Color3(0.16, 0.16, 0.16), { unlit: true });
+  ctx.trackMesh(bunsen);
+  trackedMeshes.push(bunsen);
 
   const flame = MeshBuilder.CreateCylinder('flame', { diameterTop: 0.01, diameterBottom: 0.16, height: 0.3, tessellation: 16 }, ctx.scene);
   flame.position.set(-1.2, 1.8, -0.5);
-  flame.parent = ctx.roomRoot;
   flame.material = makeMat(ctx.scene, 'flameMat', new Color3(0.29, 0.56, 0.89), { unlit: true, alpha: 0.7 });
+  ctx.trackMesh(flame);
+  trackedMeshes.push(flame);
   animatedMeshes.push(flame);
 }
 
@@ -101,122 +105,140 @@ function createNuclearControlRoom(ctx: AppContext, themeColor: Color3): void {
   const panel = MeshBuilder.CreateBox('nuclearPanel', { width: 6, height: 2, depth: 0.2 }, ctx.scene);
   panel.position.set(0, 2.5, -4);
   panel.lookAt(new Vector3(0, 2.5, 0));
-  panel.parent = ctx.roomRoot;
   panel.material = makeMat(ctx.scene, 'nuclearPanelMat', new Color3(0.1, 0.1, 0.16), { unlit: true, alpha: 0.9 });
+  ctx.trackMesh(panel);
+  trackedMeshes.push(panel);
 
   const core = MeshBuilder.CreateCylinder('reactorCore', { diameter: 3, height: 4, tessellation: 32 }, ctx.scene);
   core.position.set(0, 2, 0);
-  core.parent = ctx.roomRoot;
   core.material = makeMat(ctx.scene, 'coreMat', themeColor, { unlit: true, alpha: 0.5, emissive: themeColor.scale(0.3) });
+  ctx.trackMesh(core);
+  trackedMeshes.push(core);
   animatedMeshes.push(core);
 }
 
 function createElectrochemLab(ctx: AppContext): void {
   const battery = MeshBuilder.CreateBox('expBattery', { width: 2, height: 1.5, depth: 0.8 }, ctx.scene);
   battery.position.set(0, 0.75, -2);
-  battery.parent = ctx.roomRoot;
   battery.material = makeMat(ctx.scene, 'expBatteryMat', new Color3(0.45, 0.73, 1), { unlit: true });
+  ctx.trackMesh(battery);
+  trackedMeshes.push(battery);
 
   const terminal = MeshBuilder.CreateBox('terminal', { width: 3, height: 2, depth: 0.1 }, ctx.scene);
   terminal.position.set(0, 1, -4);
-  terminal.parent = ctx.roomRoot;
   terminal.material = makeMat(ctx.scene, 'terminalMat', new Color3(0.16, 0.16, 0.16), { unlit: true });
+  ctx.trackMesh(terminal);
+  trackedMeshes.push(terminal);
 }
 
 function createCarbonUniverse(ctx: AppContext, themeColor: Color3): void {
   const helix = MeshBuilder.CreateTorusKnot('dnaHelix', { radius: 0.8, tube: 0.08, radialSegments: 64, tubularSegments: 32, p: 2, q: 3 }, ctx.scene);
   helix.position.set(0, 2.5, 0);
-  helix.parent = ctx.roomRoot;
   helix.material = makeMat(ctx.scene, 'helixMat', themeColor, { emissive: themeColor.scale(0.2) });
+  ctx.trackMesh(helix);
+  trackedMeshes.push(helix);
   animatedMeshes.push(helix);
 }
 
 function createExtremeConditions(ctx: AppContext): void {
   const chamber = MeshBuilder.CreateCylinder('pressureChamber', { diameter: 4, height: 4, tessellation: 32 }, ctx.scene);
   chamber.position.set(0, 2, 0);
-  chamber.parent = ctx.roomRoot;
   chamber.material = makeMat(ctx.scene, 'chamberMat', new Color3(1, 0.66, 0.3), { unlit: true, alpha: 0.3 });
+  ctx.trackMesh(chamber);
+  trackedMeshes.push(chamber);
 
   const plasma = MeshBuilder.CreateSphere('plasma', { diameter: 3, segments: 32 }, ctx.scene);
   plasma.position.set(0, 2, 0);
-  plasma.parent = ctx.roomRoot;
   plasma.material = makeMat(ctx.scene, 'plasmaMat', new Color3(1, 0.42, 0.21), { unlit: true, alpha: 0.6 });
+  ctx.trackMesh(plasma);
+  trackedMeshes.push(plasma);
   animatedMeshes.push(plasma);
 
   const superfluid = MeshBuilder.CreateTorus('superfluidHe', { diameter: 3.6, thickness: 0.3, tessellation: 100 }, ctx.scene);
   superfluid.position.set(3, 2, 0);
   superfluid.rotation.x = Math.PI / 2;
-  superfluid.parent = ctx.roomRoot;
   superfluid.material = makeMat(ctx.scene, 'superfluidMat', new Color3(0.45, 0.73, 1), { unlit: true, alpha: 0.5 });
+  ctx.trackMesh(superfluid);
+  trackedMeshes.push(superfluid);
   animatedMeshes.push(superfluid);
 }
 
 function createIndustrialApps(ctx: AppContext): void {
   const furnace = MeshBuilder.CreateCylinder('blastFurnace', { diameterTop: 3, diameterBottom: 4, height: 5, tessellation: 8 }, ctx.scene);
   furnace.position.set(0, 2.5, 0);
-  furnace.parent = ctx.roomRoot;
   furnace.material = makeMat(ctx.scene, 'furnaceMat', new Color3(0.45, 0.73, 1), { unlit: true, alpha: 0.6 });
+  ctx.trackMesh(furnace);
+  trackedMeshes.push(furnace);
 
   for (let i = 0; i < 4; i++) {
     const pipe = MeshBuilder.CreateCylinder(`pipe_${i}`, { diameter: 0.6, height: 8, tessellation: 16 }, ctx.scene);
     pipe.position.set(-3 + i * 2, 1, 3);
     pipe.rotation.z = Math.PI / 2;
-    pipe.parent = ctx.roomRoot;
     pipe.material = makeMat(ctx.scene, `pipeMat_${i}`, new Color3(0.29, 0.29, 0.29), { unlit: true });
+    ctx.trackMesh(pipe);
+    trackedMeshes.push(pipe);
   }
 
   const reactor = MeshBuilder.CreateBox('haberReactor', { width: 3, height: 4, depth: 3 }, ctx.scene);
   reactor.position.set(0, 2, -4);
-  reactor.parent = ctx.roomRoot;
   reactor.material = makeMat(ctx.scene, 'reactorMat', new Color3(0.13, 0.79, 0.59), { unlit: true, alpha: 0.5 });
+  ctx.trackMesh(reactor);
+  trackedMeshes.push(reactor);
 }
 
 function createHistoricalLab(ctx: AppContext): void {
   const table = MeshBuilder.CreateBox('antiqueTable', { width: 4, height: 1, depth: 2 }, ctx.scene);
   table.position.set(0, 0.5, 0);
-  table.parent = ctx.roomRoot;
   table.material = makeMat(ctx.scene, 'antiqueTableMat', new Color3(0.55, 0.27, 0.07), { unlit: true });
+  ctx.trackMesh(table);
+  trackedMeshes.push(table);
 
   const crucible = MeshBuilder.CreateCylinder('crucible', { diameterTop: 0.3, diameterBottom: 0.6, height: 0.5, tessellation: 32 }, ctx.scene);
   crucible.position.set(1, 1, 0);
-  crucible.parent = ctx.roomRoot;
   crucible.material = makeMat(ctx.scene, 'crucibleMat', new Color3(0.84, 0.2, 0.52), { unlit: true, alpha: 0.8 });
+  ctx.trackMesh(crucible);
+  trackedMeshes.push(crucible);
 
   const parchment = MeshBuilder.CreatePlane('parchment', { width: 1.5, height: 1 }, ctx.scene);
   parchment.position.set(-1, 1.1, 0);
   parchment.rotation.y = -Math.PI / 4;
-  parchment.parent = ctx.roomRoot;
   const parchmentMat = makeMat(ctx.scene, 'parchmentMat', new Color3(0.96, 0.87, 0.7), { unlit: true });
   parchmentMat.backFaceCulling = false;
   parchment.material = parchmentMat;
+  ctx.trackMesh(parchment);
+  trackedMeshes.push(parchment);
 
   const symbol = MeshBuilder.CreateTorus('alchemySymbol', { diameter: 2, thickness: 0.1, tessellation: 32 }, ctx.scene);
   symbol.position.set(0, 3, 0);
-  symbol.parent = ctx.roomRoot;
   symbol.material = makeMat(ctx.scene, 'symbolMat', new Color3(1, 0.84, 0), { unlit: true });
+  ctx.trackMesh(symbol);
+  trackedMeshes.push(symbol);
   animatedMeshes.push(symbol);
 }
 
 function createSpaceChem(ctx: AppContext): void {
   const nebula = MeshBuilder.CreateSphere('nebula', { diameter: 16, segments: 32 }, ctx.scene);
   nebula.position.set(0, 2, -10);
-  nebula.parent = ctx.roomRoot;
   nebula.material = makeMat(ctx.scene, 'nebulaMat', new Color3(0.42, 0.36, 0.91), { unlit: true, alpha: 0.15 });
+  ctx.trackMesh(nebula);
+  trackedMeshes.push(nebula);
 
   const fragment = MeshBuilder.CreateIcoSphere('spaceFragment', { radius: 1, subdivisions: 1, flat: true }, ctx.scene);
   fragment.position.set(0, 2.5, 0);
-  fragment.parent = ctx.roomRoot;
   fragment.material = makeMat(ctx.scene, 'fragmentMat', new Color3(0.45, 0.73, 1), { emissive: new Color3(0.1, 0.15, 0.3) });
+  ctx.trackMesh(fragment);
+  trackedMeshes.push(fragment);
   animatedMeshes.push(fragment);
 }
 
 function createNanoWorld(ctx: AppContext): void {
   const lattice = MeshBuilder.CreateBox('nanoLattice', { width: 2, height: 2, depth: 2 }, ctx.scene);
   lattice.position.set(0, 2, 0);
-  lattice.parent = ctx.roomRoot;
   const latticeMat = makeMat(ctx.scene, 'nanoLatticeMat', new Color3(0.09, 0.64, 0.72), { unlit: true, alpha: 0.4 });
   latticeMat.wireframe = true;
   lattice.material = latticeMat;
+  ctx.trackMesh(lattice);
+  trackedMeshes.push(lattice);
   animatedMeshes.push(lattice);
 
   const atomMat = makeMat(ctx.scene, 'nanoAtomMat', Color3.White(), { unlit: true });
@@ -225,8 +247,9 @@ function createNanoWorld(ctx: AppContext): void {
       for (let z = 0; z < 2; z++) {
         const atom = MeshBuilder.CreateSphere(`nanoAtom_${x}${y}${z}`, { diameter: 0.2, segments: 16 }, ctx.scene);
         atom.position.set((x - 0.5) * 0.9, (y - 0.5) * 0.9 + 2, (z - 0.5) * 0.9);
-        atom.parent = ctx.roomRoot;
         atom.material = atomMat;
+        ctx.trackMesh(atom);
+        trackedMeshes.push(atom);
       }
     }
   }
@@ -235,32 +258,37 @@ function createNanoWorld(ctx: AppContext): void {
 function createChallengeArena(ctx: AppContext): void {
   const podium = MeshBuilder.CreateCylinder('podium', { diameterTop: 2, diameterBottom: 3, height: 0.5, tessellation: 32 }, ctx.scene);
   podium.position.set(0, 0.25, 0);
-  podium.parent = ctx.roomRoot;
   podium.material = makeMat(ctx.scene, 'podiumMat', new Color3(1, 0.76, 0.03), { unlit: true, alpha: 0.8 });
+  ctx.trackMesh(podium);
+  trackedMeshes.push(podium);
 
   const trophy = MeshBuilder.CreateCylinder('trophy', { diameterTop: 0.3, diameterBottom: 0.5, height: 1.5, tessellation: 16 }, ctx.scene);
   trophy.position.set(0, 1.25, 0);
-  trophy.parent = ctx.roomRoot;
   trophy.material = makeMat(ctx.scene, 'trophyMat', new Color3(1, 0.84, 0), { unlit: true, emissive: new Color3(0.3, 0.25, 0) });
+  ctx.trackMesh(trophy);
+  trackedMeshes.push(trophy);
 
   const scoreboard = MeshBuilder.CreatePlane('scoreboard', { width: 4, height: 2 }, ctx.scene);
   scoreboard.position.set(0, 3, -4);
-  scoreboard.parent = ctx.roomRoot;
   const sbMat = makeMat(ctx.scene, 'scoreboardMat', new Color3(0.1, 0.1, 0.2), { unlit: true, alpha: 0.9 });
   sbMat.backFaceCulling = false;
   scoreboard.material = sbMat;
+  ctx.trackMesh(scoreboard);
+  trackedMeshes.push(scoreboard);
 }
 
 function createGenericLab(ctx: AppContext): void {
   const table = MeshBuilder.CreateBox('genericTable', { width: 3, height: 1, depth: 1.5 }, ctx.scene);
   table.position.set(0, 0.5, 0);
-  table.parent = ctx.roomRoot;
   table.material = makeMat(ctx.scene, 'genericTableMat', new Color3(0.29, 0.29, 0.29), { unlit: true });
+  ctx.trackMesh(table);
+  trackedMeshes.push(table);
 
   const beaker = MeshBuilder.CreateCylinder('beaker', { diameterTop: 0.6, diameterBottom: 0.4, height: 1, tessellation: 16 }, ctx.scene);
   beaker.position.set(0.8, 1.5, 0);
-  beaker.parent = ctx.roomRoot;
   beaker.material = makeMat(ctx.scene, 'beakerMat', new Color3(0.45, 0.73, 1), { unlit: true, alpha: 0.5 });
+  ctx.trackMesh(beaker);
+  trackedMeshes.push(beaker);
 }
 
 function createExperimentStations(ctx: AppContext, room: ExperimentalRoomData): void {
@@ -273,8 +301,9 @@ function createExperimentStations(ctx: AppContext, room: ExperimentalRoomData): 
 
     const station = MeshBuilder.CreateCylinder(`expStation_${expId}`, { diameter: 1.6, height: 0.5, tessellation: 16 }, ctx.scene);
     station.position.set(x, 0.25, z);
-    station.parent = ctx.roomRoot;
     station.material = makeMat(ctx.scene, `expStationMat_${expId}`, themeColor.scale(0.8), { unlit: true, alpha: 0.6 });
+    ctx.trackMesh(station);
+    trackedMeshes.push(station);
 
     const icon = MeshBuilder.CreateSphere(`expIcon_${expId}`, { diameter: 0.4, segments: 16 }, ctx.scene);
     icon.position.y = 0.6;
@@ -285,9 +314,9 @@ function createExperimentStations(ctx: AppContext, room: ExperimentalRoomData): 
     label.text = expId;
     label.color = 'white';
     label.fontSize = 12;
+    ui.addControl(label);
     label.linkWithMesh(station);
     label.linkOffsetY = -25;
-    ui.addControl(label);
 
     station.actionManager = new ActionManager(ctx.scene);
     station.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => station.scaling.setAll(1.2)));
@@ -298,19 +327,16 @@ function createExperimentStations(ctx: AppContext, room: ExperimentalRoomData): 
 function setupLighting(ctx: AppContext, themeColor: Color3): void {
   const ambient = new HemisphericLight('expAmbient', new Vector3(0, 1, 0), ctx.scene);
   ambient.intensity = 0.3;
-  ambient.parent = ctx.roomRoot;
 
   const light1 = new PointLight('expPoint1', new Vector3(5, 5, 5), ctx.scene);
   light1.diffuse = themeColor;
   light1.intensity = 0.8;
   light1.range = 15;
-  light1.parent = ctx.roomRoot;
 
   const light2 = new PointLight('expPoint2', new Vector3(-5, 5, -5), ctx.scene);
   light2.diffuse = themeColor;
   light2.intensity = 0.8;
   light2.range = 15;
-  light2.parent = ctx.roomRoot;
 }
 
 function createTeleportZone(ctx: AppContext): void {
@@ -318,21 +344,22 @@ function createTeleportZone(ctx: AppContext): void {
   floor.position.y = 0.001;
   floor.isVisible = false;
   floor.isPickable = false;
-  floor.parent = ctx.roomRoot;
+  ctx.trackMesh(floor);
 }
 
 function createNavigationPanel(ctx: AppContext): void {
   const navPanel = MeshBuilder.CreateBox('expNavPanel', { width: 1.5, height: 0.5, depth: 0.1 }, ctx.scene);
   navPanel.position.set(0, 1.5, -5);
-  navPanel.parent = ctx.roomRoot;
   navPanel.material = makeMat(ctx.scene, 'expNavPanelMat', new Color3(0.2, 0.2, 0.3), { unlit: true, alpha: 0.9 });
+  ctx.trackMesh(navPanel);
+  trackedMeshes.push(navPanel);
 
   const navLabel = new TextBlock('expNavLabel');
-  navLabel.text = '◀ Lobby';
+  navLabel.text = '\u25C0 Lobby';
   navLabel.color = 'white';
   navLabel.fontSize = 18;
-  navLabel.linkWithMesh(navPanel);
   ui.addControl(navLabel);
+  navLabel.linkWithMesh(navPanel);
 
   navPanel.actionManager = new ActionManager(ctx.scene);
   navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => navPanel.scaling.setAll(1.1)));
@@ -340,15 +367,15 @@ function createNavigationPanel(ctx: AppContext): void {
   navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger, () => { ctx.goto = ROOM_LOBBY; }));
 }
 
-export function enter(ctx: AppContext, _param?: string): void {
-  ctx.roomRoot.setEnabled(true);
+export function enter(_ctx: AppContext, _param?: string): void {
+  trackedMeshes.forEach(m => { m.isVisible = true; });
 }
 
-export function exit(ctx: AppContext): void {
-  ctx.roomRoot.setEnabled(false);
+export function exit(_ctx: AppContext): void {
+  trackedMeshes.forEach(m => { m.isVisible = false; });
 }
 
-export function execute(_ctx: AppContext, delta: number, time: number): void {
+export function execute(_ctx: AppContext, delta: number, _time: number): void {
   animatedMeshes.forEach(mesh => {
     if (!mesh.isEnabled()) return;
     mesh.rotation.y += delta * 0.3;

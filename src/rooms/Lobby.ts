@@ -44,6 +44,8 @@ export function setup(ctx: AppContext): void {
 
   scene.clearColor = new Color4(0.04, 0.04, 0.1, 1);
 
+  uiTexture = AdvancedDynamicTexture.CreateFullscreenUI('lobbyUI', true, scene);
+
   createFloor(ctx);
   createTeleportFloor(ctx);
   createAtomNucleus(ctx);
@@ -55,22 +57,20 @@ export function setup(ctx: AppContext): void {
 
   const ambientLight = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene);
   ambientLight.intensity = 0.2;
-  ambientLight.parent = ctx.roomRoot;
 
   const coreLight = new PointLight('coreLight', new Vector3(0, 2, 0), scene);
   coreLight.intensity = 1;
   coreLight.diffuse = toColor3(0x4a90e2);
   coreLight.range = 10;
-  coreLight.parent = ctx.roomRoot;
 
-  uiTexture = AdvancedDynamicTexture.CreateFullscreenUI('lobbyUI', true, scene);
+  setupInteractions(ctx);
 }
 
 function createFloor(ctx: AppContext): void {
   const scene = ctx.scene;
   const floor = MeshBuilder.CreateCylinder('floor', { diameter: 30, height: 0.2, tessellation: 64 }, scene);
   floor.position.y = -0.1;
-  floor.parent = ctx.roomRoot;
+  ctx.trackMesh(floor);
 
   const floorMat = new StandardMaterial('floorMat', scene);
   floorMat.diffuseColor = toColor3(0x1a1a2e);
@@ -84,8 +84,8 @@ function createTeleportFloor(ctx: AppContext): void {
   teleportFloor = MeshBuilder.CreatePlane('teleportFloor', { width: 30, height: 30 }, scene);
   teleportFloor.rotation.x = Math.PI / 2;
   teleportFloor.position.y = 0.001;
-  teleportFloor.parent = ctx.roomRoot;
   teleportFloor.isVisible = false;
+  ctx.trackMesh(teleportFloor);
 }
 
 function createAtomNucleus(ctx: AppContext): void {
@@ -99,7 +99,7 @@ function createAtomNucleus(ctx: AppContext): void {
   atomCore = MeshBuilder.CreateSphere('atomCore', { diameter: ATOM_RADIUS * 2, segments: 32 }, scene);
   atomCore.position.y = 1.6;
   atomCore.material = coreMat;
-  atomCore.parent = ctx.roomRoot;
+  ctx.trackMesh(atomCore);
 
   const glowMat = new StandardMaterial('glowMat', scene);
   glowMat.diffuseColor = toColor3(0x4a90e2);
@@ -111,7 +111,7 @@ function createAtomNucleus(ctx: AppContext): void {
   const glow = MeshBuilder.CreateSphere('glow', { diameter: ATOM_RADIUS * 3, segments: 32 }, scene);
   glow.position.y = 1.6;
   glow.material = glowMat;
-  glow.parent = ctx.roomRoot;
+  ctx.trackMesh(glow);
 }
 
 function createElectronOrbits(ctx: AppContext): void {
@@ -131,7 +131,7 @@ function createElectronOrbits(ctx: AppContext): void {
     orbit.rotation.x = Math.PI / 2;
     orbit.position.y = 1.6;
     orbit.material = orbitMat;
-    orbit.parent = ctx.roomRoot;
+    ctx.trackMesh(orbit);
 
     const electronMat = new StandardMaterial(`electronMat${i}`, scene);
     electronMat.diffuseColor = Color3.White();
@@ -143,8 +143,9 @@ function createElectronOrbits(ctx: AppContext): void {
 
     const group = new TransformNode(`electronGroup${i}`, scene);
     group.position.y = 1.6;
-    group.parent = ctx.roomRoot;
     electron.parent = group;
+    ctx.trackNode(group);
+    ctx.trackMesh(electron);
 
     electronOrbits.push({
       group,
@@ -161,7 +162,7 @@ function createElectronOrbits(ctx: AppContext): void {
 function createPeriodicTableHologram(ctx: AppContext): void {
   const scene = ctx.scene;
   periodicTableGroup = new TransformNode('periodicTable', scene);
-  periodicTableGroup.parent = ctx.roomRoot;
+  ctx.trackNode(periodicTableGroup);
 
   const width = 12;
   const height = 7;
@@ -213,17 +214,17 @@ function createElementButtons(ctx: AppContext): void {
     const button = MeshBuilder.CreateSphere(`elementButton_${element.symbol}`, { diameter: 0.5, segments: 16 }, scene);
     button.position.set(x, 1.6, z);
     button.material = buttonMat;
-    button.parent = ctx.roomRoot;
     button.metadata = { element, roomIndex: index + 1 };
+    ctx.trackMesh(button);
 
     const label = new TextBlock(`label_${element.symbol}`, element.symbol);
     label.color = 'white';
     label.fontSize = 14;
     label.outlineWidth = 2;
     label.outlineColor = 'black';
+    uiTexture?.addControl(label);
     label.linkWithMesh(button);
     label.linkOffsetY = -30;
-    uiTexture?.addControl(label);
     elementLabels.push(label);
 
     elementButtons.push(button);
@@ -250,8 +251,8 @@ function createExpRoomButtons(ctx: AppContext): void {
     const button = MeshBuilder.CreateBox(`expButton_${room.id}`, { width: 0.8, height: 0.8, depth: 0.1 }, scene);
     button.position.set(x, 1.6, z);
     button.material = buttonMat;
-    button.parent = ctx.roomRoot;
     button.metadata = { expRoom: room, roomIndex: ELEMENTS.length + index + 1 };
+    ctx.trackMesh(button);
 
     expButtons.push(button);
   });
@@ -271,7 +272,7 @@ function createInfoPanel(ctx: AppContext): void {
   infoPanel.position.set(0, 3.5, -4);
   infoPanel.material = panelMat;
   infoPanel.isVisible = false;
-  infoPanel.parent = ctx.roomRoot;
+  ctx.trackMesh(infoPanel);
 
   infoTitle = new TextBlock('infoTitle', '');
   infoTitle.color = 'white';
@@ -279,18 +280,18 @@ function createInfoPanel(ctx: AppContext): void {
   infoTitle.fontWeight = 'bold';
   infoTitle.textWrapping = true;
   infoTitle.width = 2.6;
+  uiTexture?.addControl(infoTitle);
   infoTitle.linkWithMesh(infoPanel);
   infoTitle.linkOffsetY = -30;
-  uiTexture?.addControl(infoTitle);
 
   infoDescription = new TextBlock('infoDescription', '');
   infoDescription.color = '#cccccc';
   infoDescription.fontSize = 12;
   infoDescription.textWrapping = true;
   infoDescription.width = 2.6;
+  uiTexture?.addControl(infoDescription);
   infoDescription.linkWithMesh(infoPanel);
   infoDescription.linkOffsetY = 60;
-  uiTexture?.addControl(infoDescription);
 }
 
 function setupInteractions(ctx: AppContext): void {
@@ -337,13 +338,6 @@ function setupInteractions(ctx: AppContext): void {
     );
   });
 
-  if (teleportFloor) {
-    teleportFloor.actionManager = new ActionManager(scene);
-    teleportFloor.actionManager.registerAction(
-      new ExecuteCodeAction(ActionManager.OnPickTrigger, () => {
-      })
-    );
-  }
 }
 
 function showElementInfo(element: ElementData): void {
@@ -382,8 +376,6 @@ export function enter(ctx: AppContext): void {
   elementLabels.forEach(label => label.isVisible = true);
   if (infoTitle) infoTitle.isVisible = false;
   if (infoDescription) infoDescription.isVisible = false;
-
-  setupInteractions(ctx);
 }
 
 export function exit(_ctx: AppContext): void {

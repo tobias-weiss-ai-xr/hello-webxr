@@ -1,4 +1,4 @@
-import type { Scene, Camera, TransformNode, AbstractMesh } from '@babylonjs/core';
+import type { Scene, Camera, AbstractMesh, TransformNode } from '@babylonjs/core';
 
 export interface RoomModule {
   setup(ctx: AppContext, param?: string): void;
@@ -14,11 +14,12 @@ export interface AppContext {
   xr: import('@babylonjs/core/XR/webXRDefaultExperience').WebXRDefaultExperience | null;
   room: number;
   vrMode: boolean;
-  roomRoot: TransformNode;
   handedness: 'left' | 'right';
   goto: number | null;
   GotoRoom: (roomIndex: number, elementSymbol?: string, expRoomId?: string) => void;
   assets: Record<string, any>;
+  trackMesh: (mesh: AbstractMesh) => void;
+  trackNode: (node: TransformNode) => void;
 }
 
 export interface InteractionState {

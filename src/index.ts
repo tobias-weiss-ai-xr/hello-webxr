@@ -12,6 +12,8 @@ import { RoomManager, ROOM_LOBBY, ROOM_ELEMENTS_START } from './rooms/RoomManage
 import * as Lobby from './rooms/Lobby.js';
 import * as ElementRoom from './rooms/ElementRoom.js';
 import * as ExperimentalRoom from './rooms/ExperimentalRoom.js';
+import { loadAssets, type AssetManifest } from './lib/AssetLoader.js';
+import { AudioManager } from './lib/AudioManager.js';
 
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
 const loadingEl = document.getElementById('loading');
@@ -29,7 +31,19 @@ let scene: Scene;
 let camera: ArcRotateCamera;
 let xrExperience: import('@babylonjs/core/XR/webXRDefaultExperience').WebXRDefaultExperience | null = null;
 let roomManager: RoomManager;
+let audioManager: AudioManager;
 let context: AppContext;
+
+const ASSET_MANIFEST: AssetManifest = {
+  hall: { url: 'hall.glb' },
+  teleport: { url: 'teleport.glb' },
+  generic_controller: { url: 'generic_controller.glb' },
+  angel: { url: 'angel.min.glb' },
+  spider: { url: 'spider.glb' },
+  sound_door: { url: 'sound_door.glb' },
+  sky: { url: 'sky.png' },
+  grid: { url: 'grid.png' },
+};
 
 async function init() {
   engine = new Engine(canvas, true, {
@@ -61,6 +75,20 @@ async function init() {
     roomManager.registerRoom(ROOM_EXP_START + i, ExperimentalRoom);
   });
 
+  // Initialize audio (procedural sounds, no external files)
+  audioManager = new AudioManager(scene);
+  audioManager.init().catch(e => console.warn('[AudioManager] Init failed:', e));
+
+  // Load 3D/textures in background, populate context.assets
+  const assetStore = { ...ASSET_MANIFEST } as Record<string, any>;
+  loadAssets(scene, 'assets', ASSET_MANIFEST, () => {
+    console.log('[AssetLoader] All assets loaded');
+  }, (loaded, total) => {
+    if (loadingEl) {
+      loadingEl.textContent = `Lade... ${Math.round(loaded / total * 100)}%`;
+    }
+  });
+
   context = {
     scene,
     engine,
@@ -68,11 +96,12 @@ async function init() {
     xr: null,
     room: ROOM_LOBBY,
     vrMode: false,
-    roomRoot: roomManager.roomRootNode,
     handedness,
     goto: null,
     GotoRoom: gotoRoom,
-    assets: {}
+    assets: assetStore,
+    trackMesh: (mesh) => roomManager.trackMesh(mesh),
+    trackNode: (node) => roomManager.trackNode(node)
   };
 
   (window as any).context = context;
@@ -151,7 +180,10 @@ function createFloorMesh(): import('@babylonjs/core').Mesh {
 }
 
 function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string): void {
-  roomManager.exitRoom(context.room, context);
+  if (context.room !== roomIndex) {
+    roomManager.exitRoom(context.room, context);
+    audioManager.stopAmbience();
+  }
 
   if (roomIndex >= ROOM_ELEMENTS_START && roomIndex <= ROOM_ELEMENTS_END && !elementSymbol) {
     elementSymbol = ELEMENTS[roomIndex - ROOM_ELEMENTS_START].symbol;
@@ -163,11 +195,23 @@ function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string)
   const param = elementSymbol || expRoomId;
   roomManager.setupRoom(roomIndex, context, param);
 
+  if (roomIndex === ROOM_LOBBY) {
+    audioManager.playRoomAmbience('lobby');
+  } else if (roomIndex >= ROOM_ELEMENTS_START && roomIndex <= ROOM_ELEMENTS_END) {
+    const element = ELEMENTS[roomIndex - ROOM_ELEMENTS_START];
+    const group = element.group as 'alkali' | 'alkalineEarth' | 'transition' | 'lanthanide' | 'actinide' | 'metal' | 'metalloid' | 'nonmetal' | 'halogen' | 'nobleGas';
+    audioManager.playRoomAmbience(group);
+  } else if (roomIndex >= ROOM_EXP_START) {
+    audioManager.playRoomAmbience('lobby');
+  }
+
   if (context.vrMode && xrExperience?.baseExperience.camera) {
     xrExperience.baseExperience.camera.position = new Vector3(0, 1.6, 6.8);
   } else {
-    camera.position = Vector3.Zero();
     camera.target = Vector3.Zero();
+    camera.alpha = -Math.PI / 2;
+    camera.beta = Math.PI / 3;
+    camera.radius = 8;
   }
 
   context.room = roomIndex;

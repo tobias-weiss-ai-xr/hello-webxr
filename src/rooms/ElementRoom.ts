@@ -5,12 +5,10 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
-import type { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 
-import type { AppContext } from '../types/index.js';
+import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
 import { ROOM_LOBBY } from './RoomManager.js';
-import type { ElementData } from '../types/index.js';
 
 interface ElectronData { angle: number; shellRadius: number; speed: number; isElectron: true }
 
@@ -30,9 +28,10 @@ function makeMat(scene: import('@babylonjs/core').Scene, name: string, color: Co
   return m;
 }
 
-var atomModel: TransformNode;
-var ui: AdvancedDynamicTexture;
-var elementData: ElementData | undefined;
+let atomModel: TransformNode;
+let ui: AdvancedDynamicTexture;
+let elementData: ElementData | undefined;
+let trackedMeshes: import('@babylonjs/core').AbstractMesh[] = [];
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
   if (!elementSymbol) return;
@@ -56,15 +55,16 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 function createFloor(ctx: AppContext, themeColor: Color3): void {
   const floor = MeshBuilder.CreateCylinder('elementFloor', { diameter: 20, height: 0.2, tessellation: 64 }, ctx.scene);
   floor.position.y = -0.1;
-  floor.parent = ctx.roomRoot;
   floor.material = makeMat(ctx.scene, 'elementFloorMat', themeColor.scale(0.1), { unlit: true });
+  ctx.trackMesh(floor);
+  trackedMeshes.push(floor);
 }
 
 function createAtomModel(ctx: AppContext, element: ElementData): void {
   atomModel = new TransformNode('atomModel', ctx.scene);
-  atomModel.parent = ctx.roomRoot;
   atomModel.position.y = 2;
   atomModel.scaling.setAll(1.5);
+  ctx.trackNode(atomModel);
 
   const themeColor = toColor3(element.color);
 
@@ -108,8 +108,9 @@ function createInfoPanel(ctx: AppContext, element: ElementData): void {
   const panel = MeshBuilder.CreateBox('infoPanel', { width: 3, height: 4, depth: 0.1 }, ctx.scene);
   panel.position.set(-4, 2, 0);
   panel.lookAt(new Vector3(0, 2, 0));
-  panel.parent = ctx.roomRoot;
   panel.material = makeMat(ctx.scene, 'infoPanelMat', new Color3(0.16, 0.16, 0.23), { unlit: true, alpha: 0.9 });
+  ctx.trackMesh(panel);
+  trackedMeshes.push(panel);
 
   const titleText = new TextBlock('elementTitle');
   titleText.text = `${element.symbol} - ${element.name}\nGruppe: ${element.group}\nPeriode: ${element.period}`;
@@ -117,9 +118,9 @@ function createInfoPanel(ctx: AppContext, element: ElementData): void {
   titleText.fontSize = 16;
   titleText.textWrapping = true;
   titleText.width = 2.5;
+  ui.addControl(titleText);
   titleText.linkWithMesh(panel);
   titleText.linkOffsetY = 60;
-  ui.addControl(titleText);
 
   const descText = new TextBlock('elementDesc');
   descText.text = `OZ: ${element.atomicNumber}  Masse: ${element.mass}\n\n${element.description}`;
@@ -127,9 +128,9 @@ function createInfoPanel(ctx: AppContext, element: ElementData): void {
   descText.fontSize = 12;
   descText.textWrapping = true;
   descText.width = 2.5;
+  ui.addControl(descText);
   descText.linkWithMesh(panel);
   descText.linkOffsetY = -40;
-  ui.addControl(descText);
 }
 
 function createExperimentStations(ctx: AppContext, element: ElementData): void {
@@ -143,8 +144,9 @@ function createExperimentStations(ctx: AppContext, element: ElementData): void {
 
     const station = MeshBuilder.CreateCylinder(`expStation_${expId}`, { diameter: 1.6, height: 0.5, tessellation: 16 }, ctx.scene);
     station.position.set(x, 0.25, z);
-    station.parent = ctx.roomRoot;
     station.material = makeMat(ctx.scene, `stationMat_${expId}`, themeColor.scale(0.8), { unlit: true, alpha: 0.6 });
+    ctx.trackMesh(station);
+    trackedMeshes.push(station);
 
     const icon = MeshBuilder.CreateSphere(`stationIcon_${expId}`, { diameter: 0.4, segments: 16 }, ctx.scene);
     icon.position.y = 0.6;
@@ -160,19 +162,16 @@ function createExperimentStations(ctx: AppContext, element: ElementData): void {
 function setupLighting(ctx: AppContext, themeColor: Color3): void {
   const ambient = new HemisphericLight('elementAmbient', new Vector3(0, 1, 0), ctx.scene);
   ambient.intensity = 0.3;
-  ambient.parent = ctx.roomRoot;
 
   const light1 = new PointLight('elementPoint1', new Vector3(5, 5, 5), ctx.scene);
   light1.diffuse = themeColor;
   light1.intensity = 0.8;
   light1.range = 15;
-  light1.parent = ctx.roomRoot;
 
   const light2 = new PointLight('elementPoint2', new Vector3(-5, 5, -5), ctx.scene);
   light2.diffuse = themeColor;
   light2.intensity = 0.8;
   light2.range = 15;
-  light2.parent = ctx.roomRoot;
 }
 
 function createTeleportZone(ctx: AppContext): void {
@@ -180,21 +179,22 @@ function createTeleportZone(ctx: AppContext): void {
   floor.position.y = 0.001;
   floor.isVisible = false;
   floor.isPickable = false;
-  floor.parent = ctx.roomRoot;
+  ctx.trackMesh(floor);
 }
 
 function createNavigationPanel(ctx: AppContext): void {
   const navPanel = MeshBuilder.CreateBox('navPanel', { width: 1.5, height: 0.5, depth: 0.1 }, ctx.scene);
   navPanel.position.set(0, 1.5, -5);
-  navPanel.parent = ctx.roomRoot;
   navPanel.material = makeMat(ctx.scene, 'navPanelMat', new Color3(0.2, 0.2, 0.3), { unlit: true, alpha: 0.9 });
+  ctx.trackMesh(navPanel);
+  trackedMeshes.push(navPanel);
 
   const navLabel = new TextBlock('navLabel');
-  navLabel.text = '◀ Lobby';
+  navLabel.text = '\u25C0 Lobby';
   navLabel.color = 'white';
   navLabel.fontSize = 18;
-  navLabel.linkWithMesh(navPanel);
   ui.addControl(navLabel);
+  navLabel.linkWithMesh(navPanel);
 
   navPanel.actionManager = new ActionManager(ctx.scene);
   navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => navPanel.scaling.setAll(1.1)));
@@ -202,12 +202,14 @@ function createNavigationPanel(ctx: AppContext): void {
   navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger, () => { ctx.goto = ROOM_LOBBY; }));
 }
 
-export function enter(ctx: AppContext, _param?: string): void {
-  ctx.roomRoot.setEnabled(true);
+export function enter(_ctx: AppContext, _param?: string): void {
+  trackedMeshes.forEach(m => { m.isVisible = true; });
+  if (atomModel) atomModel.setEnabled(true);
 }
 
-export function exit(ctx: AppContext): void {
-  ctx.roomRoot.setEnabled(false);
+export function exit(_ctx: AppContext): void {
+  trackedMeshes.forEach(m => { m.isVisible = false; });
+  if (atomModel) atomModel.setEnabled(false);
 }
 
 export function execute(_ctx: AppContext, delta: number, time: number): void {

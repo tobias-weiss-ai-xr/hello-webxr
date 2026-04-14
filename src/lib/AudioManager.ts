@@ -273,7 +273,10 @@ export class AudioManager {
     panner.connect(this.audioCtx.destination);
     source.start(0);
 
-    const timeout = setTimeout(() => {
+    const spatialSound: SpatialSound = { source, panner, id: soundId, timeout: null! };
+    this.spatialSounds.push(spatialSound);
+
+    spatialSound.timeout = setTimeout(() => {
       try { source.stop(); } catch { /* already stopped */ }
       source.disconnect();
       panner.disconnect();
@@ -281,9 +284,6 @@ export class AudioManager {
       const idx = this.spatialSounds.findIndex(s => s === spatialSound);
       if (idx !== -1) this.spatialSounds.splice(idx, 1);
     }, sound.duration * 1000);
-
-    const spatialSound: SpatialSound = { source, panner, id: soundId, timeout };
-    this.spatialSounds.push(spatialSound);
   }
 
   updateSpatialSounds(listenerPosition: Vector3): void {
