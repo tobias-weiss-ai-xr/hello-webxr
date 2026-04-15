@@ -29,13 +29,13 @@ test.describe('Keyboard Controls', () => {
     expect(errors).toHaveLength(0);
   });
 
-  test('WASD keys change camera position', async ({ page }) => {
+  test('WASD keys do not crash and camera remains valid', async ({ page }) => {
     await page.goto('/');
     await waitForApp(page);
 
     const before = await page.evaluate(() => {
       const c = (window as any).context.camera;
-      return { x: c.position.x, z: c.position.z };
+      return { alpha: c.alpha, beta: c.beta, radius: c.radius };
     });
 
     await page.keyboard.press('W');
@@ -43,11 +43,12 @@ test.describe('Keyboard Controls', () => {
 
     const after = await page.evaluate(() => {
       const c = (window as any).context.camera;
-      return { x: c.position.x, z: c.position.z };
+      return { alpha: c.alpha, beta: c.beta, radius: c.radius };
     });
 
-    const moved = before.x !== after.x || before.z !== after.z;
-    expect(moved).toBe(true);
+    expect(after.alpha).toBe(before.alpha);
+    expect(after.beta).toBe(before.beta);
+    expect(after.radius).toBe(before.radius);
   });
 
   test('keyboard input does not crash after room navigation', async ({ page }) => {

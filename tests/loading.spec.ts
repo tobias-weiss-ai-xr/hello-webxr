@@ -21,10 +21,15 @@ test.describe('Application Loading', () => {
   test('loading screen disappears after assets load', async ({ page }) => {
     await page.goto('/');
 
-    const loading = page.locator('#loading');
-    await expect(loading).toBeVisible({ timeout: 5000 });
+    // Loading may already be hidden by the time we check (headless is fast).
+    // Wait for the app to fully initialize instead.
+    await page.waitForFunction(
+      () => (window as any).context?.engine && (window as any).context?.room !== undefined,
+      { timeout: 30000 }
+    );
 
-    await expect(loading).toHaveCSS('display', 'none', { timeout: 30000 });
+    const loading = page.locator('#loading');
+    await expect(loading).toHaveCSS('display', 'none', { timeout: 5000 });
   });
 
   test('canvas appears after loading completes', async ({ page }) => {
