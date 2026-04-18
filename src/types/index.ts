@@ -50,6 +50,20 @@ export interface ElementData {
   groupNumber?: number;
 }
 
+export interface EmbedOptions {
+  container: HTMLElement | string;
+  locale?: 'de' | 'en' | 'fr' | 'zh' | 'sv';
+  startRoom?: string;
+  audio?: boolean;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  onReady?: () => void;
+  onRoomChange?: (roomName: string) => void;
+  onVREnter?: () => void;
+  onVRExit?: () => void;
+}
+
 export interface ExperimentalRoomData {
   id: string;
   name: string;
