@@ -5,6 +5,7 @@ import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { buildRoom } from './RoomBuilder.js';
+import { createDoorwayTrigger } from './DoorwayTrigger.js';
 
 import type { AppContext, ExperimentalRoomData } from '../types/index.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
@@ -49,6 +50,7 @@ let ui: AdvancedDynamicTexture;
 let roomData: ExperimentalRoomData | undefined;
 let animatedMeshes: import('@babylonjs/core').Mesh[] = [];
 let trackedMeshes: import('@babylonjs/core').AbstractMesh[] = [];
+let doorwayTriggers: { dispose: () => void }[] = [];
 
 export function setup(ctx: AppContext, roomId?: string): void {
   if (!roomId) return;
@@ -64,6 +66,17 @@ export function setup(ctx: AppContext, roomId?: string): void {
 
   createRoomSpecificSetup(ctx, roomData.id, themeColor);
   createFloor(ctx, themeColor);
+
+  // Doorway trigger: south → lobby
+  const roomDimensions = { width: 10, height: 4, depth: 10 };
+  doorwayTriggers.forEach(t => t.dispose());
+  doorwayTriggers = [];
+  doorwayTriggers.push(createDoorwayTrigger(ctx.scene, {
+    doorwayConfig: { wall: 'south', offset: 0 },
+    roomDimensions,
+    onTrigger: () => { ctx.goto = ROOM_LOBBY; },
+  }));
+
   createExperimentStations(ctx, roomData);
   setupLighting(ctx, themeColor);
   createTeleportZone(ctx);
@@ -399,6 +412,8 @@ export function enter(_ctx: AppContext, _param?: string): void {
 
 export function exit(_ctx: AppContext): void {
   trackedMeshes.forEach(m => { m.isVisible = false; });
+  doorwayTriggers.forEach(t => t.dispose());
+  doorwayTriggers = [];
 }
 
 export function execute(_ctx: AppContext, delta: number, _time: number): void {

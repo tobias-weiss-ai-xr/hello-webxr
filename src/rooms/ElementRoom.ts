@@ -6,9 +6,10 @@ import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { buildRoom } from './RoomBuilder.js';
+import { createDoorwayTrigger } from './DoorwayTrigger.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
-import { ELEMENTS } from '../data/elements.js';
+import { ELEMENTS, EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import { ROOM_LOBBY } from './RoomManager.js';
 
 interface ElectronData { angle: number; shellRadius: number; speed: number; isElectron: true }
@@ -33,6 +34,7 @@ let atomModel: TransformNode;
 let ui: AdvancedDynamicTexture;
 let elementData: ElementData | undefined;
 let trackedMeshes: import('@babylonjs/core').AbstractMesh[] = [];
+let doorwayTriggers: { dispose: () => void }[] = [];
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
   if (!elementSymbol) return;
@@ -57,6 +59,32 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   });
 
   ctx.setFloorMesh?.(room.floor);
+
+  // Doorway triggers: south → lobby, west → experimental room
+  const elementIndex = ELEMENTS.findIndex(e => e.symbol === elementSymbol);
+  const roomDimensions = { width: 12, height: 4, depth: 12 };
+
+  doorwayTriggers.forEach(t => t.dispose());
+  doorwayTriggers = [];
+
+  // South doorway: walk back to lobby
+  doorwayTriggers.push(createDoorwayTrigger(ctx.scene, {
+    doorwayConfig: { wall: 'south', offset: 0 },
+    roomDimensions,
+    onTrigger: () => { ctx.goto = ROOM_LOBBY; },
+  }));
+
+  // West doorway: walk to experimental room (if element has experiments)
+  if (elementData?.experiments && elementData.experiments.length > 0 && elementIndex >= 0) {
+    // Map element to its first experiment's room, cycling through available experimental rooms
+    const expRoomIndex = elementIndex % EXPERIMENTAL_ROOMS.length;
+    const targetRoomIndex = ELEMENTS.length + expRoomIndex;
+    doorwayTriggers.push(createDoorwayTrigger(ctx.scene, {
+      doorwayConfig: { wall: 'west', offset: 0 },
+      roomDimensions,
+      onTrigger: () => { ctx.GotoRoom(targetRoomIndex); },
+    }));
+  }
 
   createAtomModel(ctx, elementData);
   createInfoPanel(ctx, elementData);
@@ -204,6 +232,8 @@ export function enter(_ctx: AppContext, _param?: string): void {
 export function exit(_ctx: AppContext): void {
   trackedMeshes.forEach(m => { m.isVisible = false; });
   if (atomModel) atomModel.setEnabled(false);
+  doorwayTriggers.forEach(t => t.dispose());
+  doorwayTriggers = [];
 }
 
 export function execute(_ctx: AppContext, delta: number, time: number): void {
