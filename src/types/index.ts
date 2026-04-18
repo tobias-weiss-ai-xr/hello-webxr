@@ -20,6 +20,7 @@ export interface AppContext {
   assets: Record<string, any>;
   trackMesh: (mesh: AbstractMesh) => void;
   trackNode: (node: TransformNode) => void;
+  setFloorMesh?: (mesh: AbstractMesh) => void;
 }
 
 export interface InteractionState {

@@ -4,6 +4,7 @@ import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
+import { buildRoom } from './RoomBuilder.js';
 
 import type { AppContext, ExperimentalRoomData } from '../types/index.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
@@ -20,6 +21,19 @@ const ROOM_COLORS: Record<string, Color3> = {
   space_chem: new Color3(0.04, 0.04, 0.1),
   nano_world: new Color3(0.09, 0.64, 0.72),
   challenge_arena: new Color3(1, 0.76, 0.03)
+};
+
+const themeColors: Record<string, { floor: Color3; wall: Color3; ceiling: Color3 }> = {
+  reaction_lab: { floor: new Color3(0.2, 0.1, 0.1), wall: new Color3(0.25, 0.12, 0.12), ceiling: new Color3(0.15, 0.08, 0.08) },
+  nuclear_chamber: { floor: new Color3(0.1, 0.2, 0.1), wall: new Color3(0.12, 0.25, 0.12), ceiling: new Color3(0.08, 0.15, 0.08) },
+  electrochem_lab: { floor: new Color3(0.2, 0.15, 0.05), wall: new Color3(0.25, 0.18, 0.08), ceiling: new Color3(0.15, 0.1, 0.03) },
+  organic_chem: { floor: new Color3(0.1, 0.1, 0.2), wall: new Color3(0.12, 0.12, 0.25), ceiling: new Color3(0.08, 0.08, 0.15) },
+  extreme_conditions: { floor: new Color3(0.15, 0.15, 0.2), wall: new Color3(0.18, 0.18, 0.25), ceiling: new Color3(0.1, 0.1, 0.15) },
+  industrial_apps: { floor: new Color3(0.1, 0.15, 0.2), wall: new Color3(0.12, 0.18, 0.25), ceiling: new Color3(0.08, 0.1, 0.15) },
+  historical_lab: { floor: new Color3(0.15, 0.1, 0.15), wall: new Color3(0.18, 0.12, 0.18), ceiling: new Color3(0.1, 0.08, 0.1) },
+  space_chem: { floor: new Color3(0.1, 0.1, 0.15), wall: new Color3(0.12, 0.12, 0.18), ceiling: new Color3(0.08, 0.08, 0.1) },
+  nano_world: { floor: new Color3(0.2, 0.15, 0.1), wall: new Color3(0.25, 0.18, 0.12), ceiling: new Color3(0.15, 0.1, 0.08) },
+  challenge_arena: { floor: new Color3(0.15, 0.2, 0.15), wall: new Color3(0.18, 0.25, 0.18), ceiling: new Color3(0.1, 0.15, 0.1) },
 };
 
 function makeMat(scene: import('@babylonjs/core').Scene, name: string, color: Color3, opts: { unlit?: boolean; alpha?: number; emissive?: Color3 } = {}): StandardMaterial {
@@ -57,11 +71,23 @@ export function setup(ctx: AppContext, roomId?: string): void {
 }
 
 function createFloor(ctx: AppContext, themeColor: Color3): void {
-  const floor = MeshBuilder.CreateCylinder('expFloor', { diameter: 20, height: 0.2, tessellation: 64 }, ctx.scene);
-  floor.position.y = -0.1;
-  floor.material = makeMat(ctx.scene, 'expFloorMat', themeColor.scale(0.1), { unlit: true });
-  ctx.trackMesh(floor);
-  trackedMeshes.push(floor);
+  const roomId = roomData?.id || 'reaction_lab';
+  const theme = themeColors[roomId] ?? themeColors.reaction_lab;
+  const room = buildRoom(ctx.scene, {
+    dimensions: { width: 10, height: 4, depth: 10 },
+    floorColor: theme.floor,
+    wallColor: theme.wall,
+    ceilingColor: theme.ceiling,
+    doorways: [{ wall: 'south', offset: 0 }],
+  });
+  
+  ctx.setFloorMesh?.(room.floor);
+  
+  // Track all room components
+  ctx.trackMesh(room.floor);
+  room.walls.forEach(wall => ctx.trackMesh(wall));
+  room.doorways.forEach(doorway => ctx.trackMesh(doorway));
+  trackedMeshes.push(room.floor, ...room.walls, ...room.doorways);
 }
 
 function createRoomSpecificSetup(ctx: AppContext, roomId: string, themeColor: Color3): void {

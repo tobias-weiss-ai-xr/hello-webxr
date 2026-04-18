@@ -1,11 +1,12 @@
 import { Engine } from '@babylonjs/core/Engines/engine.js';
 import { Scene } from '@babylonjs/core/scene.js';
-import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera.js';
+import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera.js';
 import { Vector3, Color4 } from '@babylonjs/core/Maths/math.js';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight.js';
 import { WebXRState } from '@babylonjs/core/XR/webXRTypes.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import type { AppContext } from './types/index.js';
 import { ELEMENTS, EXPERIMENTAL_ROOMS } from './data/elements.js';
 import { RoomManager, ROOM_LOBBY, ROOM_ELEMENTS_START } from './rooms/RoomManager.js';
@@ -14,6 +15,8 @@ import * as ElementRoom from './rooms/ElementRoom.js';
 import * as ExperimentalRoom from './rooms/ExperimentalRoom.js';
 import { loadAssets, type AssetManifest } from './lib/AssetLoader.js';
 import { AudioManager } from './lib/AudioManager.js';
+import { DesktopControls } from './movement/DesktopControls.js';
+import { VRNavigation } from './movement/VRNavigation.js';
 
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
 const loadingEl = document.getElementById('loading');
@@ -28,10 +31,12 @@ const handedness = (urlParams.get('handedness') as 'left' | 'right') || 'right';
 
 let engine: Engine;
 let scene: Scene;
-let camera: ArcRotateCamera;
+let camera: UniversalCamera;
 let xrExperience: import('@babylonjs/core/XR/webXRDefaultExperience').WebXRDefaultExperience | null = null;
 let roomManager: RoomManager;
 let audioManager: AudioManager;
+let vrNav: import('./movement/VRNavigation.js').VRNavigation | null = null;
+let currentVRFloor: AbstractMesh | null = null;
 let context: AppContext;
 
 const ASSET_MANIFEST: AssetManifest = {
@@ -56,11 +61,18 @@ async function init() {
   scene = new Scene(engine);
   scene.clearColor = new Color4(0.04, 0.04, 0.1, 1);
 
-  camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 3, 8, Vector3.Zero(), scene);
-  camera.lowerRadiusLimit = 0.5;
-  camera.upperRadiusLimit = 50;
-  camera.wheelPrecision = 20;
+  camera = new UniversalCamera('camera', new Vector3(0, 1.6, 0), scene);
   camera.attachControl(canvas, true);
+  camera.minZ = 0.1;
+  camera.fov = 1.2;
+  camera.inertia = 0.8;
+  camera.angularSensibility = 2000;
+  camera.keysUp = [87];    // W
+  camera.keysDown = [83];  // S
+  camera.keysLeft = [65];  // A
+  camera.keysRight = [68]; // D
+  scene.activeCamera = camera;
+  const desktopControls = new DesktopControls(camera, scene);
 
   const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
   hemiLight.intensity = 0.3;
@@ -101,7 +113,16 @@ async function init() {
     GotoRoom: gotoRoom,
     assets: assetStore,
     trackMesh: (mesh) => roomManager.trackMesh(mesh),
-    trackNode: (node) => roomManager.trackNode(node)
+    trackNode: (node) => roomManager.trackNode(node),
+    setFloorMesh: (mesh) => {
+      if (vrNav && currentVRFloor) {
+        vrNav.removeFloorMesh(currentVRFloor);
+      }
+      currentVRFloor = mesh;
+      if (vrNav) {
+        vrNav.addFloorMesh(mesh);
+      }
+    },
   };
 
   (window as any).context = context;
@@ -109,27 +130,31 @@ async function init() {
   roomManager.setupRoom(ROOM_LOBBY, context);
 
   try {
-    xrExperience = await scene.createDefaultXRExperienceAsync({
-      floorMeshes: [createFloorMesh()],
-      optionalFeatures: true
+    vrNav = new VRNavigation(scene, {
+      disableTeleportation: false,
     });
-    context.xr = xrExperience;
 
-    xrExperience.baseExperience.onStateChangedObservable.add((state) => {
-      const wasVrMode = context.vrMode;
-      context.vrMode = state === WebXRState.IN_XR;
+    vrNav.ready.then(xrExperience => {
+      context.xr = xrExperience;
 
-      if (context.vrMode && !wasVrMode) {
-        roomManager.exitRoom(context.room, context);
-      } else if (!context.vrMode && wasVrMode) {
-        roomManager.enterRoom(context.room, context);
-      }
+      xrExperience.baseExperience.onStateChangedObservable.add((state) => {
+        const wasVrMode = context.vrMode;
+        context.vrMode = state === WebXRState.IN_XR;
+
+        if (context.vrMode && !wasVrMode) {
+          roomManager.exitRoom(context.room, context);
+        } else if (!context.vrMode && wasVrMode) {
+          roomManager.enterRoom(context.room, context);
+        }
+      });
+    }).catch(e => {
+      console.warn('WebXR not available:', e);
     });
   } catch (e) {
     console.warn('WebXR not available:', e);
   }
 
-  setupDesktopControls();
+  // setupDesktopControls() is replaced by UniversalCamera native WASD controls and DesktopControls module
 
   let initialRoom = ROOM_LOBBY;
   let initialParam: string | undefined;
@@ -172,13 +197,6 @@ async function init() {
   window.addEventListener('resize', () => engine.resize());
 }
 
-function createFloorMesh(): import('@babylonjs/core').Mesh {
-  const floor = MeshBuilder.CreateGround('teleportFloor', { width: 30, height: 30 }, scene);
-  floor.isVisible = false;
-  floor.isPickable = false;
-  return floor;
-}
-
 function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string): void {
   if (context.room !== roomIndex) {
     roomManager.exitRoom(context.room, context);
@@ -205,41 +223,18 @@ function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string)
     audioManager.playRoomAmbience('lobby');
   }
 
-  if (context.vrMode && xrExperience?.baseExperience.camera) {
-    xrExperience.baseExperience.camera.position = new Vector3(0, 1.6, 6.8);
+  if (context.vrMode) {
+    // VR camera position is handled by VRNavigation
   } else {
-    camera.target = Vector3.Zero();
-    camera.alpha = -Math.PI / 2;
-    camera.beta = Math.PI / 3;
-    camera.radius = 8;
+    camera.position = new Vector3(0, 1.6, 0);
+    camera.rotation = new Vector3(0, -Math.PI / 2, 0);
   }
 
   context.room = roomIndex;
   roomManager.enterRoom(roomIndex, context, param);
 }
 
-function setupDesktopControls(): void {
-  const keys: Record<string, boolean> = {};
-  const velocity = 0.1;
 
-  window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-  scene.onBeforeRenderObservable.add(() => {
-    if (context.vrMode) return;
-    const forward = camera.getDirection(Vector3.Forward());
-    const right = camera.getDirection(Vector3.Right());
-    forward.y = 0;
-    forward.normalize();
-    right.y = 0;
-    right.normalize();
-
-    if (keys['w'] || keys['arrowup']) camera.position.addInPlace(forward.scale(velocity));
-    if (keys['s'] || keys['arrowdown']) camera.position.addInPlace(forward.scale(-velocity));
-    if (keys['a'] || keys['arrowleft']) camera.position.addInPlace(right.scale(-velocity));
-    if (keys['d'] || keys['arrowright']) camera.position.addInPlace(right.scale(velocity));
-  });
-}
 
 try {
   init();
