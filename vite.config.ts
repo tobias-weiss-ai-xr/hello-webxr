@@ -11,15 +11,8 @@ export default defineConfig(({ mode }) => ({
         lib: {
           entry: resolve(__dirname, 'src/embed/mount.ts'),
           name: 'PSEVR',
-          formats: ['es', 'umd'],
-          fileName: (format: string) => `pse-vr.${format === 'es' ? 'mjs' : 'js'}`,
-        },
-        rollupOptions: {
-          output: {
-            manualChunks(id: string) {
-              if (id.includes('@babylonjs')) return 'babylon';
-            },
-          },
+          formats: ['es'],
+          fileName: () => 'pse-vr.mjs',
         },
         outDir: 'dist-embed',
         sourcemap: true,
