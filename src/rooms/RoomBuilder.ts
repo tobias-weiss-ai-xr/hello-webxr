@@ -86,6 +86,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
   floor.position = new Vector3(position.x, position.y, position.z);
   floor.material = floorMat;
   floor.receiveShadows = true;
+  floor.checkCollisions = true;
 
   // --- Ceiling ---
   const ceiling = MeshBuilder.CreateGround('roomCeiling', {
@@ -95,6 +96,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
   ceiling.position = new Vector3(position.x, position.y + height, position.z);
   ceiling.rotation.x = Math.PI;
   ceiling.material = ceilingMat;
+  ceiling.checkCollisions = true;
 
   // --- Walls ---
   const walls: AbstractMesh[] = [];
@@ -154,6 +156,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
       }, scene);
       leftWall.rotation.y = wallDef.rotation;
       leftWall.material = wallMat;
+      leftWall.checkCollisions = true;
       walls.push(leftWall);
 
       // Right segment
@@ -164,6 +167,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
       }, scene);
       rightWall.rotation.y = wallDef.rotation;
       rightWall.material = wallMat;
+      rightWall.checkCollisions = true;
       walls.push(rightWall);
 
       // Top segment (above doorway)
@@ -175,6 +179,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
       }, scene);
       topWall.rotation.y = wallDef.rotation;
       topWall.material = wallMat;
+      topWall.checkCollisions = true;
       walls.push(topWall);
 
       // Position segments based on wall orientation
@@ -189,6 +194,7 @@ export function buildRoom(scene: Scene, options: RoomBuildOptions): RoomResult {
       wall.position = wallDef.center;
       wall.rotation.y = wallDef.rotation;
       wall.material = wallMat;
+      wall.checkCollisions = true;
       walls.push(wall);
     }
   }

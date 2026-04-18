@@ -1,6 +1,8 @@
 import type { Scene } from '@babylonjs/core/scene.js';
 import type { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera.js';
+import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { Collider } from '@babylonjs/core/Collisions/collider.js';
 
 export interface DesktopControlsOptions {
   /** Maximum movement speed in units/second (default: 4) */
@@ -19,6 +21,7 @@ export class DesktopControls {
   private decel: number;
   private keys = new Set<string>();
   private observer: ReturnType<Scene['onBeforeRenderObservable']['add']> | null = null;
+  private collider: Collider;
 
   constructor(
     private camera: UniversalCamera,
@@ -28,6 +31,8 @@ export class DesktopControls {
     this.maxSpeed = options.maxSpeed ?? 4;
     this.accel = options.acceleration ?? 12;
     this.decel = options.deceleration ?? 8;
+
+    this.collider = new Collider();
 
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
@@ -81,7 +86,26 @@ export class DesktopControls {
       }
     }
 
-    this.camera.position.addInPlace(this.velocity.scale(deltaTime));
+    // Use scene collision coordinator so walls/floors block movement
+    const displacement = this.velocity.scale(deltaTime);
+    const coordinator = this.scene.collisionCoordinator;
+
+    // Initialize collider with camera ellipsoid
+    this.collider._initialize(this.camera.position, displacement, 0.001);
+    this.collider._radius = this.camera.ellipsoid;
+
+    coordinator.getNewPosition(
+      this.camera.position,
+      displacement,
+      this.collider,
+      3,
+      null,
+      (_collisionIndex: number, newPosition: Vector3, _collidedMesh: AbstractMesh | null) => {
+        this.camera.position.copyFrom(newPosition);
+      },
+      0,
+      true
+    );
   }
 
   dispose(): void {

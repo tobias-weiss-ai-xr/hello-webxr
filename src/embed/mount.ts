@@ -108,6 +108,12 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   camera.keysRight = [68]; // D
   scene.activeCamera = camera;
 
+  // Collision detection: enable on camera and scene
+  scene.collisionsEnabled = true;
+  camera.checkCollisions = true;
+  camera.ellipsoid = new Vector3(0.5, 0.9, 0.5);   // player capsule half-extents
+  camera.ellipsoidOffset = new Vector3(0, 0.9, 0);  // center of capsule from feet
+
   // Desktop controls
   const desktopControls = new DesktopControls(camera, scene);
 

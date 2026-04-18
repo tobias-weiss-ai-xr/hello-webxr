@@ -1,9 +1,8 @@
 import { defineConfig } from 'vite';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 import { resolve } from 'path';
 
 export default defineConfig(({ mode }) => ({
-  plugins: [basicSsl()],
+  plugins: [],
   root: '.',
   publicDir: 'assets',
   build: mode === 'lib'
@@ -36,7 +35,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0',
     port: 3000,
-    https: true
   },
   assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.png', '**/*.jpg']
 }));
