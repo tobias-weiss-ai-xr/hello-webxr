@@ -20,6 +20,7 @@ export interface AppContext {
   assets: Record<string, any>;
   trackMesh: (mesh: AbstractMesh) => void;
   trackNode: (node: TransformNode) => void;
+  setFloorMesh?: (mesh: AbstractMesh) => void;
 }
 
 export interface InteractionState {
@@ -47,6 +48,20 @@ export interface ElementData {
   icon?: string;
   block?: string;
   groupNumber?: number;
+}
+
+export interface EmbedOptions {
+  container: HTMLElement | string;
+  locale?: 'de' | 'en' | 'fr' | 'zh' | 'sv';
+  startRoom?: string;
+  audio?: boolean;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  onReady?: () => void;
+  onRoomChange?: (roomName: string) => void;
+  onVREnter?: () => void;
+  onVRExit?: () => void;
 }
 
 export interface ExperimentalRoomData {

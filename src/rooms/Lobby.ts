@@ -8,6 +8,7 @@ import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
 
 const ATOM_RADIUS = 0.8;
 const ORBIT_RADIUS = 4;
@@ -46,7 +47,17 @@ export function setup(ctx: AppContext): void {
 
   uiTexture = AdvancedDynamicTexture.CreateFullscreenUI('lobbyUI', true, scene);
 
-  createFloor(ctx);
+  const room = buildRoom(ctx.scene, {
+    dimensions: { width: 20, height: 5, depth: 20 },
+    floorColor: new Color3(0.08, 0.08, 0.12),
+    wallColor: new Color3(0.12, 0.12, 0.18),
+    ceilingColor: new Color3(0.06, 0.06, 0.1),
+    ambientColor: new Color3(0.4, 0.4, 0.6),
+    doorways: [{ wall: 'south', offset: 0 }],
+  });
+
+  ctx.setFloorMesh?.(room.floor);
+
   createTeleportFloor(ctx);
   createAtomNucleus(ctx);
   createElectronOrbits(ctx);
@@ -54,14 +65,6 @@ export function setup(ctx: AppContext): void {
   createElementButtons(ctx);
   createExpRoomButtons(ctx);
   createInfoPanel(ctx);
-
-  const ambientLight = new HemisphericLight('ambient', new Vector3(0, 1, 0), scene);
-  ambientLight.intensity = 0.2;
-
-  const coreLight = new PointLight('coreLight', new Vector3(0, 2, 0), scene);
-  coreLight.intensity = 1;
-  coreLight.diffuse = toColor3(0x4a90e2);
-  coreLight.range = 10;
 
   setupInteractions(ctx);
 }
@@ -172,7 +175,7 @@ function createPeriodicTableHologram(ctx: AppContext): void {
   const cellWidth = width / cols;
   const cellHeight = height / rows;
 
-  for (let i = 0; i < ELEMENTS.length && i < 3; i++) {
+  for (let i = 0; i < ELEMENTS.length; i++) {
     const element = ELEMENTS[i];
     const cellMat = new StandardMaterial(`cellMat${i}`, scene);
     cellMat.diffuseColor = toColor3(element.color);
@@ -181,11 +184,11 @@ function createPeriodicTableHologram(ctx: AppContext): void {
     cellMat.disableLighting = true;
     cellMat.backFaceCulling = false;
 
-    const cell = MeshBuilder.CreateBox(`cell_${element.symbol}`, { width: cellWidth * 0.8, height: cellHeight * 0.8, depth: 0.05 }, scene);
+    const cell = MeshBuilder.CreateBox(`cell_${element.symbol}`, { width: 0.8, height: 0.8, depth: 0.05 }, scene);
     cell.material = cellMat;
     cell.parent = periodicTableGroup;
 
-    if (element.groupNumber) {
+    if (element.groupNumber && element.period) {
       const x = (element.groupNumber - 9) * cellWidth;
       const y = (4 - element.period) * cellHeight;
       cell.position.set(x, y + 2, -6);

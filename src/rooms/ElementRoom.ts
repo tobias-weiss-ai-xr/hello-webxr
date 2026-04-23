@@ -5,6 +5,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
+import { buildRoom } from './RoomBuilder.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
@@ -43,22 +44,28 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   const themeColor = toColor3(elementData.color);
   ctx.scene.clearColor = new Color4(themeColor.r * 0.15, themeColor.g * 0.15, themeColor.b * 0.15, 1);
 
-  createFloor(ctx, themeColor);
+  const room = buildRoom(ctx.scene, {
+    dimensions: { width: 12, height: 4, depth: 12 },
+    floorColor: new Color3(0.1, 0.1, 0.15),
+    wallColor: new Color3(0.15, 0.15, 0.2),
+    ceilingColor: new Color3(0.08, 0.08, 0.12),
+    ambientColor: new Color3(0.5, 0.5, 0.6),
+    doorways: [
+      { wall: 'south', offset: 0 },  // entry from lobby
+      { wall: 'west', offset: 0 },   // to experimental room
+    ],
+  });
+
+  ctx.setFloorMesh?.(room.floor);
+
   createAtomModel(ctx, elementData);
   createInfoPanel(ctx, elementData);
   createExperimentStations(ctx, elementData);
-  setupLighting(ctx, themeColor);
   createTeleportZone(ctx);
   createNavigationPanel(ctx);
 }
 
-function createFloor(ctx: AppContext, themeColor: Color3): void {
-  const floor = MeshBuilder.CreateCylinder('elementFloor', { diameter: 20, height: 0.2, tessellation: 64 }, ctx.scene);
-  floor.position.y = -0.1;
-  floor.material = makeMat(ctx.scene, 'elementFloorMat', themeColor.scale(0.1), { unlit: true });
-  ctx.trackMesh(floor);
-  trackedMeshes.push(floor);
-}
+
 
 function createAtomModel(ctx: AppContext, element: ElementData): void {
   atomModel = new TransformNode('atomModel', ctx.scene);
@@ -159,20 +166,7 @@ function createExperimentStations(ctx: AppContext, element: ElementData): void {
   });
 }
 
-function setupLighting(ctx: AppContext, themeColor: Color3): void {
-  const ambient = new HemisphericLight('elementAmbient', new Vector3(0, 1, 0), ctx.scene);
-  ambient.intensity = 0.3;
 
-  const light1 = new PointLight('elementPoint1', new Vector3(5, 5, 5), ctx.scene);
-  light1.diffuse = themeColor;
-  light1.intensity = 0.8;
-  light1.range = 15;
-
-  const light2 = new PointLight('elementPoint2', new Vector3(-5, 5, -5), ctx.scene);
-  light2.diffuse = themeColor;
-  light2.intensity = 0.8;
-  light2.range = 15;
-}
 
 function createTeleportZone(ctx: AppContext): void {
   const floor = MeshBuilder.CreateGround('elementTeleportFloor', { width: 20, height: 20 }, ctx.scene);
