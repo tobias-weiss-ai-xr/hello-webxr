@@ -2,6 +2,9 @@ import type { AppContext, RoomModule } from '../types/index.js';
 
 export const ROOM_LOBBY = 0;
 export const ROOM_ELEMENTS_START = 1;
+export const ROOM_PERIODIC_PAVILION = 128;
+export const ROOM_LAB_WING_START = 119;
+export const ROOM_EXPERIMENTS_START = 129;
 
 export class RoomManager {
   private rooms: (RoomModule | null)[] = [];

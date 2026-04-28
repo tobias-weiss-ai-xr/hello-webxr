@@ -8,10 +8,11 @@ import { WebXRState } from '@babylonjs/core/XR/webXRTypes.js';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import type { EmbedOptions, AppContext } from '../types/index.js';
 import { ELEMENTS, EXPERIMENTAL_ROOMS } from '../data/elements.js';
-import { RoomManager, ROOM_LOBBY, ROOM_ELEMENTS_START } from '../rooms/RoomManager.js';
+import { RoomManager, ROOM_LOBBY, ROOM_ELEMENTS_START, ROOM_PERIODIC_PAVILION } from '../rooms/RoomManager.js';
 import * as Lobby from '../rooms/Lobby.js';
 import * as ElementRoom from '../rooms/ElementRoom.js';
 import * as ExperimentalRoom from '../rooms/ExperimentalRoom.js';
+import * as PeriodicPavilion from '../rooms/PeriodicPavilion.js';
 import { loadAssets, type AssetManifest } from '../lib/AssetLoader.js';
 import { AudioManager } from '../lib/AudioManager.js';
 import { DesktopControls } from '../movement/DesktopControls.js';
@@ -125,6 +126,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   const roomManager = new RoomManager(scene);
 
   roomManager.registerRoom(ROOM_LOBBY, Lobby);
+  roomManager.registerRoom(ROOM_PERIODIC_PAVILION, PeriodicPavilion);
   ELEMENTS.forEach((_, i) => {
     roomManager.registerRoom(ROOM_ELEMENTS_START + i, ElementRoom);
   });

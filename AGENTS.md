@@ -1,51 +1,63 @@
 # PSE in VR - Virtuelles Periodensystem
 
-WebXR-basiertes virtuelles Periodensystem mit 118 Element-Räumen und 10 Experimentierräumen. Immersives Chemie-Lernerlebnis.
+WebXR-basiertes virtuelles Periodensystem mit 118 Element-Räumen und 10 Experimentierräumen.
 
-**Stack:** Three.js (3D), ECSY (ECS), Playwright (tests), Webpack (build), WebXR Polyfill
+**Stack:** Babylon.js (3D + GUI), TypeScript (strict), Vite (build), Playwright (e2e tests)
+**Production URL:** https://pse.chemie-lernen.org
+**Deploy branch:** `pse-in-vr`
+
+> **Migration note:** This project migrated from Three.js/Webpack/ECSY to Babylon.js/Vite/TypeScript. Old README and package.json still reference the original "hello-webxr" demo — trust what's in `src/`, not the README.
 
 ---
 
 ## COMMANDS
 
 ```bash
-# Development
-npm install
-npm start              # HTTPS dev server at :3000
+# Setup (needs --legacy-peer-deps due to stale peer deps in package.json)
+npm install --legacy-peer-deps
 
-# Build
-npm run build          # Production bundle
-npm run watch          # Watch mode
+# Development (HTTPS required for WebXR, port 3000)
+npm run dev              # Vite dev server at https://localhost:3000
+
+# Build (type-checks first, then Vite build)
+npm run build            # tsc --noEmit && vite build → dist/
 
 # Testing
-npm test               # All Playwright tests
-npx playwright test tests/navigation.spec.js    # Single test file
-npx playwright test navigation.spec.js:10       # Specific test by line
-npx playwright test -g "test name"             # By test name
-npm run test:ui        # Browser UI
-npm run test:headed    # Headed mode
-
-# Shaders (if modifying .vert/.frag files)
-python packshaders.py [seconds]  # Repack into src/lib/shaders.js
+npm test                 # All Playwright tests (sequential, 1 worker)
+npx playwright test tests/navigation.spec.ts       # Single test file
+npx playwright test navigation.spec.ts:10          # Specific test by line
+npx playwright test -g "test name"                 # By test name
+npm run test:headed       # Headed mode (browser visible)
 ```
+
+**CI test workflow** uses Node 20, runs `build` then `test`. **CI deploy** uses Node 18, deploys `dist/` to GitHub Pages from `pse-in-vr` branch.
 
 ---
 
-## STRUCTURE
+## PROJECT STRUCTURE
 
 ```
 src/
-├── data/         # Element data & room definitions (ELEMENTS, EXPERIMENTAL_ROOMS)
-├── lib/          # Core libraries (RayControl, Teleport, assetManager, shaders)
-├── systems/      # ECSY entity-component systems
-├── rooms/        # VR room modules (Lobby, ElementRoom, ExperimentalRoom)
-├── stations/     # Legacy: Interactive stations within rooms
-└── components/   # ECSY component definitions
+├── index.ts          # Entry point — engine init, room registration, render loop
+├── types/index.ts    # All TypeScript interfaces (AppContext, RoomModule, ElementData, etc.)
+├── data/elements.ts  # Element data (118 elements), GROUP_COLORS, EXPERIMENTAL_ROOMS
+├── lib/
+│   ├── AssetLoader.ts   # glTF/GLB/texture loading via Babylon SceneLoader
+│   ├── AudioManager.ts  # Procedural audio + spatial sounds (Web Audio API)
+│   └── ColorUtils.ts
+├── rooms/
+│   ├── RoomManager.ts   # Room registry, setup/enter/exit lifecycle, mesh disposal
+│   ├── Lobby.ts         # Room 0 — periodic table hologram, element buttons
+│   ├── ElementRoom.ts   # Rooms 1-118 — atom visualization per element
+│   └── ExperimentalRoom.ts  # Rooms 119+ — experiment rooms
+└── vendor/              # Binary vendor files (Basis, Draco transcoders — do not edit)
 
-tests/            # Playwright e2e tests (inspect window.context)
-assets/           # 3D models, textures, sounds
-shaders/          # GLSL shader sources
+tests/                  # Playwright e2e tests (.spec.ts)
+assets/                 # 3D models (.glb), textures (.png)
+index.html              # Vite entry point (<script type="module" src="/src/index.ts">)
 ```
+
+**Path alias:** `@/` → `./src/*` (configured in both `tsconfig.json` and `vite.config.ts`)
 
 ---
 
@@ -53,143 +65,121 @@ shaders/          # GLSL shader sources
 
 | Task | Location |
 |------|----------|
-| Entry point, room navigation | `src/index.js` |
-| Interaction system | `src/lib/RayControl.js` |
-| Room logic (setup/enter/exit/execute) | `src/rooms/*.js` |
-| ECS components | `src/components/index.js` |
-| Asset loading | `src/lib/assetManager.js` |
-| Element data | `src/data/elements.js` |
-| 3D models | `src/lib/modelLoader.js` |
-| Audio system | `src/lib/AudioManager.js` |
+| Entry point, room registration, render loop | `src/index.ts` |
+| All type definitions (AppContext, RoomModule, etc.) | `src/types/index.ts` |
+| Room lifecycle (setup/enter/exit/execute) | `src/rooms/*.ts` |
+| Room index constants (ROOM_LOBBY, ROOM_ELEMENTS_START) | `src/rooms/RoomManager.ts` |
+| Element data, group colors, experimental rooms | `src/data/elements.ts` |
+| Asset loading | `src/lib/AssetLoader.ts` |
+| Audio (procedural sounds, ambience) | `src/lib/AudioManager.ts` |
+| 3D model loading | Babylon `SceneLoader.ImportMeshAsync` in `src/lib/AssetLoader.ts` |
 
 ---
 
-## CODE STYLE
+## ARCHITECTURE
 
-**Module exports:**
-- Classes: `export default class MyClass { }`
-- Functions: `export function myFunc() { }` or named exports `{ myFunc }`
-- Data: `export const MY_CONSTANT = value;`
+### Room System
 
-**Imports:** Always use `.js` extension for relative paths:
-```javascript
-import * as THREE from 'three';
-import RayControl from '../lib/RayControl.js';
-import { ELEMENTS, GROUP_COLORS } from '../data/elements.js';
-import { Text, Position, Object3D } from '../components/index.js';
+All room modules export 4 functions matching the `RoomModule` interface (`src/types/index.ts`):
+
+```typescript
+export function setup(ctx: AppContext, param?: string): void;    // Called once per room index
+export function enter(ctx: AppContext, param?: string): void;    // Show room, attach UI
+export function exit(ctx: AppContext): void;                     // Hide room, dispose meshes
+export function execute(ctx: AppContext, delta: number, time: number): void;  // Per-frame updates
 ```
 
-**Variable declarations:**
-- `var` for module-scoped variables (traditional pattern here)
-- `const` for constants
-- `let` for block-scoped variables
+- `RoomManager` tracks all created meshes/nodes per room and disposes them on exit
+- `setup()` is called once and cached; `enter()`/`exit()` are called on every navigation
+- Room modules use `ctx.trackMesh()` and `ctx.trackNode()` to register disposables
 
-**Naming:**
-- Classes: PascalCase (`RayControl`, `Teleport`)
-- Functions: camelCase (`createAtomModel`, `setupLighting`)
-- Constants: UPPER_SNAKE_CASE (`ROOM_LOBBY`, `ELEMENT_COLORS`)
-- Module variables: camelCase with `var` (`scene`, `elementData`)
+### Room Indices
 
-**Error handling:**
-- Never use empty catch blocks
-- Use `console.warn()` for recoverable errors
-- Use `console.error()` for critical issues
-
-**Three.js patterns:**
-- Scene: `new THREE.Scene()`
-- Meshes: `new THREE.Mesh(geometry, material)`
-- Materials: Use proper properties (`color`, `metalness`, `roughness`, `emissive`, `opacity`)
-- Vector3: `new THREE.Vector3(x, y, z)`, `set()`, `copy()`
-
----
-
-## ROOM PATTERNS
-
-All room modules export 4 functions:
-
-```javascript
-export function setup(ctx, param) {
-  // param = elementSymbol (for ElementRoom) or roomId (for ExperimentalRoom)
-  scene = new THREE.Scene();
-  ctx.raycontrol.addState('name', {...});
-}
-
-export function enter(ctx, param) {
-  ctx.scene.add(scene);
-  ctx.raycontrol.activateState('name');
-}
-
-export function exit(ctx, param) {
-  ctx.raycontrol.deactivateState('name');
-  ctx.scene.remove(scene);
-}
-
-export function execute(ctx, delta, time, param) {
-  // Update animations
-  material.uniforms.time.value = time;
-}
+```
+0           = Lobby (ROOM_LOBBY)
+1–118       = Element rooms (ROOM_ELEMENTS_START through ROOM_ELEMENTS_START + 117)
+119+        = Experimental rooms
 ```
 
----
+Navigation via URL: `/?room=H` (element symbol) or `/?room=reaction_lab` (room ID)
 
-## ROOM NAVIGATION
+### AppContext (`ctx`)
 
-```javascript
-// Room indices:
-// 0 = Lobby
-// 1-22 = Element rooms (H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, Ca, Fe, Cu, Au, U)
-// 23+ = Experimental rooms
+Passed to all room functions. Full definition in `src/types/index.ts`:
 
-// Direct navigation via URL:
-// https://localhost:3000/?room=H  (Go to Hydrogen room)
-// https://localhost:3000/?room=0  (Go to lobby)
-
-// In src/index.js:
-context.goto = roomIndex;  // Triggers room change
+```typescript
+scene, engine, camera, xr          // Babylon.js core
+room: number                       // Current room index
+vrMode: boolean                    // true when in WebXR session
+goto: number | null                // Set to trigger room change in next frame
+GotoRoom(index, symbol?, expId?)   // Programmatic navigation
+assets: Record<string, any>        // Loaded asset results
+trackMesh(mesh), trackNode(node)   // Register disposables with RoomManager
 ```
 
----
-
-## CONTEXT OBJECT (`ctx`)
-
-Passed to all room functions and classes:
-- `ctx.scene`, `ctx.renderer`, `ctx.camera`
-- `ctx.world` (ECSY), `ctx.raycontrol`, `ctx.teleport`
-- `ctx.assets`, `ctx.shaders`, `ctx.audioListener`
-- `ctx.GotoRoom` - Function reference for room navigation
-- `ctx.cameraRig`, `ctx.controllers`, `ctx.handedness`
-- `ctx.vrMode` - Boolean, true when in WebXR mode
+Runtime state accessible in tests via `(window as any).context`.
 
 ---
 
-## ANTI-PATTERNS
+## CODE CONVENTIONS
 
-- Direct `three/examples/jsm/...` imports - use established patterns from `src/lib/`
-- Empty catch blocks - use `console.warn()` at minimum
-- Assuming TypeScript - this is pure JavaScript
-- Hardcoded room indices - use ROOM_LOBBY, ROOM_ELEMENTS_START constants
+**Language:** TypeScript with `strict: true` (`tsconfig.json`). No `as any` suppression.
 
-**Known workarounds** (preserve):
-- Oculus Browser <8 controller event skips (`@FIXME` in `src/index.js`)
+**Imports:** Always include `.js` extension for relative paths (Vite ESM resolution):
+```typescript
+import { Engine } from '@babylonjs/core/Engines/engine.js';
+import type { AppContext } from '../types/index.js';
+```
+
+**Babylon.js imports:** Use deep path imports with `.js` extension (tree-shakeable):
+```typescript
+// CORRECT — tree-shakeable deep imports
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+
+// WRONG — barrel imports (bundles entire library)
+import * as BABYLON from '@babylonjs/core';
+```
+
+**Module-level state:** Rooms use module-scoped `let` variables for scene objects (Babylon convention — meshes belong to the scene, not class instances).
+
+**Unused params:** Prefix with underscore: `(_ctx: AppContext, _delta: number)`
 
 ---
 
 ## TESTING
 
-Tests use Playwright, inspect `window.context` for runtime state:
-```javascript
-test('example test', async ({ page }) => {
+Tests are Playwright e2e, inspect `window.context` for runtime state:
+
+```typescript
+// Helper pattern used across test files
+async function waitForApp(page) {
+  await page.waitForFunction(
+    () => (window as any).context?.engine && (window as any).context?.room !== undefined,
+    { timeout: 30000 }
+  );
+}
+
+test('example', async ({ page }) => {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
-  const room = await page.evaluate(() => window.context.room);
+  await waitForApp(page);
+  const room = await page.evaluate(() => (window as any).context.room);
   expect(room).toBe(0);
 });
 ```
 
+**Test config:** `fullyParallel: false`, `workers: 1` (sequential execution). `ignoreHTTPSErrors: true`. CI retries 2x.
+
+**Test files:** `tests/navigation.spec.ts`, `tests/loading.spec.ts`, `tests/keyboard-controls.spec.ts`, `tests/assets.spec.ts`, `tests/error-resilience.spec.ts`
+
 ---
 
-## PERFORMANCE
+## ANTI-PATTERNS
 
-- `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` caps at 2x
-- Asset loading via `assetManager.js` with progress callbacks
-- ECSY systems for efficient entity updates
+- **Three.js imports** — project uses Babylon.js exclusively. `three` is in package.json but unused in source.
+- **Barrel imports from `@babylonjs/core`** — use deep path imports for tree-shaking.
+- **`as any` type suppression** — strict TypeScript, no escapes.
+- **Direct `three/examples/jsm/...` imports** — doesn't apply here, but don't introduce Three.js.
+- **Editing `src/vendor/`** — binary transcoder files, not source code.
+- **Assuming ESY/ECS patterns** — ECSY was removed; rooms are plain module exports, not ECS components.
+- **Hardcoded room indices** — use `ROOM_LOBBY` and `ROOM_ELEMENTS_START` from `RoomManager.ts`.
