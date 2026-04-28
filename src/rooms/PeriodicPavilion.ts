@@ -104,7 +104,9 @@ function createPeriodicTable(ctx: AppContext): void {
 function createInfoPanel(ctx: AppContext): void {
   const scene = ctx.scene;
 
-  infoPanel = Rectangle.CreateRoundRect('infoPanel', { width: 2.5, height: 1.5, cornerRadius: 0.1 });
+  infoPanel = new Rectangle('infoPanel');
+  infoPanel.width = '250px';
+  infoPanel.height = '150px';
   infoPanel.color = '#2a3a4a';
   infoPanel.thickness = 0;
   infoPanel.background = '#2a3a4a';
@@ -117,7 +119,7 @@ function createInfoPanel(ctx: AppContext): void {
   infoTitle.fontSize = 24;
   infoTitle.fontWeight = 'bold';
   infoTitle.textWrapping = true;
-  infoTitle.width = 2.3;
+  infoTitle.width = '230px';
   infoPanel.addControl(infoTitle);
   infoTitle.top = '-20px';
 
@@ -125,7 +127,7 @@ function createInfoPanel(ctx: AppContext): void {
   infoText.color = '#cccccc';
   infoText.fontSize = 14;
   infoText.textWrapping = true;
-  infoText.width = 2.3;
+  infoText.width = '230px';
   infoPanel.addControl(infoText);
   infoText.top = '20px';
 
@@ -183,8 +185,6 @@ export function enter(ctx: AppContext): void {
   elementCells.forEach(c => c.isVisible = true);
   elementLabels.forEach(l => l.isVisible = true);
   if (infoPanel) infoPanel.isVisible = false;
-  if (infoTitle) infoTitle.isVisible = false;
-  if (infoText) infoText.isVisible = false;
 }
 
 export function exit(_ctx: AppContext): void {
