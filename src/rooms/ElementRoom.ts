@@ -1,257 +1,392 @@
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
-import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
+import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
-import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/Actions/index.js';
-import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
-import { buildRoom } from './RoomBuilder.js';
-import { createDoorwayTrigger } from './DoorwayTrigger.js';
+import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
+import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
-import { ELEMENTS, EXPERIMENTAL_ROOMS } from '../data/elements.js';
-import { ROOM_LOBBY } from './RoomManager.js';
+import { ELEMENTS } from '../data/elements.js';
 
-interface ElectronData { angle: number; shellRadius: number; speed: number; isElectron: true }
+const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
+const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
+const ELEMENT_INFO_COLOR = new Color3(0.35, 0.38, 0.48);
 
-function toColor3(color: string | number): Color3 {
-  if (typeof color === 'number') {
-    return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+let mainAtom: TransformNode | null = null;
+let electronOrbits: { group: TransformNode; electron: any; radius: number; speed: number; angle: number }[] = [];
+let elementInfoPanel: any | null = null;
+let elementTitle: TextBlock | null = null;
+let elementDesc: TextBlock | null = null;
+let elementProps: TextBlock | null = null;
+let elementSymbolDisplay: TextBlock | null = null;
+let electronCountTextBlock: TextBlock | null = null;
+let electronShellLabels: TextBlock[] = [];
+let electronShells: { radius: number; label: TextBlock }[] = [];
+let orbitRings: any[] = [];
+let elementUI: AdvancedDynamicTexture | null = null;
+
+const ATOM_RADIUS = 0.8;
+
+function toColor3(color: number): Color3 {
+  return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+}
+
+interface AtomPart {
+  mesh: any;
+  label?: TextBlock;
+  offsetAngle: number;
+}
+
+let atomParts: AtomPart[] = [];
+
+/**
+ * Get electron configuration based on group
+ * Simplified representation for educational purposes
+ */
+function getElectronConfiguration(group: string, atomicNumber: number): number[] {
+  const groupToShells = new Map<string, number[]>();
+  groupToShells.set('1', [2]);
+  groupToShells.set('2', [2, 8]);
+  groupToShells.set('3', [2, 8, 18]);
+  groupToShells.set('4', [2, 8, 18, 32]);
+  groupToShells.set('5', [2, 8, 18, 32]);
+
+  const groupShells = groupToShells.get(group);
+  if (groupShells) {
+    return groupShells;
   }
-  return Color3.FromHexString(color.startsWith('#') ? color : `#${color}`);
-}
 
-function makeMat(scene: import('@babylonjs/core').Scene, name: string, color: Color3, opts: { unlit?: boolean; alpha?: number; emissive?: Color3 } = {}): StandardMaterial {
-  const m = new StandardMaterial(name, scene);
-  m.diffuseColor = color;
-  if (opts.unlit) m.disableLighting = true;
-  if (opts.alpha !== undefined) m.alpha = opts.alpha;
-  if (opts.emissive) m.emissiveColor = opts.emissive;
-  return m;
+  // Fallback: progressive filling of shells
+  const electrons = atomicNumber;
+  if (electrons <= 2) return [2];
+  if (electrons <= 10) return [2, 8];
+  if (electrons <= 18) return [2, 8, 8];
+  if (electrons <= 36) return [2, 8, 18, 8];
+  return [2, 8, 18, 32];
 }
-
-let atomModel: TransformNode;
-let ui: AdvancedDynamicTexture;
-let elementData: ElementData | undefined;
-let trackedMeshes: import('@babylonjs/core').AbstractMesh[] = [];
-let doorwayTriggers: { dispose: () => void }[] = [];
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
   if (!elementSymbol) return;
-  elementData = ELEMENTS.find(e => e.symbol === elementSymbol);
-  if (!elementData) return;
 
-  ui = AdvancedDynamicTexture.CreateFullscreenUI('elementRoomUI');
+  const element = ELEMENTS.find(e => e.symbol === elementSymbol);
+  if (!element) return;
 
-  const themeColor = toColor3(elementData.color);
-  ctx.scene.clearColor = new Color4(themeColor.r * 0.15, themeColor.g * 0.15, themeColor.b * 0.15, 1);
+  const scene = ctx.scene;
 
-  const room = buildRoom(ctx.scene, {
-    dimensions: { width: 12, height: 4, depth: 12 },
-    floorColor: new Color3(0.1, 0.1, 0.15),
-    wallColor: new Color3(0.15, 0.15, 0.2),
-    ceilingColor: new Color3(0.08, 0.08, 0.12),
-    ambientColor: new Color3(0.5, 0.5, 0.6),
-    doorways: [
-      { wall: 'south', offset: 0 },  // entry from lobby
-      { wall: 'west', offset: 0 },   // to experimental room
-    ],
+  // Background with unified atmosphere
+  scene.clearColor = new Color4(0.06, 0.06, 0.09, 1);
+
+  // UI
+  const elementUI = AdvancedDynamicTexture.CreateFullscreenUI('elementRoomUI');
+
+  // Build unified room
+  const room = buildRoom(scene, {
+    dimensions: { width: 14, height: 5, depth: 14 },
+    floorColor: BASE_ROOM_COLOR,
+    wallColor: new Color3(0.18, 0.19, 0.22),
+    ceilingColor: new Color3(0.10, 0.10, 0.13),
+    ambientColor: new Color3(0.35, 0.36, 0.40),
+    pointLightColor: new Color3(0.98, 0.95, 0.88),
+    doorways: [{ wall: 'south', offset: 0 }],
   });
 
   ctx.setFloorMesh?.(room.floor);
 
-  // Doorway triggers: south → lobby, west → experimental room
-  const elementIndex = ELEMENTS.findIndex(e => e.symbol === elementSymbol);
-  const roomDimensions = { width: 12, height: 4, depth: 12 };
+  // Create unified atom display
+  createAtomDisplay(ctx, element);
 
-  doorwayTriggers.forEach(t => t.dispose());
-  doorwayTriggers = [];
+  // Create info panel
+  createInfoPanel(ctx, element, elementUI!);
 
-  // South doorway: walk back to lobby
-  doorwayTriggers.push(createDoorwayTrigger(ctx.scene, {
-    doorwayConfig: { wall: 'south', offset: 0 },
-    roomDimensions,
-    onTrigger: () => { ctx.goto = ROOM_LOBBY; },
-  }));
-
-  // West doorway: walk to experimental room (if element has experiments)
-  if (elementData?.experiments && elementData.experiments.length > 0 && elementIndex >= 0) {
-    // Map element to its first experiment's room, cycling through available experimental rooms
-    const expRoomIndex = elementIndex % EXPERIMENTAL_ROOMS.length;
-    const targetRoomIndex = ELEMENTS.length + expRoomIndex;
-    doorwayTriggers.push(createDoorwayTrigger(ctx.scene, {
-      doorwayConfig: { wall: 'west', offset: 0 },
-      roomDimensions,
-      onTrigger: () => { ctx.GotoRoom(targetRoomIndex); },
-    }));
-  }
-
-  createAtomModel(ctx, elementData);
-  createInfoPanel(ctx, elementData);
-  createExperimentStations(ctx, elementData);
-  createTeleportZone(ctx);
-  createNavigationPanel(ctx);
+  // Connection lines/exploration hints
+  createKeyConnections(ctx);
 }
 
+function createAtomDisplay(ctx: AppContext, element: ElementData): void {
+  const scene = ctx.scene;
 
+  mainAtom = new TransformNode('mainAtom', scene);
+  ctx.trackNode(mainAtom);
+  mainAtom.position = new Vector3(0, 2.5, 0);
 
-function createAtomModel(ctx: AppContext, element: ElementData): void {
-  atomModel = new TransformNode('atomModel', ctx.scene);
-  atomModel.position.y = 2;
-  atomModel.scaling.setAll(1.5);
-  ctx.trackNode(atomModel);
+  const electronConfig = getElectronConfiguration(element.group, element.atomicNumber);
+  const elementColor = toColor3(typeof element.color === 'number' ? element.color : 0xCCCCCC);
 
-  const themeColor = toColor3(element.color);
+  // Nucleus
+  const nucleusMat = new StandardMaterial('nucleusMat', scene);
+  nucleusMat.diffuseColor = elementColor;
+  nucleusMat.emissiveColor = elementColor.scale(0.7);
+  nucleusMat.specularColor = Color3.White();
 
-  const nucleus = MeshBuilder.CreateSphere('nucleus', { diameter: 1, segments: 32 }, ctx.scene);
-  nucleus.parent = atomModel;
-  nucleus.material = makeMat(ctx.scene, 'nucleusMat', themeColor, { emissive: themeColor.scale(0.2) });
-  nucleus.metadata = { isNucleus: true };
+  const nucleus = MeshBuilder.CreateSphere('nucleus', { diameter: ATOM_RADIUS * 2.5, segments: 32 }, scene);
+  nucleus.material = nucleusMat;
+  nucleus.parent = mainAtom;
+  ctx.trackMesh(nucleus);
 
-  const shells = [2, 8, 18, 32, 50, 72];
-  let electronsPlaced = 0;
-  let shellRadius = 1.0;
+  // Symbol on nucleus
+  const symbolMat = new StandardMaterial('projectionRingMat', scene);
+  symbolMat.diffuseColor = Color3.White();
+  symbolMat.emissiveColor = Color3.White();
+  symbolMat.alpha = 0.3;
+  symbolMat.disableLighting = true;
 
-  while (electronsPlaced < element.atomicNumber) {
-    const maxInShell = shells[Math.min(Math.floor(shellRadius), shells.length - 1)];
-    const electronsInShell = Math.min(maxInShell, element.atomicNumber - electronsPlaced);
+  const symbolRing = MeshBuilder.CreateTorus('symbolRing', {
+    diameter: ATOM_RADIUS * 3.5,
+    thickness: 0.08,
+    tessellation: 64
+  }, scene);
+  symbolRing.material = symbolMat;
+  symbolRing.rotation.x = Math.PI / 2;
+  symbolRing.parent = mainAtom;
+  ctx.trackMesh(symbolRing);
 
-    const shell = MeshBuilder.CreateTorus(`shell_${shellRadius}`, {
-      diameter: shellRadius * 2, thickness: 0.04, tessellation: 64
-    }, ctx.scene);
+  // Electron shells
+  electronConfig.forEach((shellMax, index) => {
+    const shellRadius = ATOM_RADIUS + (index + 1) * 0.4;
+
+    // Shell ring
+    const shellMat = new StandardMaterial(`shellMat_${index}`, scene);
+    shellMat.diffuseColor = new Color3(0.4, 0.45, 0.5);
+    shellMat.emissiveColor = new Color3(0.3, 0.35, 0.4);
+    shellMat.alpha = 0.3;
+    shellMat.disableLighting = true;
+
+    const shell = MeshBuilder.CreateTorus(`shell_${index}`, {
+      diameter: shellRadius * 2,
+      thickness: 0.03,
+      tessellation: 128
+    }, scene);
+    shell.material = shellMat;
+    shell.parent = mainAtom;
     shell.rotation.x = Math.PI / 2;
-    shell.parent = atomModel;
-    shell.material = makeMat(ctx.scene, `shellMat_${shellRadius}`, themeColor, { unlit: true, alpha: 0.2 });
-    shell.metadata = { isShell: true };
+    ctx.trackMesh(shell);
+    orbitRings.push(shell);
+
+    // Add shell label
+    const shellLabel = new TextBlock(`shellLabel_${index}`, `${electronConfig[index]}e⁻`);
+    shellLabel.color = '#a0aec0';
+    shellLabel.fontSize = 10;
+    shellLabel.fontWeight = 'bold';
+    elementUI?.addControl(shellLabel);
+    shellLabel.isVisible = false;
+
+    electronShells.push({ radius: shellRadius, label: shellLabel });
+
+    const electronsInShell = Math.min(shellMax as number, 8);
+    const electronAngleStep = (Math.PI * 2) / electronsInShell;
 
     for (let i = 0; i < electronsInShell; i++) {
-      const angle = (i / electronsInShell) * Math.PI * 2;
-      const electron = MeshBuilder.CreateSphere(`electron_${electronsPlaced + i}`, { diameter: 0.16, segments: 16 }, ctx.scene);
-      electron.position.x = Math.cos(angle) * shellRadius;
-      electron.position.z = Math.sin(angle) * shellRadius;
-      electron.parent = atomModel;
-      electron.material = makeMat(ctx.scene, `eMat_${electronsPlaced + i}`, Color3.White(), { emissive: Color3.White().scale(0.5) });
-      electron.metadata = { isElectron: true, angle, shellRadius, speed: 1.5 + Math.random() * 0.5 } as ElectronData;
+      const electron = MeshBuilder.CreateSphere(`electron_${index}_${i}`, {
+        diameter: 0.15,
+        segments: 16
+      }, scene);
+
+      const electronMat = new StandardMaterial('electronMat', scene);
+      electronMat.diffuseColor = Color3.White();
+      electronMat.emissiveColor = Color3.White().scale(0.8);
+      electronMat.disableLighting = true;
+
+      electron.material = electronMat;
+
+      const angle = i * electronAngleStep;
+      electron.position.set(
+        Math.cos(angle) * shellRadius,
+        0,
+        Math.sin(angle) * shellRadius
+      );
+      electron.parent = mainAtom;
+      ctx.trackMesh(electron);
+
+      electronOrbits.push({
+        group: mainAtom!,
+        electron,
+        radius: shellRadius,
+        speed: 2 / (index + 1.5),
+        angle
+      });
     }
-
-    electronsPlaced += electronsInShell;
-    shellRadius += 0.5;
-  }
-}
-
-function createInfoPanel(ctx: AppContext, element: ElementData): void {
-  const panel = MeshBuilder.CreateBox('infoPanel', { width: 3, height: 4, depth: 0.1 }, ctx.scene);
-  panel.position.set(-4, 2, 0);
-  panel.lookAt(new Vector3(0, 2, 0));
-  panel.material = makeMat(ctx.scene, 'infoPanelMat', new Color3(0.16, 0.16, 0.23), { unlit: true, alpha: 0.9 });
-  ctx.trackMesh(panel);
-  trackedMeshes.push(panel);
-
-  const titleText = new TextBlock('elementTitle');
-  titleText.text = `${element.symbol} - ${element.name}\nGruppe: ${element.group}\nPeriode: ${element.period}`;
-  titleText.color = 'white';
-  titleText.fontSize = 16;
-  titleText.textWrapping = true;
-  titleText.width = 2.5;
-  ui.addControl(titleText);
-  titleText.linkWithMesh(panel);
-  titleText.linkOffsetY = 60;
-
-  const descText = new TextBlock('elementDesc');
-  descText.text = `OZ: ${element.atomicNumber}  Masse: ${element.mass}\n\n${element.description}`;
-  descText.color = '#cccccc';
-  descText.fontSize = 12;
-  descText.textWrapping = true;
-  descText.width = 2.5;
-  ui.addControl(descText);
-  descText.linkWithMesh(panel);
-  descText.linkOffsetY = -40;
-}
-
-function createExperimentStations(ctx: AppContext, element: ElementData): void {
-  const experiments = element.experiments || [];
-  const themeColor = toColor3(element.color);
-
-  experiments.forEach((expId, index) => {
-    const angle = (index / Math.max(experiments.length, 1)) * Math.PI * 2;
-    const x = Math.cos(angle) * 6;
-    const z = Math.sin(angle) * 6;
-
-    const station = MeshBuilder.CreateCylinder(`expStation_${expId}`, { diameter: 1.6, height: 0.5, tessellation: 16 }, ctx.scene);
-    station.position.set(x, 0.25, z);
-    station.material = makeMat(ctx.scene, `stationMat_${expId}`, themeColor.scale(0.8), { unlit: true, alpha: 0.6 });
-    ctx.trackMesh(station);
-    trackedMeshes.push(station);
-
-    const icon = MeshBuilder.CreateSphere(`stationIcon_${expId}`, { diameter: 0.4, segments: 16 }, ctx.scene);
-    icon.position.y = 0.6;
-    icon.parent = station;
-    icon.material = makeMat(ctx.scene, `iconMat_${expId}`, Color3.White(), { unlit: true });
-
-    station.actionManager = new ActionManager(ctx.scene);
-    station.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => station.scaling.setAll(1.2)));
-    station.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => station.scaling.setAll(1)));
   });
+
+  // Element symbol display (large)
+  elementSymbolDisplay = new TextBlock('elementSymbol', element.symbol);
+  elementSymbolDisplay.color = element.color.toString();
+  elementSymbolDisplay.fontSize = 72;
+  elementSymbolDisplay.fontWeight = 'bold';
+  elementUI?.addControl(elementSymbolDisplay);
+  elementSymbolDisplay.isVisible = false;
+
+  // Electron count text
+  electronCountTextBlock = new TextBlock('electronCount', `Electrons: ${element.atomicNumber}`);
+  electronCountTextBlock.color = '#a0aec0';
+  electronCountTextBlock.fontSize = 16;
+  elementUI?.addControl(electronCountTextBlock);
+  electronCountTextBlock.isVisible = false;
 }
 
+function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture | null): void {
+  const scene = ctx.scene;
 
+  // Create info panel mesh (semi-transparent panel)
+  const panelMat = new StandardMaterial('infoPanelMat', scene);
+  panelMat.diffuseColor = ELEMENT_INFO_COLOR;
+  panelMat.emissiveColor = ELEMENT_INFO_COLOR.scale(0.3);
+  panelMat.alpha = 0.85;
+  panelMat.backFaceCulling = false;
 
-function createTeleportZone(ctx: AppContext): void {
-  const floor = MeshBuilder.CreateGround('elementTeleportFloor', { width: 20, height: 20 }, ctx.scene);
-  floor.position.y = 0.001;
-  floor.isVisible = false;
-  floor.isPickable = false;
-  ctx.trackMesh(floor);
+  const panel = MeshBuilder.CreatePlane('infoPanel', { width: 5, height: 3 }, scene);
+  panel.position.set(0, 3, -4);
+  panel.rotation.y = Math.PI;
+  panel.billboardMode = 7;
+  panel.material = panelMat;
+  ctx.trackMesh(panel);
+  elementInfoPanel = panel;
+
+  // UI overlay
+  elementTitle = new TextBlock('elementTitle', `${element.symbol} - ${element.name}`);
+  elementTitle.color = 'white';
+  elementTitle.fontSize = 28;
+  elementTitle.fontWeight = 'bold';
+  elementUI?.addControl(elementTitle);
+  elementTitle.linkWithMesh(panel);
+  elementTitle.linkOffsetY = -80;
+
+  elementDesc = new TextBlock('elementDesc', element.description || '');
+  elementDesc.color = '#cccccc';
+  elementDesc.fontSize = 14;
+  elementDesc.textWrapping = true;
+  elementDesc.width = 4.5;
+  elementUI?.addControl(elementDesc);
+  elementDesc.linkWithMesh(panel);
+  elementDesc.linkOffsetY = -20;
+
+  // Properties
+  const props = `Atomic #: ${element.atomicNumber}\nMass: ${element.mass} u\nGroup: ${element.group}`;
+  elementProps = new TextBlock('elementProps', props);
+  elementProps.color = '#8899aa';
+  elementProps.fontSize = 12;
+  elementProps.lineSpacing = 1.8;
+  elementUI?.addControl(elementProps);
+  elementProps.linkWithMesh(panel);
+  elementProps.linkOffsetY = 60;
+
+  // Back button
+  const backBtn = new Rectangle('backBtn');
+  backBtn.width = '300px';
+  backBtn.height = '40px';
+  backBtn.cornerRadius = 6;
+  backBtn.color = '#4a90e2';
+  backBtn.thickness = 0;
+  backBtn.background = '#4a90e2';
+  backBtn.alpha = 0.9;
+
+  const backText = new TextBlock('backText', '← Back');
+  backText.color = 'white';
+  backText.fontSize = 16;
+  backText.fontWeight = 'bold';
+  backBtn.addControl(backText);
+  backText.top = '10px';
+
+  ui?.addControl(backBtn);
+  backBtn.isVisible = false;
+  backBtn.onPointerDownObservable.add(() => {
+    ctx.GotoRoom(0, undefined, undefined);
+  });
+
+  elementInfoPanel = panel;
 }
 
-function createNavigationPanel(ctx: AppContext): void {
-  const navPanel = MeshBuilder.CreateBox('navPanel', { width: 1.5, height: 0.5, depth: 0.1 }, ctx.scene);
-  navPanel.position.set(0, 1.5, -5);
-  navPanel.material = makeMat(ctx.scene, 'navPanelMat', new Color3(0.2, 0.2, 0.3), { unlit: true, alpha: 0.9 });
-  ctx.trackMesh(navPanel);
-  trackedMeshes.push(navPanel);
+function createKeyConnections(ctx: AppContext): void {
+  const scene = ctx.scene;
 
-  const navLabel = new TextBlock('navLabel');
-  navLabel.text = '\u25C0 Lobby';
-  navLabel.color = 'white';
-  navLabel.fontSize = 18;
-  ui.addControl(navLabel);
-  navLabel.linkWithMesh(navPanel);
+  // Connection lines to related elements (simplified visual representation)
+  const elementsGroup = ELEMENTS.find(e => e.symbol === ctx.scene?.metadata?.element?.symbol);
+  if (!elementsGroup) return;
 
-  navPanel.actionManager = new ActionManager(ctx.scene);
-  navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOverTrigger, () => navPanel.scaling.setAll(1.1)));
-  navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPointerOutTrigger, () => navPanel.scaling.setAll(1)));
-  navPanel.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickTrigger, () => { ctx.goto = ROOM_LOBBY; }));
+  // Create subtle connection hints (floating lines to related elements)
+  // This is a simplified visual - in a full implementation, you might be more specific
+  const hintMat = new StandardMaterial('hintMat', scene);
+  hintMat.diffuseColor = new Color3(0.2, 0.25, 0.3);
+  hintMat.alpha = 0.15;
+  hintMat.disableLighting = true;
+
+  const hint = MeshBuilder.CreateTorus('hintRing', { diameter: 12, thickness: 0.02, tessellation: 64 }, scene);
+  hint.rotation.x = Math.PI / 2;
+  hint.position.y = 1;
+  hint.material = hintMat;
+  hintMat.alpha = 0.1;
+  ctx.trackMesh(hint);
 }
 
-export function enter(_ctx: AppContext, _param?: string): void {
-  trackedMeshes.forEach(m => { m.isVisible = true; });
-  if (atomModel) atomModel.setEnabled(true);
+export function enter(ctx: AppContext, elementSymbol?: string): void {
+  const scene = ctx.scene;
+
+  // Make UI visible
+  if (elementInfoPanel) elementInfoPanel.isVisible = true;
+  if (elementTitle) elementTitle.isVisible = true;
+  if (elementDesc) elementDesc.isVisible = true;
+  if (elementProps) elementProps.isVisible = true;
+  if (elementSymbolDisplay) {
+    elementSymbolDisplay.isVisible = true;
+    elementSymbolDisplay.linkOffsetY = -120;
+  }
+
+  if (electronCountTextBlock) {
+    electronCountTextBlock.isVisible = true;
+  }
+
+  // Show shell labels for a moment
+  electronShells.forEach((shell, index) => {
+    setTimeout(() => {
+      if (shell.label) {
+        shell.label.isVisible = true;
+      }
+      setTimeout(() => {
+        if (shell.label) {
+          shell.label.isVisible = false;
+        }
+      }, 3000);
+    }, index * 500);
+  });
 }
 
 export function exit(_ctx: AppContext): void {
-  trackedMeshes.forEach(m => { m.isVisible = false; });
-  if (atomModel) atomModel.setEnabled(false);
-  doorwayTriggers.forEach(t => t.dispose());
-  doorwayTriggers = [];
+  // Hide UI
+  if (elementInfoPanel) elementInfoPanel.isVisible = false;
+  if (elementTitle) elementTitle.isVisible = false;
+  if (elementDesc) elementDesc.isVisible = false;
+  if (elementProps) elementProps.isVisible = false;
+  if (elementSymbolDisplay) elementSymbolDisplay.isVisible = false;
+  if (electronCountTextBlock) electronCountTextBlock.isVisible = false;
+
+  electronShells.forEach(shell => {
+    if (shell.label) shell.label.isVisible = false;
+  });
 }
 
-export function execute(_ctx: AppContext, delta: number, time: number): void {
-  if (!atomModel?.isEnabled()) return;
+export function execute(_ctx: AppContext, _delta: number, time: number): void {
+  if (mainAtom) {
+    // Gentle rotation
+    mainAtom.rotation.y += 0.003;
+    mainAtom.rotation.x = Math.sin(time * 0.1) * 0.1;
+  }
 
-  atomModel.getChildMeshes().forEach(child => {
-    const meta = child.metadata;
-    if (meta?.isElectron) {
-      const d = meta as ElectronData;
-      d.angle += d.speed * delta;
-      child.position.x = Math.cos(d.angle) * d.shellRadius;
-      child.position.z = Math.sin(d.angle) * d.shellRadius;
-    } else if (meta?.isNucleus) {
-      child.rotation.y += delta * 0.3;
-      const pulse = 1 + Math.sin(time * 2) * 0.05;
-      child.scaling.setAll(pulse);
-    } else if (meta?.isShell) {
-      child.rotation.z += delta * 0.1;
+  // Animate electrons
+  electronOrbits.forEach((orbit, index) => {
+    orbit.angle += orbit.speed * 0.016;
+    if (orbit.electron) {
+      orbit.electron.position.x = Math.cos(orbit.angle) * orbit.radius;
+      orbit.electron.position.z = Math.sin(orbit.angle) * orbit.radius;
     }
   });
+
+  // Gentle pulse on nucleus
+  if (mainAtom) {
+    const nucleus = mainAtom.getChildren()[0] as any;
+    if (nucleus && nucleus.material) {
+      const currentIndex = Math.floor(time * 2) % 3;
+      const pulseFactor = 0.7 + (currentIndex + 1) * 0.1;
+      nucleus.material.emissiveColor = nucleus.material.emissiveColor.scale(pulseFactor);
+    }
+  }
 }
