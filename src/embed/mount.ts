@@ -97,10 +97,11 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     : new Color4(0.04, 0.04, 0.1, 1);
 
   // Camera
-  const camera = new UniversalCamera('camera', new Vector3(0, 1.6, 0), scene);
+  const camera = new UniversalCamera('camera', new Vector3(0, 1.6, 8), scene);
   camera.attachControl(canvas, true);
   camera.minZ = 0.1;
   camera.fov = 1.2;
+  camera.rotation = new Vector3(0, 0, 0);
   camera.inertia = 0.8;
   camera.angularSensibility = 2000;
   camera.keysUp = [87];    // W
@@ -186,8 +187,8 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     if (app.context.vrMode) {
       // VR camera position is handled by VRNavigation
     } else {
-      camera.position = new Vector3(0, 1.6, 0);
-      camera.rotation = new Vector3(0, -Math.PI / 2, 0);
+      camera.position = new Vector3(0, 1.6, 8);
+      camera.rotation = new Vector3(0, 0, 0);
     }
 
     app.context.room = roomIndex;
