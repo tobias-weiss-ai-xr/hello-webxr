@@ -23,12 +23,7 @@ const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
 const ROOM_EXP_START = ROOM_ELEMENTS_END + 1;
 
 const ASSET_MANIFEST: AssetManifest = {
-  hall: { url: 'hall.glb' },
-  teleport: { url: 'teleport.glb' },
   generic_controller: { url: 'generic_controller.glb' },
-  angel: { url: 'angel.min.glb' },
-  spider: { url: 'spider.glb' },
-  sound_door: { url: 'sound_door.glb' },
   sky: { url: 'sky.png' },
   grid: { url: 'grid.png' },
 };
@@ -101,7 +96,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   camera.attachControl(canvas, true);
   camera.minZ = 0.1;
   camera.fov = 1.2;
-  camera.rotation = new Vector3(0, 0, 0);
+  camera.rotation = new Vector3(0, Math.PI, 0);
   camera.inertia = 0.8;
   camera.angularSensibility = 2000;
   camera.keysUp = [87];    // W
@@ -188,7 +183,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
       // VR camera position is handled by VRNavigation
     } else {
       camera.position = new Vector3(0, 1.6, 8);
-      camera.rotation = new Vector3(0, 0, 0);
+      camera.rotation = new Vector3(0, Math.PI, 0);
     }
 
     app.context.room = roomIndex;
