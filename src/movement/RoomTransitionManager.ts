@@ -37,16 +37,27 @@ export class RoomTransitionManager {
       const targetPosition = new Vector3(0, 1.6, 8);
       const targetRotation = new Vector3(0, Math.PI, 0);
 
-      if (enableAnimation && !ctx.vrMode) {
-        this.animateDesktopCamera(ctx, targetPosition, targetRotation, duration);
-      }
-
       const midpoint = duration / 2;
-      setTimeout(() => {
-        if (enableFade) {
+
+      if (enableFade) {
+        this.fadeOutRoomMeshes(ctx, midpoint, () => {
+          if (enableAnimation && !ctx.vrMode) {
+            this.animateDesktopCamera(ctx, targetPosition, targetRotation, midpoint);
+          }
+
+          roomExchange();
+
           this.fadeInRoomMeshes(ctx, midpoint);
+        });
+      } else {
+        if (enableAnimation && !ctx.vrMode) {
+          this.animateDesktopCamera(ctx, targetPosition, targetRotation, duration);
         }
-      }, midpoint);
+
+        setTimeout(() => {
+          roomExchange();
+        }, midpoint);
+      }
 
       setTimeout(() => {
         this._isTransitioning = false;
