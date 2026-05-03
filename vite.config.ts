@@ -35,6 +35,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    https: {
+      key: '/tmp/vite-dev-key.pem',
+      cert: '/tmp/vite-dev-cert.pem',
+    },
   },
   assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.png', '**/*.jpg']
 }));
