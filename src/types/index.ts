@@ -21,6 +21,7 @@ export interface AppContext {
   trackMesh: (mesh: AbstractMesh) => void;
   trackNode: (node: TransformNode) => void;
   setFloorMesh?: (mesh: AbstractMesh) => void;
+  roomManager?: import('../rooms/RoomManager.js').RoomManager;
 }
 
 export interface InteractionState {

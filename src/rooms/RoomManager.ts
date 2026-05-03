@@ -34,8 +34,14 @@ export class RoomManager {
     return this.rooms[index] ?? null;
   }
 
+  getRoomMeshes(): import('@babylonjs/core').AbstractMesh[] {
+    return [...this._roomMeshes];
+  }
+
   /** Track a mesh created by a room for later disposal */
   trackMesh(mesh: import('@babylonjs/core').AbstractMesh): void {
+    mesh.metadata = mesh.metadata || {};
+    mesh.metadata._trackedByRoomManager = true;
     this._roomMeshes.push(mesh);
   }
 

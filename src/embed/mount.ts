@@ -219,6 +219,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
         vrNav.addFloorMesh(mesh);
       }
     },
+    roomManager,
   };
 
   // Store on window for debugging (same as original)

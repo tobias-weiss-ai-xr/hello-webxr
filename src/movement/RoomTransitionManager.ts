@@ -1,4 +1,5 @@
 import type { AppContext } from '../types/index.js';
+import { RoomManager } from '../rooms/RoomManager.js';
 import { Animation } from '@babylonjs/core/Animations/animation.js';
 import { EasingFunction } from '@babylonjs/core/Animations/easing.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
@@ -113,14 +114,12 @@ export class RoomTransitionManager {
     duration: number,
     callback: () => void
   ): void {
-    const scene = ctx.scene;
-    const meshes: AbstractMesh[] = [];
+    if (!ctx.roomManager) {
+      callback();
+      return;
+    }
 
-    scene.meshes.forEach(mesh => {
-      if (mesh.metadata && mesh.metadata._trackedByRoomManager) {
-        meshes.push(mesh);
-      }
-    });
+    const meshes = ctx.roomManager.getRoomMeshes();
 
     let completed = 0;
     const total = meshes.length;
@@ -129,7 +128,7 @@ export class RoomTransitionManager {
       const material = mesh.material as StandardMaterial;
       if (!material) {
         completed++;
-        if (completed === total) callback();
+        if (completed === total && this._isTransitioning) callback();
         return;
       }
 
@@ -154,7 +153,7 @@ export class RoomTransitionManager {
       fadeAnimation.setEasingFunction(easing);
 
       material.animations = [fadeAnimation];
-      const animatable = scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+      const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
 
       if (animatable) {
         animatable.onAnimationEnd = () => {
@@ -164,7 +163,7 @@ export class RoomTransitionManager {
         this._fadeAnimations.set(mesh, animatable);
       } else {
         completed++;
-        if (completed === total) callback();
+        if (completed === total && this._isTransitioning) callback();
       }
     });
 
@@ -175,14 +174,11 @@ export class RoomTransitionManager {
     ctx: AppContext,
     duration: number
   ): void {
-    const scene = ctx.scene;
-    const meshes: AbstractMesh[] = [];
+    if (!ctx.roomManager) {
+      return;
+    }
 
-    scene.meshes.forEach(mesh => {
-      if (mesh.metadata && mesh.metadata._trackedByRoomManager) {
-        meshes.push(mesh);
-      }
-    });
+    const meshes = ctx.roomManager.getRoomMeshes();
 
     meshes.forEach(mesh => {
       const material = mesh.material as StandardMaterial;
@@ -209,7 +205,7 @@ export class RoomTransitionManager {
       fadeAnimation.setEasingFunction(easing);
 
       material.animations = [fadeAnimation];
-      const animatable = scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+      const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
 
       if (animatable) {
         this._fadeAnimations.set(mesh, animatable);
