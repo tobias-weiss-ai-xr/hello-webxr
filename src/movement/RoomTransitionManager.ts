@@ -22,6 +22,7 @@ export class RoomTransitionManager {
   transitionTo(
     ctx: AppContext,
     targetRoomIndex: number,
+    roomExchange: () => void,
     options: RoomTransitionOptions = {}
   ): Promise<void> {
     return new Promise((resolve) => {
