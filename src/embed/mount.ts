@@ -17,6 +17,7 @@ import { loadAssets, type AssetManifest } from '../lib/AssetLoader.js';
 import { AudioManager } from '../lib/AudioManager.js';
 import { DesktopControls } from '../movement/DesktopControls.js';
 import { VRNavigation } from '../movement/VRNavigation.js';
+import { RoomTransitionManager } from '../movement/RoomTransitionManager.js';
 import { injectScopedStyles, removeScopedStyles } from './scoped-styles.js';
 
 const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
@@ -114,6 +115,8 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   // Desktop controls
   const desktopControls = new DesktopControls(camera, scene);
 
+  const transitionManager = new RoomTransitionManager();
+
   // Light
   const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
   hemiLight.intensity = 0.3;
@@ -148,7 +151,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   let vrNav: VRNavigation | null = null;
   let currentVRFloor: AbstractMesh | null = null;
 
-  // gotoRoom function
+// gotoRoom function
   function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string): void {
     if (!app) return;
 
@@ -167,7 +170,6 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     const param = elementSymbol || expRoomId;
     roomManager.setupRoom(roomIndex, app.context, param);
 
-    // Audio ambience
     if (roomIndex === ROOM_LOBBY) {
       audioManager.playRoomAmbience('lobby');
     } else if (roomIndex >= ROOM_ELEMENTS_START && roomIndex <= ROOM_ELEMENTS_END) {
@@ -178,22 +180,35 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
       audioManager.playRoomAmbience('lobby');
     }
 
-    // Camera position reset
-    if (app.context.vrMode) {
-      // VR camera position is handled by VRNavigation
-    } else {
-      camera.position = new Vector3(0, 1.6, 8);
-      camera.rotation = new Vector3(0, Math.PI, 0);
-    }
+    const roomExchange = () => {
+      if (!app) return;
 
-    app.context.room = roomIndex;
-    roomManager.enterRoom(roomIndex, app.context, param);
+      if (app.context.vrMode) {
+        // VR camera position is handled by VRNavigation
+      } else {
+        camera.position = new Vector3(0, 1.6, 8);
+        camera.rotation = new Vector3(0, Math.PI, 0);
+      }
 
-    // Room change callback
-    if (app.onRoomChange) {
-      const name = param || `room-${roomIndex}`;
-      app.onRoomChange(name);
-    }
+      app.context.room = roomIndex;
+      roomManager.enterRoom(roomIndex, app.context, param);
+
+      if (app.onRoomChange) {
+        const name = param || `room-${roomIndex}`;
+        app.onRoomChange(name);
+      }
+    };
+
+    if (!app) return;
+
+    transitionManager.transitionTo(app.context, roomIndex, roomExchange, {
+      duration: 500,
+      fadeEnabled: true,
+      animationEnabled: true
+    }).catch(error => {
+      console.warn('[RoomTransitionManager] Animation failed:', error);
+      roomExchange();
+    });
   }
 
   // AppContext
