@@ -78,46 +78,50 @@ export class RoomTransitionManager {
     targetRotation: Vector3,
     duration: number
   ): void {
-    const camera = ctx.camera as UniversalCamera;
-    const easing = new EasingFunction();
-    easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+    try {
+      const camera = ctx.camera as UniversalCamera;
+      const easing = new EasingFunction();
+      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
-    const keyFramesPos: Vector3[] = [];
-    const keyFramesRot: Vector3[] = [];
-    const fps = 60;
-    const totalFrames = Math.round((duration / 1000) * fps);
+      const keyFramesPos: Vector3[] = [];
+      const keyFramesRot: Vector3[] = [];
+      const fps = 60;
+      const totalFrames = Math.round((duration / 1000) * fps);
 
-    for (let i = 0; i <= totalFrames; i++) {
-      const t = i / totalFrames;
-      keyFramesPos.push(Vector3.Lerp(camera.position, targetPosition, t));
-      keyFramesRot.push(Vector3.Lerp(camera.rotation, targetRotation, t));
-    }
+      for (let i = 0; i <= totalFrames; i++) {
+        const t = i / totalFrames;
+        keyFramesPos.push(Vector3.Lerp(camera.position, targetPosition, t));
+        keyFramesRot.push(Vector3.Lerp(camera.rotation, targetRotation, t));
+      }
 
-    const posAnimation = new Animation(
-      'camera-position',
-      'position',
-      fps,
-      Animation.ANIMATIONTYPE_VECTOR3,
-      Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-    posAnimation.setKeys(keyFramesPos.map((val, i) => ({ frame: i, value: val })));
-    posAnimation.setEasingFunction(easing);
+      const posAnimation = new Animation(
+        'camera-position',
+        'position',
+        fps,
+        Animation.ANIMATIONTYPE_VECTOR3,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      posAnimation.setKeys(keyFramesPos.map((val, i) => ({ frame: i, value: val })));
+      posAnimation.setEasingFunction(easing);
 
-    const rotAnimation = new Animation(
-      'camera-rotation',
-      'rotation',
-      fps,
-      Animation.ANIMATIONTYPE_VECTOR3,
-      Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-    rotAnimation.setKeys(keyFramesRot.map((val, i) => ({ frame: i, value: val })));
-    rotAnimation.setEasingFunction(easing);
+      const rotAnimation = new Animation(
+        'camera-rotation',
+        'rotation',
+        fps,
+        Animation.ANIMATIONTYPE_VECTOR3,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      rotAnimation.setKeys(keyFramesRot.map((val, i) => ({ frame: i, value: val })));
+      rotAnimation.setEasingFunction(easing);
 
-    camera.animations = [posAnimation, rotAnimation];
+      camera.animations = [posAnimation, rotAnimation];
 
-    const animatable = ctx.scene.beginAnimation(camera, 0, totalFrames, false);
-    if (animatable) {
-      this._animateTarget = animatable;
+      const animatable = ctx.scene.beginAnimation(camera, 0, totalFrames, false);
+      if (animatable) {
+        this._animateTarget = animatable;
+      }
+    } catch (e) {
+      console.warn('[RoomTransitionManager] Camera animation failed:', e);
     }
   }
 
@@ -126,123 +130,158 @@ export class RoomTransitionManager {
     duration: number,
     callback: () => void
   ): void {
-    if (!ctx.roomManager) {
-      callback();
-      return;
-    }
-
-    const meshes = ctx.roomManager.getRoomMeshes();
-
-    let completed = 0;
-    const total = meshes.length;
-
-    meshes.forEach(mesh => {
-      const material = mesh.material as StandardMaterial;
-      if (!material) {
-        completed++;
-        if (completed === total && this._isTransitioning) callback();
+    try {
+      if (!ctx.roomManager) {
+        callback();
         return;
       }
 
-      const originalAlpha = material.alpha;
-      mesh.metadata._originalAlpha = originalAlpha;
+      const meshes = ctx.roomManager.getRoomMeshes();
 
-      const fadeAnimation = new Animation(
-        'material-alpha',
-        'alpha',
-        60,
-        Animation.ANIMATIONTYPE_FLOAT,
-        Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
+      let completed = 0;
+      const total = meshes.length;
 
-      fadeAnimation.setKeys([
-        { frame: 0, value: originalAlpha },
-        { frame: Math.round((duration / 1000) * 60), value: 0.25 }
-      ]);
+      meshes.forEach(mesh => {
+        try {
+          const material = mesh.material as StandardMaterial;
+          if (!material) {
+            completed++;
+            if (completed === total && this._isTransitioning) callback();
+            return;
+          }
 
-      const easing = new EasingFunction();
-      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
-      fadeAnimation.setEasingFunction(easing);
+          const originalAlpha = material.alpha;
+          mesh.metadata._originalAlpha = originalAlpha;
 
-      material.animations = [fadeAnimation];
-      const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+          const fadeAnimation = new Animation(
+            'material-alpha',
+            'alpha',
+            60,
+            Animation.ANIMATIONTYPE_FLOAT,
+            Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
 
-      if (animatable) {
-        animatable.onAnimationEnd = () => {
+          fadeAnimation.setKeys([
+            { frame: 0, value: originalAlpha },
+            { frame: Math.round((duration / 1000) * 60), value: 0.25 }
+          ]);
+
+          const easing = new EasingFunction();
+          easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+          fadeAnimation.setEasingFunction(easing);
+
+          material.animations = [fadeAnimation];
+          const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+
+          if (animatable) {
+            animatable.onAnimationEnd = () => {
+              completed++;
+              if (completed === total && this._isTransitioning) callback();
+            };
+            this._fadeAnimations.set(mesh, animatable);
+          } else {
+            completed++;
+            if (completed === total && this._isTransitioning) callback();
+          }
+        } catch (e) {
+          console.warn('[RoomTransitionManager] Fade-out failed for mesh:', mesh.name, e);
           completed++;
           if (completed === total && this._isTransitioning) callback();
-        };
-        this._fadeAnimations.set(mesh, animatable);
-      } else {
-        completed++;
-        if (completed === total && this._isTransitioning) callback();
-      }
-    });
+        }
+      });
 
-    if (total === 0) callback();
+      if (total === 0) callback();
+    } catch (e) {
+      console.warn('[RoomTransitionManager] Fade-out failed:', e);
+      callback();
+    }
   }
 
   private fadeInRoomMeshes(
     ctx: AppContext,
     duration: number
   ): void {
-    if (!ctx.roomManager) {
-      return;
-    }
-
-    const meshes = ctx.roomManager.getRoomMeshes();
-
-    meshes.forEach(mesh => {
-      const material = mesh.material as StandardMaterial;
-      if (!material) return;
-
-      const targetAlpha = mesh.metadata._originalAlpha ?? 1.0;
-      delete mesh.metadata._originalAlpha;
-
-      const fadeAnimation = new Animation(
-        'material-alpha',
-        'alpha',
-        60,
-        Animation.ANIMATIONTYPE_FLOAT,
-        Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-
-      fadeAnimation.setKeys([
-        { frame: 0, value: 0.25 },
-        { frame: Math.round((duration / 1000) * 60), value: targetAlpha }
-      ]);
-
-      const easing = new EasingFunction();
-      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
-      fadeAnimation.setEasingFunction(easing);
-
-      material.animations = [fadeAnimation];
-      const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
-
-      if (animatable) {
-        this._fadeAnimations.set(mesh, animatable);
+    try {
+      if (!ctx.roomManager) {
+        return;
       }
-    });
+
+      const meshes = ctx.roomManager.getRoomMeshes();
+
+      meshes.forEach(mesh => {
+        try {
+          const material = mesh.material as StandardMaterial;
+          if (!material) return;
+
+          const targetAlpha = mesh.metadata._originalAlpha ?? 1.0;
+          delete mesh.metadata._originalAlpha;
+
+          const fadeAnimation = new Animation(
+            'material-alpha',
+            'alpha',
+            60,
+            Animation.ANIMATIONTYPE_FLOAT,
+            Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+
+          fadeAnimation.setKeys([
+            { frame: 0, value: 0.25 },
+            { frame: Math.round((duration / 1000) * 60), value: targetAlpha }
+          ]);
+
+          const easing = new EasingFunction();
+          easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+          fadeAnimation.setEasingFunction(easing);
+
+          material.animations = [fadeAnimation];
+          const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+
+          if (animatable) {
+            this._fadeAnimations.set(mesh, animatable);
+          }
+        } catch (e) {
+          console.warn('[RoomTransitionManager] Fade-in failed for mesh:', mesh.name, e);
+        }
+      });
+    } catch (e) {
+      console.warn('[RoomTransitionManager] Fade-in failed:', e);
+    }
   }
 
   cancel(): void {
     this._activeAnimations.forEach(animatable => {
-      if (animatable) {
-        animatable.stop();
+      try {
+        if (animatable) {
+          animatable.stop();
+        }
+      } catch (e) {
+        console.warn('[RoomTransitionManager] Failed to stop animation:', e);
       }
     });
     this._activeAnimations.clear();
 
-    if (this._animateTarget) {
-      this._animateTarget.stop();
-      this._animateTarget = null;
+    try {
+      if (this._animateTarget) {
+        this._animateTarget.stop();
+        this._animateTarget = null;
+      }
+    } catch (e) {
+      console.warn('[RoomTransitionManager] Failed to stop camera animation:', e);
     }
 
     this._fadeAnimations.forEach((animatable, mesh) => {
-      if (animatable) {
-        animatable.stop();
+      try {
+        if (animatable) {
+          animatable.stop();
+        }
+        const material = mesh.material as StandardMaterial;
+        if (material && mesh.metadata._originalAlpha !== undefined) {
+          material.alpha = mesh.metadata._originalAlpha;
+          delete mesh.metadata._originalAlpha;
+        }
+      } catch (e) {
+        console.warn('[RoomTransitionManager] Failed to stop fade animation for mesh:', mesh.name, e);
       }
-      // TODO: Restore original alpha
     });
     this._fadeAnimations.clear();
 
