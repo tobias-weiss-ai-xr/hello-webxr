@@ -72,6 +72,8 @@ index.html              # Vite entry point (<script type="module" src="/src/inde
 | Element data, group colors, experimental rooms | `src/data/elements.ts` |
 | Asset loading | `src/lib/AssetLoader.ts` |
 | Audio (procedural sounds, ambience) | `src/lib/AudioManager.ts` |
+| Room transition animations | `src/movement/RoomTransitionManager.ts` |
+| Room state and transitions | `src/rooms/RoomManager.ts` |
 | 3D model loading | Babylon `SceneLoader.ImportMeshAsync` in `src/lib/AssetLoader.ts` |
 
 ---
