@@ -2,6 +2,7 @@ import type { AppContext } from '../types/index.js';
 import { Animation } from '@babylonjs/core/Animations/animation.js';
 import { EasingFunction } from '@babylonjs/core/Animations/easing.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import type { AbstractMesh, Animatable, UniversalCamera } from '@babylonjs/core';
 
 export interface RoomTransitionOptions {
@@ -38,9 +39,17 @@ export class RoomTransitionManager {
         this.animateDesktopCamera(ctx, targetPosition, targetRotation, duration);
       }
 
+      const midpoint = duration / 2;
+      setTimeout(() => {
+        if (enableFade) {
+          this.fadeInRoomMeshes(ctx, midpoint);
+        }
+      }, midpoint);
+
       setTimeout(() => {
         this._isTransitioning = false;
         this._resolveTransition = null;
+        this._fadeAnimations.clear();
         resolve();
       }, duration);
     });
@@ -97,6 +106,115 @@ export class RoomTransitionManager {
     if (animatable) {
       this._animateTarget = animatable;
     }
+  }
+
+  private fadeOutRoomMeshes(
+    ctx: AppContext,
+    duration: number,
+    callback: () => void
+  ): void {
+    const scene = ctx.scene;
+    const meshes: AbstractMesh[] = [];
+
+    scene.meshes.forEach(mesh => {
+      if (mesh.metadata && mesh.metadata._trackedByRoomManager) {
+        meshes.push(mesh);
+      }
+    });
+
+    let completed = 0;
+    const total = meshes.length;
+
+    meshes.forEach(mesh => {
+      const material = mesh.material as StandardMaterial;
+      if (!material) {
+        completed++;
+        if (completed === total) callback();
+        return;
+      }
+
+      const originalAlpha = material.alpha;
+      mesh.metadata._originalAlpha = originalAlpha;
+
+      const fadeAnimation = new Animation(
+        'material-alpha',
+        'alpha',
+        60,
+        Animation.ANIMATIONTYPE_FLOAT,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+
+      fadeAnimation.setKeys([
+        { frame: 0, value: originalAlpha },
+        { frame: Math.round((duration / 1000) * 60), value: 0.25 }
+      ]);
+
+      const easing = new EasingFunction();
+      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+      fadeAnimation.setEasingFunction(easing);
+
+      material.animations = [fadeAnimation];
+      const animatable = scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+
+      if (animatable) {
+        animatable.onAnimationEnd = () => {
+          completed++;
+          if (completed === total && this._isTransitioning) callback();
+        };
+        this._fadeAnimations.set(mesh, animatable);
+      } else {
+        completed++;
+        if (completed === total) callback();
+      }
+    });
+
+    if (total === 0) callback();
+  }
+
+  private fadeInRoomMeshes(
+    ctx: AppContext,
+    duration: number
+  ): void {
+    const scene = ctx.scene;
+    const meshes: AbstractMesh[] = [];
+
+    scene.meshes.forEach(mesh => {
+      if (mesh.metadata && mesh.metadata._trackedByRoomManager) {
+        meshes.push(mesh);
+      }
+    });
+
+    meshes.forEach(mesh => {
+      const material = mesh.material as StandardMaterial;
+      if (!material) return;
+
+      const targetAlpha = mesh.metadata._originalAlpha ?? 1.0;
+      delete mesh.metadata._originalAlpha;
+
+      const fadeAnimation = new Animation(
+        'material-alpha',
+        'alpha',
+        60,
+        Animation.ANIMATIONTYPE_FLOAT,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+
+      fadeAnimation.setKeys([
+        { frame: 0, value: 0.25 },
+        { frame: Math.round((duration / 1000) * 60), value: targetAlpha }
+      ]);
+
+      const easing = new EasingFunction();
+      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+      fadeAnimation.setEasingFunction(easing);
+
+      material.animations = [fadeAnimation];
+      const animatable = scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
+
+      if (animatable) {
+        this._fadeAnimations.set(mesh, animatable);
+      }
+    });
   }
 
   cancel(): void {
