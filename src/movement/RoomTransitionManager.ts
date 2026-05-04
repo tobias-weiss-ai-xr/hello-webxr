@@ -1,7 +1,7 @@
 import type { AppContext } from '../types/index.js';
 import { RoomManager } from '../rooms/RoomManager.js';
 import { Animation } from '@babylonjs/core/Animations/animation.js';
-import { EasingFunction } from '@babylonjs/core/Animations/easing.js';
+import { EasingFunction, SineEase } from '@babylonjs/core/Animations/easing.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import type { AbstractMesh, Animatable, UniversalCamera } from '@babylonjs/core';
@@ -80,7 +80,7 @@ export class RoomTransitionManager {
   ): void {
     try {
       const camera = ctx.camera as UniversalCamera;
-      const easing = new EasingFunction();
+      const easing = new SineEase();
       easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
       const keyFramesPos: Vector3[] = [];
@@ -166,9 +166,9 @@ export class RoomTransitionManager {
             { frame: Math.round((duration / 1000) * 60), value: 0.25 }
           ]);
 
-          const easing = new EasingFunction();
-          easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
-          fadeAnimation.setEasingFunction(easing);
+const easing = new SineEase();
+      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+      fadeAnimation.setEasingFunction(easing);
 
           material.animations = [fadeAnimation];
           const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);
@@ -229,9 +229,9 @@ export class RoomTransitionManager {
             { frame: Math.round((duration / 1000) * 60), value: targetAlpha }
           ]);
 
-          const easing = new EasingFunction();
-          easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
-          fadeAnimation.setEasingFunction(easing);
+const easing = new SineEase();
+      easing.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+      fadeAnimation.setEasingFunction(easing);
 
           material.animations = [fadeAnimation];
           const animatable = ctx.scene.beginAnimation(material, 0, Math.round((duration / 1000) * 60), false);

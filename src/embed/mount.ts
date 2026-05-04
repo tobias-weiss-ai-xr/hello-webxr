@@ -153,7 +153,11 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
 
 // gotoRoom function
   function gotoRoom(roomIndex: number, elementSymbol?: string, expRoomId?: string): void {
-    if (!app) return;
+    if (!app) {
+      console.warn('[gotoRoom] Called before app is initialized, ignoring');
+      return;
+    }
+    console.log('[gotoRoom] Navigating to room', roomIndex, 'param:', elementSymbol || expRoomId);
 
     if (app.context.room !== roomIndex) {
       roomManager.exitRoom(app.context.room, app.context);
@@ -289,8 +293,6 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     }
   }
 
-  gotoRoom(initialRoom, initialParam);
-
   // Render loop
   engine.runRenderLoop(() => {
     const delta = engine.getDeltaTime() / 1000;
@@ -335,6 +337,9 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     currentVRFloor,
     gotoRoom,
   };
+
+  // Navigate to initial room from URL params or options
+  gotoRoom(initialRoom, initialParam);
 
   // Fire onReady
   if (options.onReady) {

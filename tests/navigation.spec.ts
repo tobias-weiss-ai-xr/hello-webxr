@@ -7,6 +7,14 @@ async function waitForApp(page) {
   );
 }
 
+async function waitForRoom(page, expectedRoom: number) {
+  await page.waitForFunction(
+    (expected: number) => (window as any).context?.room === expected,
+    { timeout: 30000 },
+    expectedRoom
+  );
+}
+
 test.describe('Room Navigation', () => {
   test('lobby loads by default (room 0)', async ({ page }) => {
     await page.goto('/');
@@ -33,6 +41,7 @@ test.describe('Room Navigation', () => {
   test('navigating to hydrogen room via URL param', async ({ page }) => {
     await page.goto('/?room=H');
     await waitForApp(page);
+    await waitForRoom(page, 1);
 
     const room = await page.evaluate(() => (window as any).context.room);
     expect(room).toBe(1);
@@ -41,6 +50,7 @@ test.describe('Room Navigation', () => {
   test('navigating to gold room via URL param', async ({ page }) => {
     await page.goto('/?room=Au');
     await waitForApp(page);
+    await waitForRoom(page, 22);
 
     const room = await page.evaluate(() => (window as any).context.room);
     expect(room).toBe(22);
