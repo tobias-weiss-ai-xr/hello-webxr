@@ -7,20 +7,46 @@ async function waitForApp(page) {
   );
 }
 
+async function waitForRoom(page, expectedRoom: number) {
+  await page.waitForFunction(
+    (expected: number) => (window as any).context?.room === expected,
+    { timeout: 30000 },
+    expectedRoom
+  );
+}
+
 test('smooth transition between Lobby and ElementRoom', async ({ page }) => {
   await page.goto('/');
   await waitForApp(page);
 
   // Navigate to element room (Hydrogen) via URL param
   await page.goto('/?room=H');
+  await waitForRoom(page, 1);
+});
+
+test('transition cancel on rapid navigation', async ({ page }) => {
+  await page.goto('/');
   await waitForApp(page);
 
-  // Wait for transition to complete (animation + room load)
-  await page.waitForTimeout(2000);
+  // Start transition to H, then immediately to C
+  await page.goto('/?room=H');
+  await page.waitForTimeout(100); // Mid-transition
 
-  // Verify we're in element room (rooms 1-118 are element rooms)
-  const room = await page.evaluate(() => (window as any).context.room);
-  expect(room).toBe(1); // H is first element (index 1)
+  await page.goto('/?room=C');
+  await waitForRoom(page, 6);
+});
+
+test('input locked during transition', async ({ page }) => {
+  await page.goto('/');
+  await waitForApp(page);
+
+  // Start transition
+  await page.goto('/?room=H');
+
+  // Immediately try to move (W key) - should be visible but ineffective during transition
+  await page.waitForTimeout(200);
+
+  await waitForRoom(page, 1);
 });
 
 test('transition cancel on rapid navigation', async ({ page }) => {

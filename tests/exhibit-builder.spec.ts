@@ -6,7 +6,7 @@ test('ExhibitBuilder creates exhibit station with atom, artifacts, and info pane
 
   const hasExhibits = await page.evaluate(() => {
     const ctx = (window as any).context;
-    return ctx.scene?.meshes?.filter(m => m.name?.startsWith('exhibit_')).length >= 6 ||
+    return ctx.scene?.meshes?.filter(m => m.name?.startsWith('exhibitBase')).length >= 6 ||
            ctx.scene?.meshes?.filter(m => m.name?.startsWith('atomModel_')).length >= 6;
   });
 

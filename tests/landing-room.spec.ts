@@ -3,11 +3,11 @@ import { test, expect } from '@playwright/test';
 test('Landing Room has 6 featured exhibits', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => (window as any).context?.room !== undefined);
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => (window as any).scene?.meshes?.filter(m => m.name?.startsWith('exhibitBase')).length >= 6);
 
   const exhibitCount = await page.evaluate(() => {
     const ctx = (window as any).context;
-    return ctx.scene?.meshes?.filter(m => m.name?.startsWith('exhibit_')).length || 0;
+    return ctx.scene?.meshes?.filter(m => m.name?.startsWith('exhibitBase')).length || 0;
   });
 
   expect(exhibitCount).toBe(6);

@@ -11,7 +11,8 @@
     "build:all": "npm run build && npm run build:lib",
     "preview": "vite preview",
     "test": "playwright test",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "test:local": "npm run build && (PORT=5173 npx vite preview --port 5173 &) && sleep 5 && playwright test && pkill -f 'vite preview'"
   },
   "repository": {
     "type": "git",
