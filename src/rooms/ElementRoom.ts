@@ -282,16 +282,30 @@ function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDyna
 
   const backText = new TextBlock('backText', '← Back');
   backText.color = 'white';
-  backText.fontSize = 16;
+backText.fontSize = 16;
   backText.fontWeight = 'bold';
   backBtn.addControl(backText);
   backText.top = '10px';
-
+  
   ui?.addControl(backBtn);
-  backBtn.isVisible = false;
+  backBtn.isVisible = true;  // Fix: Make back button visible
   backBtn.onPointerDownObservable.add(() => {
     ctx.GotoRoom(0, undefined, undefined);
   });
+  
+  // Keyboard shortcuts (desktop)
+  const keyboardHandler = (e: KeyboardEvent) => {
+    if (ctx.room !== ROOM_ELEMENTS_START + ELEMENTS.findIndex(el => el.symbol === elementSymbol)) return;
+    
+    if (e.key === 'Escape' || e.key === 'b' || e.key === 'B') {
+      ctx.GotoRoom(0, undefined, undefined);
+    }
+  };
+  
+  document.addEventListener('keydown', keyboardHandler);
+  
+  // Store handler for cleanup
+  (window as any)._elementRoomKeyboardHandler = keyboardHandler;
 
   elementInfoPanel = panel;
 }
@@ -351,6 +365,12 @@ export function enter(ctx: AppContext, elementSymbol?: string): void {
 }
 
 export function exit(_ctx: AppContext): void {
+  const handler = (window as any)._elementRoomKeyboardHandler;
+  if (handler) {
+    document.removeEventListener('keydown', handler);
+    delete (window as any)._elementRoomKeyboardHandler;
+  }
+  
   // Hide UI
   if (elementInfoPanel) elementInfoPanel.isVisible = false;
   if (elementTitle) elementTitle.isVisible = false;
