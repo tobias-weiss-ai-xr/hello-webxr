@@ -88,10 +88,15 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
     ceilingColor: new Color3(0.10, 0.10, 0.13),
     ambientColor: new Color3(0.35, 0.36, 0.40),
     pointLightColor: new Color3(0.98, 0.95, 0.88),
-    doorways: [{ wall: 'south', offset: 0 }],
+    doorways: [
+      { wall: 'south', offset: 0 },
+      { wall: 'north', offset: 0, width: 1.8, height: 2.2 }
+    ],
   });
 
   ctx.setFloorMesh?.(room.floor);
+
+  createExitDoorway(ctx, ACCENT_COLOR);
 
   // Create unified atom display
   createAtomDisplay(ctx, element);
@@ -101,6 +106,43 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   // Connection lines/exploration hints
   createKeyConnections(ctx);
+}
+
+let exitArch: any = null;
+let exitLabel: any = null;
+
+function createExitDoorway(ctx: AppContext, accentColor: Color3): void {
+  const scene = ctx.scene;
+
+  const frameMaterial = new StdMat('exitFrame', scene);
+  frameMaterial.emissiveColor = accentColor.scale(0.3);
+  frameMaterial.alpha = 0.6;
+  frameMaterial.disableLighting = true;
+
+  exitArch = MeshBuilder.CreateBox('exitArch', {
+    height: 2.0,
+    width: 1.8,
+    depth: 0.1
+  }, scene);
+
+  exitArch.position.set(0, 1.6, 7);
+  exitArch.material = frameMaterial;
+
+  createExitLabel(ctx);
+
+  ctx.trackMesh(exitArch);
+}
+
+function createExitLabel(ctx: AppContext): void {
+  exitLabel = new TextBlock('exitLabel', 'EXIT → Lobby');
+  exitLabel.color = 'white';
+  exitLabel.fontSize = 14;
+  exitLabel.fontWeight = 'bold';
+  exitLabel.alpha = 0.8;
+
+  elementUI?.addControl(exitLabel);
+  exitLabel.linkWithMesh(exitArch);
+  exitLabel.linkOffsetY = -60;
 }
 
 function createAtomDisplay(ctx: AppContext, element: ElementData): void {
@@ -370,7 +412,17 @@ export function exit(_ctx: AppContext): void {
     document.removeEventListener('keydown', handler);
     delete (window as any)._elementRoomKeyboardHandler;
   }
-  
+
+  if (exitArch) {
+    exitArch.dispose();
+    exitArch = null;
+  }
+
+  if (exitLabel) {
+    exitLabel.dispose();
+    exitLabel = null;
+  }
+
   // Hide UI
   if (elementInfoPanel) elementInfoPanel.isVisible = false;
   if (elementTitle) elementTitle.isVisible = false;
