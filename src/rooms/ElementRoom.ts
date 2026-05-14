@@ -4,10 +4,12 @@ import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
-import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
+import { buildRoom, type RoomBuildOptions, type ThemeBasedRoomOptions } from './RoomBuilder.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
+import { THEMES } from '../data/themes.js';
+import type { Theme } from '../types/index.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -30,6 +32,27 @@ const ATOM_RADIUS = 0.8;
 
 function toColor3(color: number): Color3 {
   return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+}
+
+function getThemeForElement(elementSymbol: string): Theme {
+  const element = ELEMENTS.find(e => e.symbol === elementSymbol);
+  if (!element) return THEMES.NONMETALS;
+
+  if (element.symbol === 'H') return THEMES.HYDROGEN_SPECIAL;
+  if (element.symbol === 'He') return THEMES.HELIUM_SPECIAL;
+  if (['Au', 'Ag', 'Pt', 'Pd'].includes(element.symbol)) return THEMES.NOBLE_METALS;
+
+  switch (element.group) {
+    case 'nobleGas': return THEMES.NOBLE_GASES;
+    case 'alkali': return THEMES.ALKALI_METALS;
+    case 'halogen': return THEMES.HALOGENS;
+    case 'transition': return THEMES.TRANSITION_METALS;
+    case 'lanthanide': return THEMES.LANTHANIDES;
+    case 'actinide': return THEMES.ACTINIDES;
+    case 'metalloid': return THEMES.METALLOIDS;
+    case 'alkalineEarth': return THEMES.ALKALINE_EARTH;
+    default: return THEMES.NONMETALS;
+  }
 }
 
 interface AtomPart {
@@ -74,8 +97,14 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   const scene = ctx.scene;
 
-  // Background with unified atmosphere
-  scene.clearColor = new Color4(0.06, 0.06, 0.09, 1);
+  const theme = getThemeForElement(elementSymbol);
+
+  scene.clearColor = new Color4(
+    theme.baseColor.r * 0.3,
+    theme.baseColor.g * 0.3,
+    theme.baseColor.b * 0.3,
+    1
+  );
 
   // UI
   const elementUI = AdvancedDynamicTexture.CreateFullscreenUI('elementRoomUI');
@@ -96,7 +125,7 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   ctx.setFloorMesh?.(room.floor);
 
-  createExitDoorway(ctx, ACCENT_COLOR);
+  createExitDoorway(ctx, theme);
 
   // Create unified atom display
   createAtomDisplay(ctx, element);
@@ -111,11 +140,11 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 let exitArch: any = null;
 let exitLabel: any = null;
 
-function createExitDoorway(ctx: AppContext, accentColor: Color3): void {
+function createExitDoorway(ctx: AppContext, theme: Theme): void {
   const scene = ctx.scene;
 
   const frameMaterial = new StdMat('exitFrame', scene);
-  frameMaterial.emissiveColor = accentColor.scale(0.3);
+  frameMaterial.emissiveColor = theme.accentColor.scale(0.3);
   frameMaterial.alpha = 0.6;
   frameMaterial.disableLighting = true;
 
