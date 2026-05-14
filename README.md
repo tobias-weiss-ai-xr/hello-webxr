@@ -6,12 +6,23 @@
 
 This is a WebXR demo made to celebrate the [WebXR spec](https://immersive-web.github.io/webxr/) release at the end of 2019. It showcases several small experiences, perfect to test different kind of interactions and situations in Virtual Reality. For newcomers, it's a nice entry point to the medium, and web developers may find many things they can reuse and learn (more info on the [launch article](https://blog.mozvr.com/hello-webxr)).
 
-## How to build
+## Testing
 
-1. `npm install`
-2. `npm start`
-3. Open `http://localhost:8080`
+**CI tests**: Run against deployed production site
+**Local tests**: Requires server running first
 
+```bash
+# Local testing with preview server
+npm run test:local
+```
+
+Or manually:
+```bash
+npm run build
+PORT=5173 npx vite preview --port 5173 &
+# In another terminal:
+npm test
+```
 
 ### Shader packing
 

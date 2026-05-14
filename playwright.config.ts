@@ -8,7 +8,9 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'https://tobias-weiss.org',
+    baseURL: process.env.CI
+      ? 'https://pse.chemie-lernen.org'
+      : `https://localhost:${process.env.PORT || '5173'}`,
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -20,4 +22,3 @@ export default defineConfig({
     },
   ],
 });
-
