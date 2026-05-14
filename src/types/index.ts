@@ -51,6 +51,53 @@ export interface ElementData {
   groupNumber?: number;
 }
 
+// Theme pattern types
+export type WallPatternType = 'smooth' | 'textured' | 'geometric' | 'organic' | 'crystalline';
+export type FloorPatternType = 'solid' | 'grid' | 'circuit' | 'crystal' | 'cosmic';
+export type ParticleType = 'none' | 'dust' | 'bubbles' | 'sparks' | 'stars' | 'energy' | 'radiation';
+export type LightingStyleType = 'standard' | 'warm' | 'cool' | 'neon' | 'solar';
+export type InfoPanelStyleType = 'minimal' | 'detailed' | 'interactive';
+
+// Particle configuration
+export interface ParticleConfig {
+  enabled: boolean;
+  type: ParticleType;
+  density: number;  // 0.0 to 1.0
+  color: Color3;
+}
+
+// Experiment types (for future phases)
+export type ExperimentType = 'none' | 'reaction' | 'display' | 'simulation' | 'interaction';
+
+// Complete theme definition
+export interface Theme {
+  id: string;
+  name: string;
+  
+  // Visual identity
+  baseColor: Color3;
+  accentColor: Color3;
+  wallPattern: WallPatternType;
+  floorPattern: FloorPatternType;
+  
+  // Atmosphere
+  ambientParticles: ParticleConfig;
+  lightingStyle: LightingStyleType;
+  
+  // Audio
+  ambientSound: string;
+  interactionSounds: string[];
+  
+  // Educational content
+  infoPanelStyle: InfoPanelStyleType;
+  
+  // Available experiments
+  experimentTypes: ExperimentType[];
+  
+  // Special elements that get curated enhancements
+  curatedElements: string[];
+}
+
 export interface EmbedOptions {
   container: HTMLElement | string;
   locale?: 'de' | 'en' | 'fr' | 'zh' | 'sv';
