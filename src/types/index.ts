@@ -52,7 +52,7 @@ export interface ElementData {
 }
 
 // Theme pattern types
-export type WallPatternType = 'smooth' | 'textured' | 'geometric' | 'organic' | 'crystalline';
+export type WallPatternType = 'smooth' | 'textured' | 'geometric' | 'organic' | 'crystalline' | 'cosmic';
 export type FloorPatternType = 'solid' | 'grid' | 'circuit' | 'crystal' | 'cosmic';
 export type ParticleType = 'none' | 'dust' | 'bubbles' | 'sparks' | 'stars' | 'energy' | 'radiation';
 export type LightingStyleType = 'standard' | 'warm' | 'cool' | 'neon' | 'solar';
