@@ -165,6 +165,22 @@ export const THEMES: Record<string, Theme> = {
     experimentTypes: ['simulation', 'display'],
     curatedElements: ['He'],
   },
+
+  ALKALINE_EARTH: {
+    id: 'ALKALINE_EARTH',
+    name: 'Alkaline Earth',
+    baseColor: new Color3(0.25, 0.22, 0.3),
+    accentColor: new Color3(0.6, 0.4, 0.5),
+    wallPattern: 'textured',
+    floorPattern: 'grid',
+    ambientParticles: createParticleConfig(false, 'none', 0, 0, 0, 0),
+    lightingStyle: 'warm',
+    ambientSound: 'earth_tones',
+    interactionSounds: ['soft_click', 'mineral_sound'],
+    infoPanelStyle: 'detailed',
+    experimentTypes: ['reaction', 'display'],
+    curatedElements: ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'],
+  },
 };
 
 // Get theme by element
