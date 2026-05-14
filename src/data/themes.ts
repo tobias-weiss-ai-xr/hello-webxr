@@ -70,6 +70,22 @@ export const THEMES: Record<string, Theme> = {
     curatedElements: [],
   },
 
+  METALLOIDS: {
+    id: 'METALLOIDS',
+    name: 'Metalloids',
+    baseColor: new Color3(0.2, 0.25, 0.3),
+    accentColor: new Color3(0.1, 0.4, 0.4),
+    wallPattern: 'geometric',
+    floorPattern: 'circuit',
+    ambientParticles: createParticleConfig(true, 'energy', 0.2, 0, 100, 120),
+    lightingStyle: 'standard',
+    ambientSound: 'electronic_hum',
+    interactionSounds: ['circuit_click', 'energy_flow'],
+    infoPanelStyle: 'detailed',
+    experimentTypes: ['simulation', 'display'],
+    curatedElements: ['B', 'Si', 'Ge', 'As', 'Sb', 'Te', 'Po'],
+  },
+
   NONMETALS: {
     id: 'NONMETALS',
     name: 'Nonmetals',
