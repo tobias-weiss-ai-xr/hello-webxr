@@ -1,10 +1,12 @@
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+import { StandardMaterial as StdMat } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
 import { buildRoom, type RoomBuildOptions, type ThemeBasedRoomOptions } from './RoomBuilder.js';
+import { ROOM_ELEMENTS_START } from './RoomManager.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
@@ -27,6 +29,7 @@ let electronShellLabels: TextBlock[] = [];
 let electronShells: { radius: number; label: TextBlock }[] = [];
 let orbitRings: any[] = [];
 let elementUI: AdvancedDynamicTexture | null = null;
+let currentElementSymbol: string | undefined = undefined;
 
 const ATOM_RADIUS = 0.8;
 
@@ -91,6 +94,8 @@ function getElectronConfiguration(group: string, atomicNumber: number): number[]
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
   if (!elementSymbol) return;
+
+  currentElementSymbol = elementSymbol;
 
   const element = ELEMENTS.find(e => e.symbol === elementSymbol);
   if (!element) return;
@@ -366,7 +371,8 @@ backText.fontSize = 16;
   
   // Keyboard shortcuts (desktop)
   const keyboardHandler = (e: KeyboardEvent) => {
-    if (ctx.room !== ROOM_ELEMENTS_START + ELEMENTS.findIndex(el => el.symbol === elementSymbol)) return;
+    if (!currentElementSymbol) return;
+    if (ctx.room !== ROOM_ELEMENTS_START + ELEMENTS.findIndex(el => el.symbol === currentElementSymbol)) return;
     
     if (e.key === 'Escape' || e.key === 'b' || e.key === 'B') {
       ctx.GotoRoom(0, undefined, undefined);

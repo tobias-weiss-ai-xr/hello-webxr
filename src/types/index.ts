@@ -1,4 +1,5 @@
 import type { Scene, Camera, AbstractMesh, TransformNode } from '@babylonjs/core';
+import { Color3 } from '@babylonjs/core/Maths/math.color.js';
 
 export interface RoomModule {
   setup(ctx: AppContext, param?: string): void;
