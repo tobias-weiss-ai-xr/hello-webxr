@@ -33,6 +33,11 @@ let currentElementSymbol: string | undefined = undefined;
 
 const ATOM_RADIUS = 0.8;
 
+// Realistic electron shell capacities (K, L, M, N, O, P, Q shells)
+const SHELL_CAPACITYS = [2, 8, 18, 32, 32, 18, 8];
+const SHELL_NAMES = ['K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+const SHELL_RADII = [0.6, 0.85, 1.15, 1.45, 1.7, 1.95, 2.2];
+
 function toColor3(color: number): Color3 {
   return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
 }
