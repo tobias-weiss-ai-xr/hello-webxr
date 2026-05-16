@@ -249,12 +249,14 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
     ctx.trackMesh(shell);
     orbitRings.push(shell);
 
-    // Add shell label
-    const shellLabel = new TextBlock(`shellLabel_${index}`, `${electronConfig[index]}e⁻`);
+// Add shell label
+    const shellName = index < SHELL_NAMES.length ? SHELL_NAMES[index] : '';
+    const capacity = index < SHELL_CAPACITYS.length ? SHELL_CAPACITYS[index] : 0;
+    const shellLabel = new TextBlock(`shellLabel_${index}`, `${shellName}: ${electronConfig[index]}/${capacity}`);
     shellLabel.color = '#a0aec0';
     shellLabel.fontSize = 10;
     shellLabel.fontWeight = 'bold';
-elementUI?.addControl(shellLabel);
+    elementUI?.addControl(shellLabel);
     shellLabel.isVisible = false;
 
     // Old shell structure - will be replaced in Task 4
