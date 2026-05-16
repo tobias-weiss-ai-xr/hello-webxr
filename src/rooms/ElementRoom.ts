@@ -26,7 +26,7 @@ let elementProps: TextBlock | null = null;
 let elementSymbolDisplay: TextBlock | null = null;
 let electronCountTextBlock: TextBlock | null = null;
 let electronShellLabels: TextBlock[] = [];
-let electronShells: { radius: number; label: TextBlock }[] = [];
+let electronShells: ElectronShell[] = [];
 let orbitRings: any[] = [];
 let elementUI: AdvancedDynamicTexture | null = null;
 let currentElementSymbol: string | undefined = undefined;
@@ -67,6 +67,19 @@ interface AtomPart {
   mesh: any;
   label?: TextBlock;
   offsetAngle: number;
+}
+
+interface ElectronShell {
+  shellName: string;
+  electronCount: number;
+  capacity: number;
+  radius: number;
+  rotation: number;
+  speed: number;
+  shellMesh?: any;
+  electrons: any[];
+  label?: TextBlock;
+  isVisible: boolean;
 }
 
 let atomParts: AtomPart[] = [];
@@ -241,10 +254,11 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
     shellLabel.color = '#a0aec0';
     shellLabel.fontSize = 10;
     shellLabel.fontWeight = 'bold';
-    elementUI?.addControl(shellLabel);
+elementUI?.addControl(shellLabel);
     shellLabel.isVisible = false;
 
-    electronShells.push({ radius: shellRadius, label: shellLabel });
+    // Old shell structure - will be replaced in Task 4
+    // electronShells.push({ radius: shellRadius, label: shellLabel });
 
     const electronsInShell = Math.min(shellMax as number, 8);
     const electronAngleStep = (Math.PI * 2) / electronsInShell;
