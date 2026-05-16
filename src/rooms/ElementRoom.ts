@@ -72,29 +72,21 @@ interface AtomPart {
 let atomParts: AtomPart[] = [];
 
 /**
- * Get electron configuration based on group
- * Simplified representation for educational purposes
+ * Get actual electron configuration based on atomic number
+ * Uses realistic shell capacities: K(2), L(8), M(18), N(32), O(32), P(18), Q(8)
  */
-function getElectronConfiguration(group: string, atomicNumber: number): number[] {
-  const groupToShells = new Map<string, number[]>();
-  groupToShells.set('1', [2]);
-  groupToShells.set('2', [2, 8]);
-  groupToShells.set('3', [2, 8, 18]);
-  groupToShells.set('4', [2, 8, 18, 32]);
-  groupToShells.set('5', [2, 8, 18, 32]);
+function getElectronConfiguration(atomicNumber: number): number[] {
+  const config: number[] = [];
+  let remaining = atomicNumber;
 
-  const groupShells = groupToShells.get(group);
-  if (groupShells) {
-    return groupShells;
+  for (const capacity of SHELL_CAPACITYS) {
+    if (remaining <= 0) break;
+    const electrons = Math.min(remaining, capacity);
+    config.push(electrons);
+    remaining -= electrons;
   }
 
-  // Fallback: progressive filling of shells
-  const electrons = atomicNumber;
-  if (electrons <= 2) return [2];
-  if (electrons <= 10) return [2, 8];
-  if (electrons <= 18) return [2, 8, 8];
-  if (electrons <= 36) return [2, 8, 18, 8];
-  return [2, 8, 18, 32];
+  return config;
 }
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
@@ -191,7 +183,7 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
   ctx.trackNode(mainAtom);
   mainAtom.position = new Vector3(0, 2.5, 0);
 
-  const electronConfig = getElectronConfiguration(element.group, element.atomicNumber);
+  const electronConfig = getElectronConfiguration(element.atomicNumber);
   const elementColor = toColor3(typeof element.color === 'number' ? element.color : 0xCCCCCC);
 
   // Nucleus
