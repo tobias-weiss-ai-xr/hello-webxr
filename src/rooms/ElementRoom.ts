@@ -14,6 +14,8 @@ import { THEMES } from '../data/themes.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import type { Theme } from '../types/index.js';
 import { InteractiveContent } from '../lib/InteractiveContent.js';
+import { AnimationHelper } from '../lib/AnimationHelper.js';
+import { Vector3 } from '@babylonjs/core/Maths/math.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -155,6 +157,14 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   // Interactive content
   createTriviaCards(ctx, element, elementUI!);
   createExperimentButtons(ctx, element, elementUI!);
+
+  // Add particles for certain elements
+  if (['Li', 'Na', 'K'].includes(element.symbol)) {
+    addReactionParticles(ctx, scene, element);
+  }
+  if (['F', 'Cl', 'Br'].includes(element.symbol)) {
+    addHalogenParticles(ctx, scene, element);
+  }
 
   // Connection lines/exploration hints
   createKeyConnections(ctx);
@@ -540,6 +550,26 @@ function createHistoricalPanel(ctx: AppContext, element: ElementData, ui: Advanc
   } else {
     histText.text = `${element.name} has historical significance in research and industry. Click the trivia cards for more information!`;
   }
+}
+
+function addReactionParticles(ctx: AppContext, scene: Map<string, any>, element: ElementData): void {
+  const theme = THEMES[element.group] || THEMES.METAL;
+  const particleCount = 8;
+
+  const origin = new Vector3(0, 2.5, 0);
+  const particles = AnimationHelper.emitParticles(scene, particleCount, origin, theme.accentColor, 2000);
+
+  particles.forEach(p => ctx.trackMesh(p));
+}
+
+function addHalogenParticles(ctx: AppContext, scene: Map<string, any>, element: ElementData): void {
+  const theme = THEMES.HALOGEN || THEMES.NON_METAL;
+  const particleCount = 12;
+
+  const origin = new Vector3(0, 2.5, 0);
+  const particles = AnimationHelper.emitParticles(scene, particleCount, origin, theme.accentColor, 1500);
+
+  particles.forEach(p => ctx.trackMesh(p));
 }
 
 export function enter(ctx: AppContext, elementSymbol?: string): void {
