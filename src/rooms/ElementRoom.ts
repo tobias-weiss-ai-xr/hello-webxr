@@ -367,6 +367,8 @@ function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDyna
   elementProps.linkWithMesh(panel);
   elementProps.linkOffsetY = 60;
 
+  createHistoricalPanel(ctx, element, elementUI!);
+
   // Back button
   const backBtn = new Rectangle('backBtn');
   backBtn.width = '300px';
@@ -494,6 +496,50 @@ function createExperimentButtons(ctx: AppContext, element: ElementData, ui: Adva
 
     experimentButtons.push(expBtn);
   });
+}
+
+function createHistoricalPanel(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  if (element.theme !== 'historical') return;
+
+  const scene = ctx.scene;
+
+  const panelMat = new StdMat('histPanelMat', scene);
+  panelMat.diffuseColor = new Color3(0.3, 0.35, 0.4);
+  panelMat.emissiveColor = new Color3(0.2, 0.25, 0.3);
+  panelMat.alpha = 0.85;
+
+  const panel = MeshBuilder.CreatePlane('histPanel', { width: 4, height: 3 }, scene);
+  panel.position.set(0, 2.8, -3);
+  panel.rotation.y = -Math.PI / 6;
+  panel.billboardMode = 7;
+  panel.material = panelMat;
+  ctx.trackMesh(panel);
+
+  const histTitle = new TextBlock('histTitle', 'Historical Significance');
+  histTitle.color = '#ECC94B';
+  histTitle.fontSize = 14;
+  histTitle.fontWeight = 'bold';
+  elementUI?.addControl(histTitle);
+  histTitle.linkWithMesh(panel);
+  histTitle.linkOffsetY = -40;
+
+  const histText = new TextBlock('histText');
+  histText.color = '#A0AEC0';
+  histText.fontSize = 12;
+  histText.textWrapping = true;
+  histText.resizeToFit = true;
+  
+  elementUI?.addControl(histText);
+  histText.linkWithMesh(panel);
+  histText.linkOffsetY = -10;
+
+  if (element.symbol === 'Au') {
+    histText.text = 'Gold has been a symbol of wealth and power for over 6,000 years. It is highly resistant to corrosion and因为, making it ideal for jewelry and electronics.';
+  } else if (element.symbol === 'Ra') {
+    histText.text = 'Radium was discovered by Marie and Pierre Curie in 1898. They named it after the Latin word "radius" for beam.';
+  } else {
+    histText.text = `${element.name} has historical significance in research and industry. Click the trivia cards for more information!`;
+  }
 }
 
 export function enter(ctx: AppContext, elementSymbol?: string): void {
