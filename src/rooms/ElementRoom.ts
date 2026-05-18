@@ -15,7 +15,6 @@ import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import type { Theme } from '../types/index.js';
 import { InteractiveContent } from '../lib/InteractiveContent.js';
 import { AnimationHelper } from '../lib/AnimationHelper.js';
-import { Vector3 } from '@babylonjs/core/Maths/math.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -160,10 +159,10 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   // Add particles for certain elements
   if (['Li', 'Na', 'K'].includes(element.symbol)) {
-    addReactionParticles(ctx, scene, element);
+    addReactionParticles(ctx, element);
   }
   if (['F', 'Cl', 'Br'].includes(element.symbol)) {
-    addHalogenParticles(ctx, scene, element);
+    addHalogenParticles(ctx, element);
   }
 
   // Connection lines/exploration hints
@@ -487,7 +486,7 @@ function createExperimentButtons(ctx: AppContext, element: ElementData, ui: Adva
   const startX = -totalWidth / 2 + buttonWidth / 2;
 
   element.experiments.forEach((expId: string, index: number) => {
-    const expData = EXPERIMENTAL_ROOMS.find(er => er.experiments.includes(expId));
+    const expData = EXPERIMENTAL_ROOMS.find(er => er.experiments?.includes(expId));
     
     if (!expData) {
       console.warn(`Experiment ${expId} not found in EXPERIMENTAL_ROOMS`);
@@ -552,7 +551,8 @@ function createHistoricalPanel(ctx: AppContext, element: ElementData, ui: Advanc
   }
 }
 
-function addReactionParticles(ctx: AppContext, scene: Map<string, any>, element: ElementData): void {
+function addReactionParticles(ctx: AppContext, element: ElementData): void {
+  const scene = ctx.scene;
   const theme = THEMES[element.group] || THEMES.METAL;
   const particleCount = 8;
 
@@ -562,7 +562,8 @@ function addReactionParticles(ctx: AppContext, scene: Map<string, any>, element:
   particles.forEach(p => ctx.trackMesh(p));
 }
 
-function addHalogenParticles(ctx: AppContext, scene: Map<string, any>, element: ElementData): void {
+function addHalogenParticles(ctx: AppContext, element: ElementData): void {
+  const scene = ctx.scene;
   const theme = THEMES.HALOGEN || THEMES.NON_METAL;
   const particleCount = 12;
 

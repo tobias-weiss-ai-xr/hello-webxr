@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, Vector3 } from '@babylonjs/core';
+import { Scene, MeshBuilder, Vector3, type Mesh } from '@babylonjs/core';
 import type { Color3 } from '@babylonjs/core';
 import { StandardMaterial as StdMat } from '@babylonjs/core/Materials/standardMaterial.js';
 
@@ -53,11 +53,11 @@ export class AnimationHelper {
 
       scene.registerBeforeRender(() => {
         particle.position.y += driftY;
-        particle.alpha -= 0.002;
-        if (particle.alpha <= 0) {
+        const mat = particle.material as StdMat;
+        mat.alpha -= 0.002;
+        if (mat.alpha <= 0) {
           particle.position.y = startY;
-          const sigma = particle.material as StdMat;
-          sigma.alpha = 0.6;
+          mat.alpha = 0.6;
         }
       });
     }

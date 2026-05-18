@@ -1,5 +1,5 @@
 import type { Scene, Mesh } from '@babylonjs/core';
-import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D';
+import { AdvancedDynamicTexture, TextBlock, Rectangle, Control } from '@babylonjs/gui/2D';
 
 export interface TriviaCard {
   front: ContentPanel;
@@ -37,7 +37,9 @@ export class InteractiveContent {
     const cardWidth = 0.3;
     const cardHeight = 0.4;
 
-    const front = Rectangle.Create('CardFront', { width: cardWidth, height: cardHeight });
+    const front = new Rectangle('CardFront');
+    front.width = `${cardWidth * 100}%`;
+    front.height = `${cardHeight * 100}%`;
     front.thickness = 0.001;
     front.cornerRadius = 0.02;
     front.background = '#2D3748';
@@ -130,7 +132,13 @@ export class InteractiveContent {
     experiment: ExperimentButton,
     onClick: () => void
   ): Rectangle {
-    const btn = Rectangle.Create(`ExpBtn_${experiment.experimentId}`, { width: 0.25, height: 0.08 });
+    const btn = new Rectangle(`ExpBtn_${experiment.experimentId}`);
+    btn.width = '100px';
+    btn.height = '40px';
+    btn.cornerRadius = 0.02;
+    btn.background = '#3182CE';
+    btn.alpha = 0.9;
+    btn.thickness = 0.001;
     btn.cornerRadius = 0.02;
     btn.background = '#3182CE';
     btn.alpha = 0.9;
