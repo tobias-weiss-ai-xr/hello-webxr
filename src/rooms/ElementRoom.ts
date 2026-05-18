@@ -11,7 +11,9 @@ import { ROOM_ELEMENTS_START } from './RoomManager.js';
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
 import { THEMES } from '../data/themes.js';
+import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import type { Theme } from '../types/index.js';
+import { InteractiveContent } from '../lib/InteractiveContent.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -30,6 +32,8 @@ let electronShells: ElectronShell[] = [];
 let orbitRings: any[] = [];
 let elementUI: AdvancedDynamicTexture | null = null;
 let currentElementSymbol: string | undefined = undefined;
+let triviaCards: any[] = [];
+let experimentButtons: any[] = [];
 
 const ATOM_RADIUS = 0.8;
 
@@ -147,6 +151,10 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   // Create info panel
   createInfoPanel(ctx, element, elementUI!);
+
+  // Interactive content
+  createTriviaCards(ctx, element, elementUI!);
+  createExperimentButtons(ctx, element, elementUI!);
 
   // Connection lines/exploration hints
   createKeyConnections(ctx);
@@ -422,6 +430,72 @@ function createKeyConnections(ctx: AppContext): void {
   ctx.trackMesh(hint);
 }
 
+function createTriviaCards(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  const scene = ctx.scene;
+
+  const card1 = InteractiveContent.createTriviaCard(
+    scene,
+    ui,
+    { x: 0.6, y: 0.15 },
+    `${element.symbol} Properties`,
+    [
+      `Atomic Number: ${element.atomicNumber}`,
+      `Mass: ${element.mass} u`,
+      `Group: ${element.group}`,
+      `Period: ${element.period}`
+    ],
+    () => {
+      InteractiveContent.flipCard(card1, element);
+    }
+  );
+
+  const card2 = InteractiveContent.createTriviaCard(
+    scene,
+    ui,
+    { x: -0.6, y: 0.15 },
+    `${element.symbol} Trivia`,
+    [
+      'Click to flip',
+      'Discover fun facts!',
+    ],
+    () => {
+      InteractiveContent.flipCard(card2, element);
+    }
+  );
+
+  triviaCards.push(card1, card2);
+}
+
+function createExperimentButtons(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  if (!element.experiments || element.experiments.length === 0) return;
+
+  const buttonWidth = 0.28;
+  const gap = 0.02;
+  const totalWidth = (buttonWidth * element.experiments.length) + (gap * (element.experiments.length - 1));
+  const startX = -totalWidth / 2 + buttonWidth / 2;
+
+  element.experiments.forEach((expId: string, index: number) => {
+    const expData = EXPERIMENTAL_ROOMS.find(er => er.experiments.includes(expId));
+    
+    if (!expData) {
+      console.warn(`Experiment ${expId} not found in EXPERIMENTAL_ROOMS`);
+      return;
+    }
+
+    const expBtn = InteractiveContent.createExperimentButton(
+      ctx.scene,
+      ui,
+      { experimentId: expId, label: expData.name || expId, roomId: 129 + index },
+      () => {
+        const roomIndex = 129 + index;
+        ctx.GotoRoom(roomIndex, element.symbol, expId);
+      }
+    );
+
+    experimentButtons.push(expBtn);
+  });
+}
+
 export function enter(ctx: AppContext, elementSymbol?: string): void {
   const scene = ctx.scene;
 
@@ -482,6 +556,14 @@ export function exit(_ctx: AppContext): void {
   electronShells.forEach(shell => {
     if (shell.label) shell.label.isVisible = false;
   });
+
+  triviaCards.forEach(card => {
+    card.front.dispose();
+  });
+  triviaCards = [];
+
+  experimentButtons.forEach(btn => btn.dispose());
+  experimentButtons = [];
 }
 
 export function execute(_ctx: AppContext, _delta: number, time: number): void {
