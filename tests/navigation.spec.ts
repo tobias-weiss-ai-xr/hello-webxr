@@ -38,6 +38,22 @@ test.describe('Room Navigation', () => {
     expect(room).toBe(1);
   });
 
+  test('navigating to natrium room via element URL param', async ({ page }) => {
+    await page.goto('/?element=Na');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(11);
+  });
+
+  test('invalid element param falls back to lobby', async ({ page }) => {
+    await page.goto('/?element=nonexistent');
+    await waitForApp(page);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(0);
+  });
+
   test('navigating to gold room via URL param', async ({ page }) => {
     await page.goto('/?room=Au');
     await waitForApp(page);

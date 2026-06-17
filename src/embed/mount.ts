@@ -64,7 +64,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
 
   // Read URL params
   const urlParams = new URLSearchParams(window.location.search);
-  const roomName = options.startRoom || urlParams.get('room');
+  const roomName = urlParams.get('element') || urlParams.get('room') || options.startRoom;
   const handedness = (urlParams.get('handedness') as 'left' | 'right') || 'right';
 
   // Inject scoped styles
@@ -197,6 +197,11 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
         const name = param || `room-${roomIndex}`;
         app.onRoomChange(name);
       }
+      try {
+        window.parent.postMessage({ type: 'pse:roomChanged', roomName: param || `room-${roomIndex}`, roomIndex }, '*');
+      } catch (e) {
+        // Silently ignore cross-origin postMessage errors
+      }
     };
 
     if (!app) return;
@@ -290,6 +295,25 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   }
 
   gotoRoom(initialRoom, initialParam);
+
+  function onParentMessage(event: MessageEvent) {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.type === 'pse:gotoRoom') {
+      const target = data.element || data.room || data.symbol;
+      if (target) {
+        const elementIndex = ELEMENTS.findIndex(e => e.symbol === target);
+        if (elementIndex !== -1) {
+          gotoRoom(ROOM_ELEMENTS_START + elementIndex, target);
+        } else if (target === 'lobby' || target === '0') {
+          gotoRoom(ROOM_LOBBY);
+        } else {
+          console.warn('[PSE VR] Unknown room target from parent:', target);
+        }
+      }
+    }
+  }
+  window.addEventListener('message', onParentMessage);
 
   // Render loop
   engine.runRenderLoop(() => {
