@@ -50,6 +50,16 @@ export interface ElementData {
   icon?: string;
   block?: string;
   groupNumber?: number;
+  // Extended fields for detail panel
+  discoveryYear?: number;
+  discoveredBy?: string;
+  electronConfig?: string;
+  category?: string;
+  uses?: string[];
+  hazards?: string[];
+  meltingPoint?: number;
+  boilingPoint?: number;
+  electronegativity?: number;
 }
 
 // Theme pattern types

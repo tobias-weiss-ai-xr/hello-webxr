@@ -12,9 +12,20 @@ import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
 import { THEMES } from '../data/themes.js';
 import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
+import { elementExtensions } from '../data/element-extensions.js';
 import type { Theme } from '../types/index.js';
 import { InteractiveContent } from '../lib/InteractiveContent.js';
 import { AnimationHelper } from '../lib/AnimationHelper.js';
+import {
+  getAufbauConfiguration,
+  createSOrbital,
+  createPOrbital,
+  createDOrbital,
+  createFOrbital,
+  getOrbitalColor,
+  getOrbitalRadius,
+  type OrbitalType,
+} from '../lib/OrbitalEffects.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -28,6 +39,10 @@ let elementDesc: TextBlock | null = null;
 let elementProps: TextBlock | null = null;
 let elementSymbolDisplay: TextBlock | null = null;
 let electronCountTextBlock: TextBlock | null = null;
+let discoveryText: TextBlock | null = null;
+let usesText: TextBlock | null = null;
+let hazardsText: TextBlock | null = null;
+let configText: TextBlock | null = null;
 let electronShellLabels: TextBlock[] = [];
 let electronShells: ElectronShell[] = [];
 let orbitRings: any[] = [];
@@ -35,6 +50,17 @@ let elementUI: AdvancedDynamicTexture | null = null;
 let currentElementSymbol: string | undefined = undefined;
 let triviaCards: any[] = [];
 let experimentButtons: any[] = [];
+
+// Aufbau animation state
+let aufbauTimer: ReturnType<typeof setTimeout> | null = null;
+let aufbauPhase = 0;
+const AUFBAU_PHASE_COUNT = 12;
+
+// Orbital view state
+let orbitalMeshes: import('@babylonjs/core').AbstractMesh[] = [];
+let orbitalGroup: TransformNode | null = null;
+let showOrbitalView = false;
+let orbitalViewBtn: Rectangle | null = null;
 
 const ATOM_RADIUS = 0.8;
 
@@ -149,6 +175,7 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
 
   // Create unified atom display
   createAtomDisplay(ctx, element);
+  createOrbitalView(ctx, element);
 
   // Create info panel
   createInfoPanel(ctx, element, elementUI!);
@@ -156,6 +183,28 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   // Interactive content
   createTriviaCards(ctx, element, elementUI!);
   createExperimentButtons(ctx, element, elementUI!);
+
+  orbitalViewBtn = new Rectangle('orbitalViewBtn');
+  orbitalViewBtn.width = '140px';
+  orbitalViewBtn.height = '32px';
+  orbitalViewBtn.cornerRadius = 6;
+  orbitalViewBtn.thickness = 0;
+  orbitalViewBtn.background = '#3a3a4a';
+  orbitalViewBtn.alpha = 0.85;
+  orbitalViewBtn.verticalAlignment = 1;
+  orbitalViewBtn.top = '-120px';
+  orbitalViewBtn.horizontalAlignment = 0;
+  orbitalViewBtn.left = '20px';
+
+  const orbLabel = new TextBlock('orbitalViewText', 'Orbital View');
+  orbLabel.color = 'white';
+  orbLabel.fontSize = 12;
+  orbLabel.fontWeight = 'bold';
+  orbLabel.top = '6px';
+  orbitalViewBtn.addControl(orbLabel);
+
+  elementUI?.addControl(orbitalViewBtn);
+  orbitalViewBtn.onPointerDownObservable.add(toggleAtomView);
 
   // Add particles for certain elements
   if (['Li', 'Na', 'K'].includes(element.symbol)) {
@@ -279,7 +328,7 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
     // Old shell structure - will be replaced in Task 4
     // electronShells.push({ radius: shellRadius, label: shellLabel });
 
-    const electronsInShell = Math.min(shellMax as number, 8);
+    const electronsInShell = shellMax as number;
     const electronAngleStep = (Math.PI * 2) / electronsInShell;
 
     for (let i = 0; i < electronsInShell; i++) {
@@ -302,6 +351,7 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
         Math.sin(angle) * shellRadius
       );
       electron.parent = mainAtom;
+      electron.setEnabled(false);
       ctx.trackMesh(electron);
 
       electronOrbits.push({
@@ -333,55 +383,106 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
 function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture | null): void {
   const scene = ctx.scene;
 
-  // Create info panel mesh (semi-transparent panel)
+  // Get extended data if available
+  const ext = elementExtensions[element.symbol] || {};
+
+  // Create info panel mesh (semi-transparent, taller to fit rich content)
   const panelMat = new StandardMaterial('infoPanelMat', scene);
   panelMat.diffuseColor = ELEMENT_INFO_COLOR;
   panelMat.emissiveColor = ELEMENT_INFO_COLOR.scale(0.3);
-  panelMat.alpha = 0.85;
+  panelMat.alpha = 0.92;
   panelMat.backFaceCulling = false;
 
-  const panel = MeshBuilder.CreatePlane('infoPanel', { width: 5, height: 3 }, scene);
-  panel.position.set(0, 3, -4);
+  const panel = MeshBuilder.CreatePlane('infoPanel', { width: 5.5, height: 3.6 }, scene);
+  panel.position.set(0, 3.2, -4);
   panel.rotation.y = Math.PI;
   panel.billboardMode = 7;
   panel.material = panelMat;
   ctx.trackMesh(panel);
   elementInfoPanel = panel;
 
-  // UI overlay
+  // Title
   elementTitle = new TextBlock('elementTitle', `${element.symbol} - ${element.name}`);
   elementTitle.color = 'white';
-  elementTitle.fontSize = 28;
+  elementTitle.fontSize = 24;
   elementTitle.fontWeight = 'bold';
   elementUI?.addControl(elementTitle);
   elementTitle.linkWithMesh(panel);
-  elementTitle.linkOffsetY = -80;
+  elementTitle.linkOffsetY = -140;
 
+  // Description
   elementDesc = new TextBlock('elementDesc', element.description || '');
   elementDesc.color = '#cccccc';
-  elementDesc.fontSize = 14;
+  elementDesc.fontSize = 12;
   elementDesc.textWrapping = true;
-  elementDesc.width = 4.5;
+  elementDesc.width = 5.0;
   elementUI?.addControl(elementDesc);
   elementDesc.linkWithMesh(panel);
-  elementDesc.linkOffsetY = -20;
+  elementDesc.linkOffsetY = -100;
 
-  // Properties
-  const props = `Atomic #: ${element.atomicNumber}\nMass: ${element.mass} u\nGroup: ${element.group}`;
+  // Core properties
+  let catLabel = ext.category || element.group;
+  const props = `#${element.atomicNumber}  ·  ${element.mass}u  ·  ${element.group}  ·  ${catLabel.charAt(0).toUpperCase() + catLabel.slice(1)}`;
   elementProps = new TextBlock('elementProps', props);
   elementProps.color = '#8899aa';
-  elementProps.fontSize = 12;
-  elementProps.lineSpacing = 1.8;
+  elementProps.fontSize = 11;
+  elementProps.lineSpacing = 1.5;
   elementUI?.addControl(elementProps);
   elementProps.linkWithMesh(panel);
-  elementProps.linkOffsetY = 60;
+  elementProps.linkOffsetY = -70;
 
-  createHistoricalPanel(ctx, element, elementUI!);
+  // Discovery
+  if (ext.discoveryYear || ext.discoveredBy) {
+    const discYear = ext.discoveryYear || '?';
+    const discBy = ext.discoveredBy || 'Unknown';
+    discoveryText = new TextBlock('discoveryText', `\uD83D\uDD2D Discovered: ${discYear}${discBy !== 'Unknown' ? ` by ${discBy}` : ''}`);
+    discoveryText.color = '#a0d2ff';
+    discoveryText.fontSize = 11;
+    elementUI?.addControl(discoveryText);
+    discoveryText.linkWithMesh(panel);
+    discoveryText.linkOffsetY = -40;
+  }
+
+  // Electron configuration
+  if (ext.electronConfig) {
+    configText = new TextBlock('configText', `\u269B Config: ${ext.electronConfig}`);
+    configText.color = '#e8d5a3';
+    configText.fontSize = 11;
+    elementUI?.addControl(configText);
+    configText.linkWithMesh(panel);
+    configText.linkOffsetY = -15;
+  }
+
+  // Uses
+  if (ext.uses && ext.uses.length > 0) {
+    const usesStr = `\u2699 Uses: ${ext.uses.join(' · ')}`;
+    usesText = new TextBlock('usesText', usesStr);
+    usesText.color = '#a8d8a8';
+    usesText.fontSize = 10;
+    usesText.textWrapping = true;
+    usesText.width = 5.0;
+    elementUI?.addControl(usesText);
+    usesText.linkWithMesh(panel);
+    usesText.linkOffsetY = 15;
+  }
+
+  // Hazards
+  if (ext.hazards && ext.hazards.length > 0) {
+    const hazStr = `\u26A0 Hazards: ${ext.hazards.join(' · ')}`;
+    hazardsText = new TextBlock('hazardsText', hazStr);
+    hazardsText.color = '#ff9a9a';
+    hazardsText.fontSize = 10;
+    hazardsText.textWrapping = true;
+    hazardsText.width = 5.0;
+    elementUI?.addControl(hazardsText);
+    hazardsText.linkWithMesh(panel);
+    hazardsText.linkOffsetY = 50;
+  }
 
   // Back button
   const backBtn = new Rectangle('backBtn');
   backBtn.width = '300px';
-  backBtn.height = '40px';
+  backBtn.height = '36px';
   backBtn.cornerRadius = 6;
   backBtn.color = '#4a90e2';
   backBtn.thickness = 0;
@@ -390,13 +491,13 @@ function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDyna
 
   const backText = new TextBlock('backText', '← Back');
   backText.color = 'white';
-backText.fontSize = 16;
+  backText.fontSize = 14;
   backText.fontWeight = 'bold';
   backBtn.addControl(backText);
-  backText.top = '10px';
+  backText.top = '8px';
   
   ui?.addControl(backBtn);
-  backBtn.isVisible = true;  // Fix: Make back button visible
+  backBtn.isVisible = true;
   backBtn.onPointerDownObservable.add(() => {
     ctx.GotoRoom(0, undefined, undefined);
   });
@@ -415,8 +516,97 @@ backText.fontSize = 16;
   
   // Store handler for cleanup
   (window as any)._elementRoomKeyboardHandler = keyboardHandler;
+}
 
-  elementInfoPanel = panel;
+/**
+ * Start Aufbau filling animation — reveals electrons shell by shell
+ * Animation phases: each phase reveals electrons in one shell (K→L→M→...)
+ */
+function startAufbauFilling(): void {
+  aufbauPhase = 0;
+
+  const animateNextShell = () => {
+    if (aufbauPhase >= AUFBAU_PHASE_COUNT || !mainAtom) {
+      return;
+    }
+
+    // Reveal electrons for current shell
+    const shellChildren = mainAtom.getChildren().filter(c =>
+      c.name.startsWith(`electron_${aufbauPhase}_`)
+    );
+
+    shellChildren.forEach((child, i) => {
+      setTimeout(() => {
+        child.setEnabled(true);
+      }, i * 60); // stagger within shell
+    });
+
+    aufbauPhase++;
+    aufbauTimer = setTimeout(animateNextShell, 500);
+  };
+
+  // Start with a small delay
+  aufbauTimer = setTimeout(animateNextShell, 300);
+}
+
+function createOrbitalView(ctx: AppContext, element: ElementData): void {
+  if (!mainAtom) return;
+
+  const scene = ctx.scene;
+
+  orbitalGroup = new TransformNode('orbitalGroup', scene);
+  orbitalGroup.parent = mainAtom;
+  orbitalGroup.position = Vector3.Zero();
+  orbitalGroup.setEnabled(false);
+
+  const config = getAufbauConfiguration(element.atomicNumber);
+  const atomRadius = ATOM_RADIUS * 2.5;
+
+  config.forEach((entry) => {
+    const orbitalType = entry.orbital;
+    const n = parseInt(orbitalType.charAt(0));
+    const letter = orbitalType.charAt(1) as 's' | 'p' | 'd' | 'f';
+    const color = getOrbitalColor(orbitalType);
+    const radius = getOrbitalRadius(n, letter);
+
+    if (letter === 's') {
+      const s = createSOrbital(scene, orbitalGroup!, color, radius, `orb_${orbitalType}`);
+      ctx.trackMesh(s);
+      orbitalMeshes.push(s);
+    } else if (letter === 'p') {
+      const { lobeA, lobeB } = createPOrbital(scene, orbitalGroup!, color, radius, `orb_${orbitalType}`, 'y');
+      ctx.trackMesh(lobeA);
+      ctx.trackMesh(lobeB);
+      orbitalMeshes.push(lobeA, lobeB);
+    } else if (letter === 'd') {
+      const lobes = createDOrbital(scene, orbitalGroup!, color, radius, `orb_${orbitalType}`);
+      lobes.forEach(l => { ctx.trackMesh(l); orbitalMeshes.push(l); });
+    } else if (letter === 'f') {
+      const lobes = createFOrbital(scene, orbitalGroup!, color, radius, `orb_${orbitalType}`);
+      lobes.forEach(l => { ctx.trackMesh(l); orbitalMeshes.push(l); });
+    }
+  });
+}
+
+function toggleAtomView(): void {
+  if (!mainAtom) return;
+
+  showOrbitalView = !showOrbitalView;
+
+  orbitRings.forEach(ring => ring.setEnabled(!showOrbitalView));
+
+  mainAtom.getChildren().forEach(child => {
+    if (child.name.startsWith('electron_')) {
+      child.setEnabled(!showOrbitalView && aufbauPhase >= AUFBAU_PHASE_COUNT);
+    }
+  });
+
+  if (orbitalGroup) orbitalGroup.setEnabled(showOrbitalView);
+
+  if (orbitalViewBtn) {
+    const label = orbitalViewBtn.getChildByName('orbitalViewText') as TextBlock;
+    if (label) label.text = showOrbitalView ? 'Bohr View' : 'Orbital View';
+  }
 }
 
 function createKeyConnections(ctx: AppContext): void {
@@ -585,9 +775,49 @@ export function enter(ctx: AppContext, elementSymbol?: string): void {
     elementSymbolDisplay.isVisible = true;
     elementSymbolDisplay.linkOffsetY = -120;
   }
+  if (electronCountTextBlock) electronCountTextBlock.isVisible = true;
+  if (discoveryText) discoveryText.isVisible = true;
+  if (configText) configText.isVisible = true;
+  if (usesText) usesText.isVisible = true;
+  if (hazardsText) hazardsText.isVisible = true;
+  if (orbitalViewBtn) orbitalViewBtn.isVisible = true;
 
-  if (electronCountTextBlock) {
-    electronCountTextBlock.isVisible = true;
+  // Reset orbital view if active
+  if (showOrbitalView) {
+    showOrbitalView = false;
+    orbitRings.forEach(ring => ring.setEnabled(true));
+    if (orbitalGroup) orbitalGroup.setEnabled(false);
+    if (orbitalViewBtn) {
+      const label = orbitalViewBtn.getChildByName('orbitalViewText') as TextBlock;
+      if (label) label.text = 'Orbital View';
+    }
+  }
+
+  // Start Aufbau electron filling animation
+  if (mainAtom) {
+    // Hide all electrons first (in case of re-entry)
+    mainAtom.getChildren().forEach(child => {
+      if (child.name.startsWith('electron_')) child.setEnabled(false);
+    });
+    electronOrbits = [];
+    // Rebuild orbit tracking for animation
+    const config = getElectronConfiguration(
+      ELEMENTS.find(e => e.symbol === currentElementSymbol)?.atomicNumber || 0
+    );
+    let eIndex = 0;
+    config.forEach((shellMax, shellIdx) => {
+      for (let i = 0; i < shellMax; i++) {
+        electronOrbits.push({
+          group: mainAtom!,
+          electron: mainAtom!.getChildren().find(c => c.name === `electron_${shellIdx}_${i}`),
+          radius: ATOM_RADIUS + (shellIdx + 1) * 0.4,
+          speed: 2 / (shellIdx + 1.5),
+          angle: (i / shellMax) * Math.PI * 2,
+        });
+        eIndex++;
+      }
+    });
+    startAufbauFilling();
   }
 
   // Show shell labels for a moment
@@ -606,6 +836,13 @@ export function enter(ctx: AppContext, elementSymbol?: string): void {
 }
 
 export function exit(_ctx: AppContext): void {
+  if (aufbauTimer) {
+    clearTimeout(aufbauTimer);
+    aufbauTimer = null;
+  }
+  aufbauPhase = 0;
+  showOrbitalView = false;
+
   const handler = (window as any)._elementRoomKeyboardHandler;
   if (handler) {
     document.removeEventListener('keydown', handler);
@@ -629,6 +866,11 @@ export function exit(_ctx: AppContext): void {
   if (elementProps) elementProps.isVisible = false;
   if (elementSymbolDisplay) elementSymbolDisplay.isVisible = false;
   if (electronCountTextBlock) electronCountTextBlock.isVisible = false;
+  if (discoveryText) { discoveryText.dispose(); discoveryText = null; }
+  if (configText) { configText.dispose(); configText = null; }
+  if (usesText) { usesText.dispose(); usesText = null; }
+  if (hazardsText) { hazardsText.dispose(); hazardsText = null; }
+  if (orbitalViewBtn) { orbitalViewBtn.isVisible = false; }
 
   electronShells.forEach(shell => {
     if (shell.label) shell.label.isVisible = false;
@@ -645,21 +887,24 @@ export function exit(_ctx: AppContext): void {
 
 export function execute(_ctx: AppContext, _delta: number, time: number): void {
   if (mainAtom) {
-    // Gentle rotation
     mainAtom.rotation.y += 0.003;
     mainAtom.rotation.x = Math.sin(time * 0.1) * 0.1;
   }
 
-  // Animate electrons
-  electronOrbits.forEach((orbit, index) => {
-    orbit.angle += orbit.speed * 0.016;
-    if (orbit.electron) {
-      orbit.electron.position.x = Math.cos(orbit.angle) * orbit.radius;
-      orbit.electron.position.z = Math.sin(orbit.angle) * orbit.radius;
-    }
-  });
+  if (!showOrbitalView) {
+    electronOrbits.forEach((orbit) => {
+      orbit.angle += orbit.speed * 0.016;
+      if (orbit.electron) {
+        orbit.electron.position.x = Math.cos(orbit.angle) * orbit.radius;
+        orbit.electron.position.z = Math.sin(orbit.angle) * orbit.radius;
+      }
+    });
+  } else if (orbitalGroup) {
+    // Slow rotation of orbital shapes
+    orbitalGroup.rotation.y += 0.002;
+    orbitalGroup.rotation.x += 0.001;
+  }
 
-  // Gentle pulse on nucleus
   if (mainAtom) {
     const nucleus = mainAtom.getChildren()[0] as any;
     if (nucleus && nucleus.material) {

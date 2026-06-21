@@ -2,11 +2,12 @@ import type { AppContext } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
-import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.js';
+import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
-import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
+import { AdvancedDynamicTexture, TextBlock, Rectangle, StackPanel } from '@babylonjs/gui/2D/index.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { buildRoom } from './RoomBuilder.js';
+import { trendData, TREND_LABELS, TREND_RANGES, type TrendKey } from '../data/trend-data.js';
 
 const ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const WALL_COLOR = new Color3(0.20, 0.22, 0.26);
@@ -20,6 +21,9 @@ let uiTexture: AdvancedDynamicTexture | null = null;
 let hoveredElement: any | null = null;
 let titleText: TextBlock | null = null;
 let infoText: TextBlock | null = null;
+let currentTrend: TrendKey | null = null;
+let trendPanel: StackPanel | null = null;
+let originalColors: Map<AbstractMesh, { diffuse: Color3; emissive: Color3 }> = new Map();
 
 function toColor3(color: number): Color3 {
   return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
@@ -48,6 +52,7 @@ export function setup(ctx: AppContext): void {
 
   createPeriodicTable(ctx);
   createInfoPanels(ctx);
+  createTrendSelector(uiTexture!);
 }
 
 function createPeriodicTable(ctx: AppContext): void {
@@ -167,6 +172,104 @@ function createInfoPanels(ctx: AppContext): void {
   infoText = elementInfo;
 }
 
+function createTrendSelector(ui: AdvancedDynamicTexture): void {
+  const panel = new StackPanel('trendPanel');
+  panel.verticalAlignment = 1;
+  panel.horizontalAlignment = 2;
+  panel.left = '-20px';
+  panel.top = '-20px';
+  panel.width = '200px';
+  panel.height = '220px';
+  panel.background = '#1a1a2e';
+  panel.alpha = 0.9;
+  ui.addControl(panel);
+  trendPanel = panel;
+
+  const titleCtrl = new TextBlock('trendTitle', 'Trend Overlay');
+  titleCtrl.color = '#8899aa';
+  titleCtrl.fontSize = 13;
+  titleCtrl.fontWeight = 'bold';
+  titleCtrl.height = '28px';
+  titleCtrl.paddingTop = '6px';
+  panel.addControl(titleCtrl);
+
+  const trends: (TrendKey | 'none')[] = ['none', 'electronegativity', 'atomicRadius', 'ionizationEnergy', 'meltingPoint'];
+  const labels: Record<string, string> = {
+    none: 'Normal',
+    electronegativity: 'Electronegativity',
+    atomicRadius: 'Atomic Radius',
+    ionizationEnergy: 'Ion. Energy',
+    meltingPoint: 'Melting Point',
+  };
+
+  trends.forEach(trend => {
+    const btn = new Rectangle(`trendBtn_${trend}`);
+    btn.height = '30px';
+    btn.width = '180px';
+    btn.thickness = 1;
+    btn.color = '#334455';
+    btn.background = '#1a1a2e';
+    btn.cornerRadius = 4;
+    btn.top = '2px';
+
+    const lbl = new TextBlock(`trendLbl_${trend}`, labels[trend] || trend);
+    lbl.color = '#ccddee';
+    lbl.fontSize = 11;
+    lbl.fontWeight = 'bold';
+    lbl.paddingLeft = '8px';
+    btn.addControl(lbl);
+
+    btn.onPointerDownObservable.add(() => {
+      currentTrend = trend === 'none' ? null : (trend as TrendKey);
+      applyTrendColors();
+    });
+
+    panel.addControl(btn);
+  });
+}
+
+function colorForTrend(trend: TrendKey, symbol: string): Color3 {
+  const data = trendData[symbol];
+  if (!data) return new Color3(0.5, 0.5, 0.5);
+
+  const value = data[trend];
+  const range = TREND_RANGES[trend];
+  const normalized = Math.max(0, Math.min(1, (value - range.min) / (range.max - range.min)));
+
+  const r = normalized;
+  const g = 0.3 + (1 - normalized) * 0.5;
+  const b = 1 - normalized;
+  return new Color3(r, g, b);
+}
+
+function applyTrendColors(): void {
+  elementButtons.forEach(btn => {
+    const mat = btn.material as StandardMaterial;
+    if (!mat) return;
+    const element = (btn.metadata as any)?.element;
+    if (!element) return;
+
+    if (!originalColors.has(btn)) {
+      originalColors.set(btn, {
+        diffuse: mat.diffuseColor.clone(),
+        emissive: mat.emissiveColor.clone(),
+      });
+    }
+
+    if (currentTrend) {
+      const c = colorForTrend(currentTrend, element.symbol);
+      mat.diffuseColor = c;
+      mat.emissiveColor = c.scale(0.5);
+    } else {
+      const orig = originalColors.get(btn);
+      if (orig) {
+        mat.diffuseColor = orig.diffuse;
+        mat.emissiveColor = orig.emissive;
+      }
+    }
+  });
+}
+
 function onElementHover(ctx: AppContext, element: any, material: StandardMaterial): void {
   hoveredElement = element;
   const hoverCNum = typeof element.color === 'number' ? element.color : 0xCCCCCC;
@@ -198,13 +301,17 @@ export function enter(ctx: AppContext): void {
   if (periodicTableGroup) periodicTableGroup.setEnabled(true);
   if (titleText) titleText.isVisible = true;
   if (infoText) infoText.isVisible = true;
+  if (trendPanel) trendPanel.isVisible = true;
 }
 
 export function exit(_ctx: AppContext): void {
+  currentTrend = null;
+  originalColors.clear();
   elementButtons.forEach(b => b.isVisible = false);
   if (periodicTableGroup) periodicTableGroup.setEnabled(false);
   if (titleText) titleText.isVisible = false;
   if (infoText) infoText.isVisible = false;
+  if (trendPanel) trendPanel.isVisible = false;
 }
 
 export function execute(_ctx: AppContext, _delta: number, time: number): void {
