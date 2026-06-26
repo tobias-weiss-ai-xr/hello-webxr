@@ -1,0 +1,14 @@
+schema: spec-driven
+
+context: |
+  Tech stack: WebXR, Three.js, Webpack, JavaScript
+  Conventions: Webpack bundle, ES modules
+  Domain: WebXR experiences and interaction examples (VR/AR in browser)
+
+rules:
+  proposal:
+    - Include rollback plan
+  specs:
+    - Use Given/When/Then format for scenarios
+  design:
+    - Include sequence diagrams for complex flows
