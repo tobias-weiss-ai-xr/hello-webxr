@@ -14,9 +14,12 @@
  *   - window global (before mount): window.THEME_OVERRIDES_API = '...'
  * Leave it unset and overrides stay purely local (no network calls).
  *
- * Endpoint contract:
- *   GET  <endpoint>  ->  { "H": "cosmic", "Fe": "forge", ... }
- *   PUT  <endpoint>  ->  body: same JSON map
+ * Endpoint contract (all admin-key protected; send the key as x-api-key):
+ *   GET    <endpoint>                  -> { "H": "cosmic", "Fe": "forge", ... }
+ *   PUT    <endpoint>                  -> replace the whole map (body = map)
+ *   PATCH  <endpoint>/<symbol>         -> { "themeKey": "cosmic" }  (upsert one)
+ *   DELETE <endpoint>/<symbol>         -> remove one key
+ * Single-key edits use PATCH/DELETE so concurrent admins don't clobber.
  */
 
 const STORAGE_KEY = 'chemie-theme-overrides';
@@ -76,13 +79,23 @@ async function loadRemote(): Promise<OverrideMap | null> {
   }
 }
 
-async function saveRemote(map: OverrideMap): Promise<void> {
+/** Push a single key to the backend (PATCH to upsert, DELETE to remove). */
+async function saveRemoteKey(symbol: string, themeKey: string | null): Promise<void> {
   const endpoint = getEndpoint();
   if (!endpoint) return;
+  const url = `${endpoint}/${encodeURIComponent(symbol)}`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (adminApiKey) headers['x-api-key'] = adminApiKey;
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (adminApiKey) headers['x-api-key'] = adminApiKey;
-    await fetch(endpoint, { method: 'PUT', headers, body: JSON.stringify(map) });
+    if (themeKey === null) {
+      await fetch(url, { method: 'DELETE', headers });
+    } else {
+      await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ themeKey }),
+      });
+    }
   } catch {
     /* offline: local cache remains the source of truth */
   }
@@ -96,7 +109,7 @@ export function getThemeOverride(symbol: string): string | undefined {
 /**
  * Set or clear an override. Pass `themeKey = null` to remove the override and
  * fall back to the element's static theme. Persists locally immediately and
- * syncs to the backend in the background (no-op when no endpoint is set).
+ * syncs to the backend (single key) in the background.
  */
 export function setThemeOverride(symbol: string, themeKey: string | null): void {
   const map = loadLocal();
@@ -106,7 +119,7 @@ export function setThemeOverride(symbol: string, themeKey: string | null): void 
     map[symbol] = themeKey;
   }
   saveLocal(map);
-  void saveRemote(map);
+  void saveRemoteKey(symbol, themeKey);
 }
 
 /** All current overrides (symbol -> themeKey) from the local cache. */
@@ -115,10 +128,13 @@ export function getAllOverrides(): OverrideMap {
 }
 
 /**
- * Pull remote overrides into the local cache. Call once at startup (e.g. from
- * mount) so device-independent admin edits appear without a manual edit.
+ * Pull remote overrides into the local cache, merging per key (remote wins,
+ * local-only keys are preserved). Call once at startup (e.g. from mount) so
+ * device-independent admin edits appear without wiping local edits.
  */
 export async function refreshOverridesFromRemote(): Promise<void> {
   const remote = await loadRemote();
-  if (remote) saveLocal(remote);
+  if (!remote) return;
+  const merged = { ...loadLocal(), ...remote };
+  saveLocal(merged);
 }
