@@ -21,6 +21,13 @@
 
 const STORAGE_KEY = 'chemie-theme-overrides';
 
+let adminApiKey = '';
+
+/** Set the admin API key used for backend sync (sent as the x-api-key header). */
+export function setAdminApiKey(key: string): void {
+  adminApiKey = key || '';
+}
+
 type OverrideMap = Record<string, string>;
 
 /** Resolve the optional sync endpoint (URL param wins, then window global). */
@@ -58,7 +65,9 @@ async function loadRemote(): Promise<OverrideMap | null> {
   const endpoint = getEndpoint();
   if (!endpoint) return null;
   try {
-    const res = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (adminApiKey) headers['x-api-key'] = adminApiKey;
+    const res = await fetch(endpoint, { headers });
     if (!res.ok) return null;
     const data = await res.json();
     return data && typeof data === 'object' ? (data as OverrideMap) : null;
@@ -71,11 +80,9 @@ async function saveRemote(map: OverrideMap): Promise<void> {
   const endpoint = getEndpoint();
   if (!endpoint) return;
   try {
-    await fetch(endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(map),
-    });
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (adminApiKey) headers['x-api-key'] = adminApiKey;
+    await fetch(endpoint, { method: 'PUT', headers, body: JSON.stringify(map) });
   } catch {
     /* offline: local cache remains the source of truth */
   }

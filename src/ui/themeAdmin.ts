@@ -8,7 +8,7 @@
  * the room or theme code.
  */
 import { THEMES } from '../data/themes.js';
-import { setThemeOverride } from '../lib/themeOverrides.js';
+import { setThemeOverride, setAdminApiKey } from '../lib/themeOverrides.js';
 import * as ElementRoom from '../rooms/ElementRoom.js';
 
 export function initThemeAdmin(): void {
@@ -64,6 +64,22 @@ export function initThemeAdmin(): void {
   }
   panel.appendChild(select);
 
+  const keyInput = document.createElement('input');
+  keyInput.type = 'password';
+  keyInput.placeholder = 'Admin-API-Key (Backend-Sync)';
+  keyInput.id = 'theme-admin-key';
+  Object.assign(keyInput.style, {
+    width: '100%',
+    padding: '6px',
+    borderRadius: '6px',
+    border: '1px solid #2a3142',
+    background: '#1a1f2b',
+    color: '#e8ecf4',
+    marginBottom: '8px',
+  });
+  keyInput.addEventListener('input', () => setAdminApiKey(keyInput.value.trim()));
+  panel.appendChild(keyInput);
+
   const btnRow = document.createElement('div');
   Object.assign(btnRow.style, { display: 'flex', gap: '6px' });
   const applyBtn = document.createElement('button');
@@ -86,7 +102,12 @@ export function initThemeAdmin(): void {
   panel.appendChild(btnRow);
 
   const hint = document.createElement('div');
-  hint.textContent = '?admin im URL — Änderungen bleiben lokal gespeichert.';
+  const endpoint =
+    (window as unknown as { THEME_OVERRIDES_API?: string }).THEME_OVERRIDES_API ||
+    new URLSearchParams(window.location.search).get('themeApi');
+  hint.textContent = endpoint
+    ? `Sync: ${endpoint} (Key nötig für Backend)`
+    : '?admin — lokal gespeichert. Mit ?themeApi=<url> Backend-Sync.';
   Object.assign(hint.style, { opacity: '0.55', marginTop: '8px', fontSize: '11px' });
   panel.appendChild(hint);
 
