@@ -15,6 +15,8 @@ import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import type { Theme } from '../types/index.js';
 import { InteractiveContent } from '../lib/InteractiveContent.js';
 import { AnimationHelper } from '../lib/AnimationHelper.js';
+import { getThemeOverride } from '../lib/themeOverrides.js';
+import type { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -33,6 +35,9 @@ let electronShells: ElectronShell[] = [];
 let orbitRings: any[] = [];
 let elementUI: AdvancedDynamicTexture | null = null;
 let currentElementSymbol: string | undefined = undefined;
+let currentCtx: AppContext | null = null;
+let currentRoomRef: any = null;
+let currentParticleSystem: ParticleSystem | null = null;
 let triviaCards: any[] = [];
 let experimentButtons: any[] = [];
 
@@ -50,6 +55,10 @@ function toColor3(color: number): Color3 {
 function getThemeForElement(elementSymbol: string): Theme {
   const element = ELEMENTS.find(e => e.symbol === elementSymbol);
   if (!element) return THEMES.NEUTRAL;
+
+  // 0. Runtime admin override (persisted in localStorage), if any.
+  const override = getThemeOverride(elementSymbol);
+  if (override && THEMES[override]) return THEMES[override];
 
   // 1. Per-element SPECIFIC scene from data/elements.ts `theme` field.
   //    This is what makes every element room distinct (H → cosmic, He →
@@ -154,6 +163,8 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   });
 
   ctx.setFloorMesh?.(room.floor);
+  currentCtx = ctx;
+  currentRoomRef = room;
 
   createExitDoorway(ctx, theme);
 
@@ -167,11 +178,15 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   createTriviaCards(ctx, element, elementUI!);
   createExperimentButtons(ctx, element, elementUI!);
 
-  // Theme-driven ambient particles (enabled per theme in data/themes.ts)
-  addThemeParticles(ctx, element, theme);
+  // Apply the resolved theme (colors + particles). Defined separately so an
+  // admin override can re-theme the live room without a full rebuild.
+  applyRoomTheme(ctx, element, theme);
 
   // Connection lines/exploration hints
   createKeyConnections(ctx);
+
+  // Notify the (optional) admin panel that a new element room is active.
+  window.dispatchEvent(new CustomEvent('pse:room', { detail: { symbol: elementSymbol } }));
 }
 
 let exitArch: any = null;
@@ -562,17 +577,68 @@ function addThemeParticles(ctx: AppContext, _element: ElementData, theme: Theme)
 
   const scene = ctx.scene;
   // Density (0–1) maps to a sensible particle count for the room.
-  const particleCount = Math.max(4, Math.round(cfg.density * 24));
+  const particleCount = Math.max(6, Math.round(cfg.density * 24));
   const origin = new Vector3(0, 2.5, 0);
-  const particles = AnimationHelper.emitParticles(
-    scene,
-    particleCount,
-    origin,
-    cfg.color,
-    2000
+
+  // Dispose any previously active system (e.g. when an admin re-themes the
+  // live room) before creating the new one.
+  if (currentParticleSystem && !currentParticleSystem.isDisposed) {
+    currentParticleSystem.dispose();
+  }
+  currentParticleSystem = AnimationHelper.emitParticles(scene, particleCount, origin, cfg.color, 2000);
+  ctx.trackParticleSystem?.(currentParticleSystem);
+}
+
+/**
+ * Recolor the already-built room + restart its particles for a theme.
+ * Used both for the initial paint and for live admin re-theming.
+ */
+function applyRoomTheme(ctx: AppContext, element: ElementData, theme: Theme): void {
+  const scene = ctx.scene;
+  scene.clearColor = new Color4(
+    theme.baseColor.r * 0.3,
+    theme.baseColor.g * 0.3,
+    theme.baseColor.b * 0.3,
+    1
   );
 
-  particles.forEach((p) => ctx.trackMesh(p));
+  const room = currentRoomRef as any;
+  if (room) {
+    const tint = (mesh: any, color: Color3, scale = 1): void => {
+      const mat = mesh?.material as StandardMaterial | null;
+      if (mat) {
+        mat.diffuseColor = color.scale(scale);
+        mat.emissiveColor = color.scale(0.05);
+      }
+    };
+    tint(room.floor, theme.baseColor, 0.9);
+    (room.walls || []).forEach((w: any) => tint(w, theme.baseColor, 1));
+    tint(room.ceiling, theme.baseColor, 0.55);
+    if (room.lights?.point) room.lights.point.diffuse = theme.accentColor;
+  }
+
+  // Retint the exit doorway frame to the (possibly overridden) accent.
+  if (exitArch?.material) {
+    (exitArch.material as StandardMaterial).emissiveColor = theme.accentColor.scale(0.3);
+  }
+
+  addThemeParticles(ctx, element, theme);
+}
+
+export function getCurrentElementSymbol(): string | undefined {
+  return currentElementSymbol;
+}
+
+export function getEffectiveThemeKey(symbol: string): string {
+  return getThemeForElement(symbol).id.toLowerCase();
+}
+
+/** Re-theme the currently active element room (used by the admin panel). */
+export function rethemeCurrentRoom(): void {
+  if (!currentElementSymbol || !currentCtx || !currentRoomRef) return;
+  const element = ELEMENTS.find(e => e.symbol === currentElementSymbol);
+  if (!element) return;
+  applyRoomTheme(currentCtx, element, getThemeForElement(currentElementSymbol));
 }
 
 export function enter(ctx: AppContext, elementSymbol?: string): void {

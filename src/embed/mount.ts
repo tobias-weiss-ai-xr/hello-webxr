@@ -19,6 +19,7 @@ import { DesktopControls } from '../movement/DesktopControls.js';
 import { VRNavigation } from '../movement/VRNavigation.js';
 import { RoomTransitionManager } from '../movement/RoomTransitionManager.js';
 import { injectScopedStyles, removeScopedStyles } from './scoped-styles.js';
+import { initThemeAdmin } from '../ui/themeAdmin.js';
 
 const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
 const ROOM_EXP_START = ROOM_ELEMENTS_END + 1;
@@ -225,6 +226,7 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     assets: assetStore,
     trackMesh: (mesh) => roomManager.trackMesh(mesh),
     trackNode: (node) => roomManager.trackNode(node),
+    trackParticleSystem: (ps) => roomManager.trackParticleSystem(ps),
     setFloorMesh: (mesh) => {
       if (vrNav && currentVRFloor) {
         vrNav.removeFloorMesh(currentVRFloor);
@@ -340,6 +342,9 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
   if (options.onReady) {
     options.onReady();
   }
+
+  // Optional in-app theme admin (only active with ?admin in the URL)
+  initThemeAdmin();
 
   return {
     unmount,

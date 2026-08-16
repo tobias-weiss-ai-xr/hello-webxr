@@ -21,6 +21,7 @@ export interface AppContext {
   assets: Record<string, any>;
   trackMesh: (mesh: AbstractMesh) => void;
   trackNode: (node: TransformNode) => void;
+  trackParticleSystem: (ps: import('@babylonjs/core/Particles/particleSystem.js').ParticleSystem) => void;
   setFloorMesh?: (mesh: AbstractMesh) => void;
   roomManager?: import('../rooms/RoomManager.js').RoomManager;
 }

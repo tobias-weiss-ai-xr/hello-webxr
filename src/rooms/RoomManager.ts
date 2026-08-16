@@ -1,4 +1,5 @@
 import type { AppContext, RoomModule } from '../types/index.js';
+import type { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
 
 export const ROOM_LOBBY = 0;
 export const ROOM_ELEMENTS_START = 1;
@@ -11,6 +12,7 @@ export class RoomManager {
   private setupCalledRooms = new Set<number>();
   private _roomMeshes: import('@babylonjs/core').AbstractMesh[] = [];
   private _roomTransformNodes: import('@babylonjs/core').TransformNode[] = [];
+  private _roomParticleSystems: ParticleSystem[] = [];
   private _currentRoomIndex = 0;
 
   constructor(
@@ -50,6 +52,12 @@ export class RoomManager {
     this._roomTransformNodes.push(node);
   }
 
+  /** Track a ParticleSystem created by a room for later disposal */
+  trackParticleSystem(ps: ParticleSystem): void {
+    this._roomParticleSystems.push(ps);
+  }
+
+
   setupRoom(index: number, ctx: AppContext, param?: string): void {
     const room = this.rooms[index];
     if (!room) {
@@ -62,12 +70,14 @@ export class RoomManager {
     }
   }
 
-  /** Dispose all room-created meshes and nodes */
+  /** Dispose all room-created meshes, nodes and particle systems */
   private disposeRoomContent(): void {
     this._roomMeshes.forEach(m => m.dispose());
     this._roomTransformNodes.forEach(n => n.dispose());
+    this._roomParticleSystems.forEach(ps => ps.isDisposed || ps.dispose());
     this._roomMeshes = [];
     this._roomTransformNodes = [];
+    this._roomParticleSystems = [];
   }
 
   enterRoom(index: number, ctx: AppContext, param?: string): void {
