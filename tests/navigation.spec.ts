@@ -71,4 +71,15 @@ test.describe('Room Navigation', () => {
     const room = await page.evaluate(() => (window as any).context.room);
     expect(room).toBe(0);
   });
+
+  test('.back button returns to lobby', async ({ page }) => {
+    await page.goto('/?room=H');
+    await waitForRoom(page, 1);
+
+    await page.click('.backBtn');
+    await waitForRoom(page, 0);
+
+    const room = await page.evaluate(() => (window as any).context.room);
+    expect(room).toBe(0);
+  });
 });

@@ -5,6 +5,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import type { Scene } from '@babylonjs/core/scene.js';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import type { WallPatternType, FloorPatternType } from '../types/index.js';
 
 export interface RoomDimensions {
   width: number;   // X axis
@@ -34,6 +35,14 @@ export interface RoomBuildOptions {
   pointLightColor?: Color3;
   pointLightIntensity?: number;
   doorways?: DoorwayConfig[];
+}
+
+export interface ThemeBasedRoomOptions extends RoomBuildOptions {
+  themeId: string;
+  baseColor?: Color3;
+  accentColor?: Color3;
+  wallPattern?: WallPatternType;
+  floorPattern?: FloorPatternType;
 }
 
 export interface RoomResult {

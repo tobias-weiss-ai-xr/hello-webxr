@@ -1,13 +1,22 @@
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+import { StandardMaterial as StdMat } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
-import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
+import { buildRoom, type RoomBuildOptions, type ThemeBasedRoomOptions } from './RoomBuilder.js';
+import { ROOM_ELEMENTS_START } from './RoomManager.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
+import { THEMES } from '../data/themes.js';
+import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
+import type { Theme } from '../types/index.js';
+import { InteractiveContent } from '../lib/InteractiveContent.js';
+import { AnimationHelper } from '../lib/AnimationHelper.js';
+import { getThemeOverride } from '../lib/themeOverrides.js';
+import type { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
 
 const BASE_ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
 const ACCENT_COLOR = new Color3(0.3, 0.35, 0.45);
@@ -22,14 +31,53 @@ let elementProps: TextBlock | null = null;
 let elementSymbolDisplay: TextBlock | null = null;
 let electronCountTextBlock: TextBlock | null = null;
 let electronShellLabels: TextBlock[] = [];
-let electronShells: { radius: number; label: TextBlock }[] = [];
+let electronShells: ElectronShell[] = [];
 let orbitRings: any[] = [];
 let elementUI: AdvancedDynamicTexture | null = null;
+let currentElementSymbol: string | undefined = undefined;
+let currentCtx: AppContext | null = null;
+let currentRoomRef: any = null;
+let currentParticleSystem: ParticleSystem | null = null;
+let triviaCards: any[] = [];
+let experimentButtons: any[] = [];
 
 const ATOM_RADIUS = 0.8;
 
+// Realistic electron shell capacities (K, L, M, N, O, P, Q shells)
+const SHELL_CAPACITYS = [2, 8, 18, 32, 32, 18, 8];
+const SHELL_NAMES = ['K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+const SHELL_RADII = [0.6, 0.85, 1.15, 1.45, 1.7, 1.95, 2.2];
+
 function toColor3(color: number): Color3 {
   return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+}
+
+function getThemeForElement(elementSymbol: string): Theme {
+  const element = ELEMENTS.find(e => e.symbol === elementSymbol);
+  if (!element) return THEMES.NEUTRAL;
+
+  // 0. Runtime admin override (persisted in localStorage), if any.
+  const override = getThemeOverride(elementSymbol);
+  if (override && THEMES[override]) return THEMES[override];
+
+  // 1. Per-element SPECIFIC scene from data/elements.ts `theme` field.
+  //    This is what makes every element room distinct (H → cosmic, He →
+  //    solar, U → nuclear, Fe → forge, …) instead of a shared default.
+  if (element.theme && THEMES[element.theme]) return THEMES[element.theme];
+
+  // 2. Group-based fallback (covers any element without a `theme` value).
+  switch (element.group) {
+    case 'nobleGas': return THEMES.NOBLE_GASES;
+    case 'alkali': return THEMES.ALKALI_METALS;
+    case 'halogen': return THEMES.HALOGENS;
+    case 'transition': return THEMES.TRANSITION_METALS;
+    case 'lanthanide': return THEMES.LANTHANIDES;
+    case 'actinide': THEMES.ACTINIDES;
+    case 'metalloid': return THEMES.METALLOIDS;
+    case 'alkalineEarth': return THEMES.ALKALINE_EARTH;
+    case 'metal': return THEMES.METAL;
+    default: return THEMES.NEUTRAL;
+  }
 }
 
 interface AtomPart {
@@ -38,60 +86,87 @@ interface AtomPart {
   offsetAngle: number;
 }
 
+interface ElectronShell {
+  shellName: string;
+  electronCount: number;
+  capacity: number;
+  radius: number;
+  rotation: number;
+  speed: number;
+  shellMesh?: any;
+  electrons: any[];
+  label?: TextBlock;
+  isVisible: boolean;
+}
+
 let atomParts: AtomPart[] = [];
 
 /**
- * Get electron configuration based on group
- * Simplified representation for educational purposes
+ * Get actual electron configuration based on atomic number
+ * Uses realistic shell capacities: K(2), L(8), M(18), N(32), O(32), P(18), Q(8)
  */
-function getElectronConfiguration(group: string, atomicNumber: number): number[] {
-  const groupToShells = new Map<string, number[]>();
-  groupToShells.set('1', [2]);
-  groupToShells.set('2', [2, 8]);
-  groupToShells.set('3', [2, 8, 18]);
-  groupToShells.set('4', [2, 8, 18, 32]);
-  groupToShells.set('5', [2, 8, 18, 32]);
+function getElectronConfiguration(atomicNumber: number): number[] {
+  const config: number[] = [];
+  let remaining = atomicNumber;
 
-  const groupShells = groupToShells.get(group);
-  if (groupShells) {
-    return groupShells;
+  for (const capacity of SHELL_CAPACITYS) {
+    if (remaining <= 0) break;
+    const electrons = Math.min(remaining, capacity);
+    config.push(electrons);
+    remaining -= electrons;
   }
 
-  // Fallback: progressive filling of shells
-  const electrons = atomicNumber;
-  if (electrons <= 2) return [2];
-  if (electrons <= 10) return [2, 8];
-  if (electrons <= 18) return [2, 8, 8];
-  if (electrons <= 36) return [2, 8, 18, 8];
-  return [2, 8, 18, 32];
+  return config;
 }
 
 export function setup(ctx: AppContext, elementSymbol?: string): void {
   if (!elementSymbol) return;
+
+  currentElementSymbol = elementSymbol;
 
   const element = ELEMENTS.find(e => e.symbol === elementSymbol);
   if (!element) return;
 
   const scene = ctx.scene;
 
-  // Background with unified atmosphere
-  scene.clearColor = new Color4(0.06, 0.06, 0.09, 1);
+  const theme = getThemeForElement(elementSymbol);
+
+  scene.clearColor = new Color4(
+    theme.baseColor.r * 0.3,
+    theme.baseColor.g * 0.3,
+    theme.baseColor.b * 0.3,
+    1
+  );
 
   // UI
   const elementUI = AdvancedDynamicTexture.CreateFullscreenUI('elementRoomUI');
 
-  // Build unified room
+  // Build themed room — colors are derived from the element's specific
+  // theme so every element room looks distinct (not a shared default).
+  const clamp = (v: number) => Math.min(0.6, Math.max(0.05, v));
+  const ambient = new Color3(
+    clamp(theme.baseColor.r * 1.6 + 0.1),
+    clamp(theme.baseColor.g * 1.6 + 0.1),
+    clamp(theme.baseColor.b * 1.6 + 0.1)
+  );
   const room = buildRoom(scene, {
     dimensions: { width: 14, height: 5, depth: 14 },
-    floorColor: BASE_ROOM_COLOR,
-    wallColor: new Color3(0.18, 0.19, 0.22),
-    ceilingColor: new Color3(0.10, 0.10, 0.13),
-    ambientColor: new Color3(0.35, 0.36, 0.40),
-    pointLightColor: new Color3(0.98, 0.95, 0.88),
-    doorways: [{ wall: 'south', offset: 0 }],
+    floorColor: theme.baseColor.scale(0.9),
+    wallColor: theme.baseColor,
+    ceilingColor: theme.baseColor.scale(0.55),
+    ambientColor: ambient,
+    pointLightColor: theme.accentColor,
+    doorways: [
+      { wall: 'south', offset: 0 },
+      { wall: 'north', offset: 0, width: 1.8, height: 2.2 }
+    ],
   });
 
   ctx.setFloorMesh?.(room.floor);
+  currentCtx = ctx;
+  currentRoomRef = room;
+
+  createExitDoorway(ctx, theme);
 
   // Create unified atom display
   createAtomDisplay(ctx, element);
@@ -99,8 +174,56 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   // Create info panel
   createInfoPanel(ctx, element, elementUI!);
 
+  // Interactive content
+  createTriviaCards(ctx, element, elementUI!);
+  createExperimentButtons(ctx, element, elementUI!);
+
+  // Apply the resolved theme (colors + particles). Defined separately so an
+  // admin override can re-theme the live room without a full rebuild.
+  applyRoomTheme(ctx, element, theme);
+
   // Connection lines/exploration hints
   createKeyConnections(ctx);
+
+  // Notify the (optional) admin panel that a new element room is active.
+  window.dispatchEvent(new CustomEvent('pse:room', { detail: { symbol: elementSymbol } }));
+}
+
+let exitArch: any = null;
+let exitLabel: any = null;
+
+function createExitDoorway(ctx: AppContext, theme: Theme): void {
+  const scene = ctx.scene;
+
+  const frameMaterial = new StdMat('exitFrame', scene);
+  frameMaterial.emissiveColor = theme.accentColor.scale(0.3);
+  frameMaterial.alpha = 0.6;
+  frameMaterial.disableLighting = true;
+
+  exitArch = MeshBuilder.CreateBox('exitArch', {
+    height: 2.0,
+    width: 1.8,
+    depth: 0.1
+  }, scene);
+
+  exitArch.position.set(0, 1.6, 7);
+  exitArch.material = frameMaterial;
+
+  createExitLabel(ctx);
+
+  ctx.trackMesh(exitArch);
+}
+
+function createExitLabel(ctx: AppContext): void {
+  exitLabel = new TextBlock('exitLabel', 'EXIT → Lobby');
+  exitLabel.color = 'white';
+  exitLabel.fontSize = 14;
+  exitLabel.fontWeight = 'bold';
+  exitLabel.alpha = 0.8;
+
+  elementUI?.addControl(exitLabel);
+  exitLabel.linkWithMesh(exitArch);
+  exitLabel.linkOffsetY = -60;
 }
 
 function createAtomDisplay(ctx: AppContext, element: ElementData): void {
@@ -110,7 +233,7 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
   ctx.trackNode(mainAtom);
   mainAtom.position = new Vector3(0, 2.5, 0);
 
-  const electronConfig = getElectronConfiguration(element.group, element.atomicNumber);
+  const electronConfig = getElectronConfiguration(element.atomicNumber);
   const elementColor = toColor3(typeof element.color === 'number' ? element.color : 0xCCCCCC);
 
   // Nucleus
@@ -163,15 +286,18 @@ function createAtomDisplay(ctx: AppContext, element: ElementData): void {
     ctx.trackMesh(shell);
     orbitRings.push(shell);
 
-    // Add shell label
-    const shellLabel = new TextBlock(`shellLabel_${index}`, `${electronConfig[index]}e⁻`);
+// Add shell label
+    const shellName = index < SHELL_NAMES.length ? SHELL_NAMES[index] : '';
+    const capacity = index < SHELL_CAPACITYS.length ? SHELL_CAPACITYS[index] : 0;
+    const shellLabel = new TextBlock(`shellLabel_${index}`, `${shellName}: ${electronConfig[index]}/${capacity}`);
     shellLabel.color = '#a0aec0';
     shellLabel.fontSize = 10;
     shellLabel.fontWeight = 'bold';
     elementUI?.addControl(shellLabel);
     shellLabel.isVisible = false;
 
-    electronShells.push({ radius: shellRadius, label: shellLabel });
+    // Old shell structure - will be replaced in Task 4
+    // electronShells.push({ radius: shellRadius, label: shellLabel });
 
     const electronsInShell = Math.min(shellMax as number, 8);
     const electronAngleStep = (Math.PI * 2) / electronsInShell;
@@ -270,6 +396,8 @@ function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDyna
   elementProps.linkWithMesh(panel);
   elementProps.linkOffsetY = 60;
 
+  createHistoricalPanel(ctx, element, elementUI!);
+
   // Back button
   const backBtn = new Rectangle('backBtn');
   backBtn.width = '300px';
@@ -282,16 +410,31 @@ function createInfoPanel(ctx: AppContext, element: ElementData, ui: AdvancedDyna
 
   const backText = new TextBlock('backText', '← Back');
   backText.color = 'white';
-  backText.fontSize = 16;
+backText.fontSize = 16;
   backText.fontWeight = 'bold';
   backBtn.addControl(backText);
   backText.top = '10px';
-
+  
   ui?.addControl(backBtn);
-  backBtn.isVisible = false;
+  backBtn.isVisible = true;  // Fix: Make back button visible
   backBtn.onPointerDownObservable.add(() => {
     ctx.GotoRoom(0, undefined, undefined);
   });
+  
+  // Keyboard shortcuts (desktop)
+  const keyboardHandler = (e: KeyboardEvent) => {
+    if (!currentElementSymbol) return;
+    if (ctx.room !== ROOM_ELEMENTS_START + ELEMENTS.findIndex(el => el.symbol === currentElementSymbol)) return;
+    
+    if (e.key === 'Escape' || e.key === 'b' || e.key === 'B') {
+      ctx.GotoRoom(0, undefined, undefined);
+    }
+  };
+  
+  document.addEventListener('keydown', keyboardHandler);
+  
+  // Store handler for cleanup
+  (window as any)._elementRoomKeyboardHandler = keyboardHandler;
 
   elementInfoPanel = panel;
 }
@@ -316,6 +459,186 @@ function createKeyConnections(ctx: AppContext): void {
   hint.material = hintMat;
   hintMat.alpha = 0.1;
   ctx.trackMesh(hint);
+}
+
+function createTriviaCards(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  const scene = ctx.scene;
+
+  const card1 = InteractiveContent.createTriviaCard(
+    scene,
+    ui,
+    { x: 0.6, y: 0.15 },
+    `${element.symbol} Properties`,
+    [
+      `Atomic Number: ${element.atomicNumber}`,
+      `Mass: ${element.mass} u`,
+      `Group: ${element.group}`,
+      `Period: ${element.period}`
+    ],
+    () => {
+      InteractiveContent.flipCard(card1, element);
+    }
+  );
+
+  const card2 = InteractiveContent.createTriviaCard(
+    scene,
+    ui,
+    { x: -0.6, y: 0.15 },
+    `${element.symbol} Trivia`,
+    [
+      'Click to flip',
+      'Discover fun facts!',
+    ],
+    () => {
+      InteractiveContent.flipCard(card2, element);
+    }
+  );
+
+  triviaCards.push(card1, card2);
+}
+
+function createExperimentButtons(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  if (!element.experiments || element.experiments.length === 0) return;
+
+  const buttonWidth = 0.28;
+  const gap = 0.02;
+  const totalWidth = (buttonWidth * element.experiments.length) + (gap * (element.experiments.length - 1));
+  const startX = -totalWidth / 2 + buttonWidth / 2;
+
+  element.experiments.forEach((expId: string, index: number) => {
+    const expData = EXPERIMENTAL_ROOMS.find(er => er.experiments?.includes(expId));
+    
+    if (!expData) {
+      console.warn(`Experiment ${expId} not found in EXPERIMENTAL_ROOMS`);
+      return;
+    }
+
+    const expBtn = InteractiveContent.createExperimentButton(
+      ctx.scene,
+      ui,
+      { experimentId: expId, label: expData.name || expId, roomId: 129 + index },
+      () => {
+        const roomIndex = 129 + index;
+        ctx.GotoRoom(roomIndex, element.symbol, expId);
+      }
+    );
+
+    experimentButtons.push(expBtn);
+  });
+}
+
+function createHistoricalPanel(ctx: AppContext, element: ElementData, ui: AdvancedDynamicTexture): void {
+  if (element.theme !== 'historical') return;
+
+  const scene = ctx.scene;
+
+  const panelMat = new StdMat('histPanelMat', scene);
+  panelMat.diffuseColor = new Color3(0.3, 0.35, 0.4);
+  panelMat.emissiveColor = new Color3(0.2, 0.25, 0.3);
+  panelMat.alpha = 0.85;
+
+  const panel = MeshBuilder.CreatePlane('histPanel', { width: 4, height: 3 }, scene);
+  panel.position.set(0, 2.8, -3);
+  panel.rotation.y = -Math.PI / 6;
+  panel.billboardMode = 7;
+  panel.material = panelMat;
+  ctx.trackMesh(panel);
+
+  const histTitle = new TextBlock('histTitle', 'Historical Significance');
+  histTitle.color = '#ECC94B';
+  histTitle.fontSize = 14;
+  histTitle.fontWeight = 'bold';
+  elementUI?.addControl(histTitle);
+  histTitle.linkWithMesh(panel);
+  histTitle.linkOffsetY = -40;
+
+  const histText = new TextBlock('histText');
+  histText.color = '#A0AEC0';
+  histText.fontSize = 12;
+  histText.textWrapping = true;
+  histText.resizeToFit = true;
+  
+  elementUI?.addControl(histText);
+  histText.linkWithMesh(panel);
+  histText.linkOffsetY = -10;
+
+  if (element.symbol === 'Au') {
+    histText.text = 'Gold has been a symbol of wealth and power for over 6,000 years. It is highly resistant to corrosion and因为, making it ideal for jewelry and electronics.';
+  } else if (element.symbol === 'Ra') {
+    histText.text = 'Radium was discovered by Marie and Pierre Curie in 1898. They named it after the Latin word "radius" for beam.';
+  } else {
+    histText.text = `${element.name} has historical significance in research and industry. Click the trivia cards for more information!`;
+  }
+}
+
+function addThemeParticles(ctx: AppContext, _element: ElementData, theme: Theme): void {
+  const cfg = theme.ambientParticles;
+  if (!cfg || !cfg.enabled) return;
+
+  const scene = ctx.scene;
+  // Density (0–1) maps to a sensible particle count for the room.
+  const particleCount = Math.max(6, Math.round(cfg.density * 24));
+  const origin = new Vector3(0, 2.5, 0);
+
+  // Dispose any previously active system (e.g. when an admin re-themes the
+  // live room) before creating the new one.
+  if (currentParticleSystem && !currentParticleSystem.isDisposed) {
+    currentParticleSystem.dispose();
+  }
+  currentParticleSystem = AnimationHelper.emitParticles(scene, particleCount, origin, cfg.color, 2000);
+  ctx.trackParticleSystem?.(currentParticleSystem);
+}
+
+/**
+ * Recolor the already-built room + restart its particles for a theme.
+ * Used both for the initial paint and for live admin re-theming.
+ */
+function applyRoomTheme(ctx: AppContext, element: ElementData, theme: Theme): void {
+  const scene = ctx.scene;
+  scene.clearColor = new Color4(
+    theme.baseColor.r * 0.3,
+    theme.baseColor.g * 0.3,
+    theme.baseColor.b * 0.3,
+    1
+  );
+
+  const room = currentRoomRef as any;
+  if (room) {
+    const tint = (mesh: any, color: Color3, scale = 1): void => {
+      const mat = mesh?.material as StandardMaterial | null;
+      if (mat) {
+        mat.diffuseColor = color.scale(scale);
+        mat.emissiveColor = color.scale(0.05);
+      }
+    };
+    tint(room.floor, theme.baseColor, 0.9);
+    (room.walls || []).forEach((w: any) => tint(w, theme.baseColor, 1));
+    tint(room.ceiling, theme.baseColor, 0.55);
+    if (room.lights?.point) room.lights.point.diffuse = theme.accentColor;
+  }
+
+  // Retint the exit doorway frame to the (possibly overridden) accent.
+  if (exitArch?.material) {
+    (exitArch.material as StandardMaterial).emissiveColor = theme.accentColor.scale(0.3);
+  }
+
+  addThemeParticles(ctx, element, theme);
+}
+
+export function getCurrentElementSymbol(): string | undefined {
+  return currentElementSymbol;
+}
+
+export function getEffectiveThemeKey(symbol: string): string {
+  return getThemeForElement(symbol).id.toLowerCase();
+}
+
+/** Re-theme the currently active element room (used by the admin panel). */
+export function rethemeCurrentRoom(): void {
+  if (!currentElementSymbol || !currentCtx || !currentRoomRef) return;
+  const element = ELEMENTS.find(e => e.symbol === currentElementSymbol);
+  if (!element) return;
+  applyRoomTheme(currentCtx, element, getThemeForElement(currentElementSymbol));
 }
 
 export function enter(ctx: AppContext, elementSymbol?: string): void {
@@ -351,6 +674,22 @@ export function enter(ctx: AppContext, elementSymbol?: string): void {
 }
 
 export function exit(_ctx: AppContext): void {
+  const handler = (window as any)._elementRoomKeyboardHandler;
+  if (handler) {
+    document.removeEventListener('keydown', handler);
+    delete (window as any)._elementRoomKeyboardHandler;
+  }
+
+  if (exitArch) {
+    exitArch.dispose();
+    exitArch = null;
+  }
+
+  if (exitLabel) {
+    exitLabel.dispose();
+    exitLabel = null;
+  }
+
   // Hide UI
   if (elementInfoPanel) elementInfoPanel.isVisible = false;
   if (elementTitle) elementTitle.isVisible = false;
@@ -362,6 +701,14 @@ export function exit(_ctx: AppContext): void {
   electronShells.forEach(shell => {
     if (shell.label) shell.label.isVisible = false;
   });
+
+  triviaCards.forEach(card => {
+    card.front.dispose();
+  });
+  triviaCards = [];
+
+  experimentButtons.forEach(btn => btn.dispose());
+  experimentButtons = [];
 }
 
 export function execute(_ctx: AppContext, _delta: number, time: number): void {
