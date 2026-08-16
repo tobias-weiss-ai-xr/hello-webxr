@@ -1,6 +1,7 @@
 import { Scene, MeshBuilder, Vector3, Color4, type Mesh, ParticleSystem } from '@babylonjs/core';
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture.js';
 import type { Color3 } from '@babylonjs/core';
+import type { ParticleType } from '../types/index.js';
 
 export class AnimationHelper {
   /**
@@ -28,7 +29,8 @@ export class AnimationHelper {
     count: number,
     origin: Vector3,
     color: Color3,
-    _duration: number = 2000
+    _duration: number = 2000,
+    particleType: ParticleType = 'energy'
   ): ParticleSystem {
     const capacity = Math.max(40, count * 4);
     const ps = new ParticleSystem('themeParticles', capacity, scene);
@@ -61,12 +63,53 @@ export class AnimationHelper {
     ps.minLifeTime = 1.4;
     ps.maxLifeTime = 2.8;
     ps.emitRate = Math.round(count * 5);
-    ps.blendMode = ParticleSystem.BLENDMODE_ADD;
-    ps.gravity = new Vector3(0, 0.12, 0);
-    ps.direction1 = new Vector3(-0.35, 0.4, -0.35);
-    ps.direction2 = new Vector3(0.35, 1.0, 0.35);
-    ps.minEmitPower = 0.2;
-    ps.maxEmitPower = 0.7;
+
+    // Per-type motion so each theme reads distinctly.
+    switch (particleType) {
+      case 'bubbles':
+        ps.blendMode = ParticleSystem.BLENDMODE_STANDARD;
+        ps.gravity = new Vector3(0, -0.25, 0); // float upward
+        ps.direction1 = new Vector3(-0.2, 0.6, -0.2);
+        ps.direction2 = new Vector3(0.2, 1.1, 0.2);
+        ps.minEmitPower = 0.15; ps.maxEmitPower = 0.5;
+        ps.minSize = 0.08; ps.maxSize = 0.22;
+        break;
+      case 'sparks':
+        ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+        ps.gravity = new Vector3(0, -0.4, 0); // fall back down
+        ps.direction1 = new Vector3(-0.5, 1.2, -0.5);
+        ps.direction2 = new Vector3(0.5, 2.0, 0.5);
+        ps.minEmitPower = 0.6; ps.maxEmitPower = 1.6;
+        ps.minLifeTime = 0.6; ps.maxLifeTime = 1.4;
+        ps.minSize = 0.04; ps.maxSize = 0.12;
+        break;
+      case 'stars':
+        ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+        ps.gravity = new Vector3(0, 0.05, 0);
+        ps.direction1 = new Vector3(-0.15, 0.1, -0.15);
+        ps.direction2 = new Vector3(0.15, 0.5, 0.15);
+        ps.minEmitPower = 0.05; ps.maxEmitPower = 0.3;
+        ps.minLifeTime = 2.5; ps.maxLifeTime = 4.5;
+        ps.minSize = 0.05; ps.maxSize = 0.14;
+        break;
+      case 'radiation':
+        ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+        ps.gravity = new Vector3(0, 0, 0);
+        ps.direction1 = new Vector3(-0.3, 0.3, -0.3);
+        ps.direction2 = new Vector3(0.3, 0.3, 0.3);
+        ps.minEmitPower = 0.1; ps.maxEmitPower = 0.4;
+        ps.minLifeTime = 1.5; ps.maxLifeTime = 3.0;
+        break;
+      case 'energy':
+      default:
+        ps.blendMode = ParticleSystem.BLENDMODE_ADD;
+        ps.gravity = new Vector3(0, 0.12, 0);
+        ps.direction1 = new Vector3(-0.35, 0.4, -0.35);
+        ps.direction2 = new Vector3(0.35, 1.0, 0.35);
+        ps.minEmitPower = 0.2; ps.maxEmitPower = 0.7;
+        break;
+    }
+
     ps.updateSpeed = 0.01;
     ps.start();
     return ps;

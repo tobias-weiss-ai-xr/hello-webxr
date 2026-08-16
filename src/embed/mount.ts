@@ -20,6 +20,7 @@ import { VRNavigation } from '../movement/VRNavigation.js';
 import { RoomTransitionManager } from '../movement/RoomTransitionManager.js';
 import { injectScopedStyles, removeScopedStyles } from './scoped-styles.js';
 import { initThemeAdmin } from '../ui/themeAdmin.js';
+import { refreshOverridesFromRemote } from '../lib/themeOverrides.js';
 
 const ROOM_ELEMENTS_END = ROOM_ELEMENTS_START + ELEMENTS.length - 1;
 const ROOM_EXP_START = ROOM_ELEMENTS_END + 1;
@@ -350,6 +351,10 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
 
   // Optional in-app theme admin (only active with ?admin in the URL)
   initThemeAdmin();
+
+  // Pull any device-independent admin theme overrides from the backend into
+  // the local cache, then re-theme the active room if an override applies.
+  void refreshOverridesFromRemote().then(() => ElementRoom.rethemeCurrentRoom());
 
   return {
     unmount,

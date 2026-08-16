@@ -2,19 +2,40 @@
  * Per-element theme overrides (admin feature).
  *
  * Themes are normally taken from data/elements.ts (`element.theme`). An admin
- * can override the scene of any element at runtime; overrides persist in
- * localStorage and take precedence over the static data. This module is the
- * single source of truth for reading/writing those overrides.
+ * can override the scene of any element at runtime. Overrides are cached in
+ * localStorage and — when a sync endpoint is configured — also pushed to /
+ * pulled from a backend API, so curated scenes survive across devices.
  *
- * Later this can be synced to a backend API without touching room code:
- * replace the localStorage calls in load/save with fetch() calls.
+ * This module is the single source of truth for reading/writing overrides.
+ * Room and theme code never talks to storage or the network directly.
+ *
+ * Configure a sync endpoint (optional) via:
+ *   - URL param:  ?themeApi=https://api.example.com/theme-overrides
+ *   - window global (before mount): window.THEME_OVERRIDES_API = '...'
+ * Leave it unset and overrides stay purely local (no network calls).
+ *
+ * Endpoint contract:
+ *   GET  <endpoint>  ->  { "H": "cosmic", "Fe": "forge", ... }
+ *   PUT  <endpoint>  ->  body: same JSON map
  */
 
 const STORAGE_KEY = 'chemie-theme-overrides';
 
 type OverrideMap = Record<string, string>;
 
-function load(): OverrideMap {
+/** Resolve the optional sync endpoint (URL param wins, then window global). */
+function getEndpoint(): string | null {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('themeApi');
+    if (fromUrl) return fromUrl;
+  } catch {
+    /* URLSearchParams unavailable — ignore */
+  }
+  const fromGlobal = (window as unknown as { THEME_OVERRIDES_API?: string }).THEME_OVERRIDES_API;
+  return typeof fromGlobal === 'string' && fromGlobal.length > 0 ? fromGlobal : null;
+}
+
+function loadLocal(): OverrideMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
@@ -25,34 +46,72 @@ function load(): OverrideMap {
   }
 }
 
-function save(map: OverrideMap): void {
+function saveLocal(map: OverrideMap): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
-    /* storage unavailable (private mode / quota) — overrides stay in-memory only */
+    /* storage unavailable (private mode / quota) — keep in memory only */
+  }
+}
+
+async function loadRemote(): Promise<OverrideMap | null> {
+  const endpoint = getEndpoint();
+  if (!endpoint) return null;
+  try {
+    const res = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && typeof data === 'object' ? (data as OverrideMap) : null;
+  } catch {
+    return null; // offline / unreachable — fall back to local cache
+  }
+}
+
+async function saveRemote(map: OverrideMap): Promise<void> {
+  const endpoint = getEndpoint();
+  if (!endpoint) return;
+  try {
+    await fetch(endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(map),
+    });
+  } catch {
+    /* offline: local cache remains the source of truth */
   }
 }
 
 /** Effective theme key for an element, or undefined if no override is set. */
 export function getThemeOverride(symbol: string): string | undefined {
-  return load()[symbol];
+  return loadLocal()[symbol];
 }
 
 /**
  * Set or clear an override. Pass `themeKey = null` to remove the override and
- * fall back to the element's static theme.
+ * fall back to the element's static theme. Persists locally immediately and
+ * syncs to the backend in the background (no-op when no endpoint is set).
  */
 export function setThemeOverride(symbol: string, themeKey: string | null): void {
-  const map = load();
+  const map = loadLocal();
   if (themeKey === null) {
     delete map[symbol];
   } else {
     map[symbol] = themeKey;
   }
-  save(map);
+  saveLocal(map);
+  void saveRemote(map);
 }
 
-/** All current overrides (symbol -> themeKey). */
+/** All current overrides (symbol -> themeKey) from the local cache. */
 export function getAllOverrides(): OverrideMap {
-  return load();
+  return loadLocal();
+}
+
+/**
+ * Pull remote overrides into the local cache. Call once at startup (e.g. from
+ * mount) so device-independent admin edits appear without a manual edit.
+ */
+export async function refreshOverridesFromRemote(): Promise<void> {
+  const remote = await loadRemote();
+  if (remote) saveLocal(remote);
 }

@@ -585,7 +585,7 @@ function addThemeParticles(ctx: AppContext, _element: ElementData, theme: Theme)
   if (currentParticleSystem && !currentParticleSystem.isDisposed) {
     currentParticleSystem.dispose();
   }
-  currentParticleSystem = AnimationHelper.emitParticles(scene, particleCount, origin, cfg.color, 2000);
+  currentParticleSystem = AnimationHelper.emitParticles(scene, particleCount, origin, cfg.color, 2000, cfg.type);
   ctx.trackParticleSystem?.(currentParticleSystem);
 }
 
