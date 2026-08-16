@@ -49,22 +49,25 @@ function toColor3(color: number): Color3 {
 
 function getThemeForElement(elementSymbol: string): Theme {
   const element = ELEMENTS.find(e => e.symbol === elementSymbol);
-  if (!element) return THEMES.NONMETALS;
+  if (!element) return THEMES.NEUTRAL;
 
-  if (element.symbol === 'H') return THEMES.HYDROGEN_SPECIAL;
-  if (element.symbol === 'He') return THEMES.HELIUM_SPECIAL;
-  if (['Au', 'Ag', 'Pt', 'Pd'].includes(element.symbol)) return THEMES.NOBLE_METALS;
+  // 1. Per-element SPECIFIC scene from data/elements.ts `theme` field.
+  //    This is what makes every element room distinct (H → cosmic, He →
+  //    solar, U → nuclear, Fe → forge, …) instead of a shared default.
+  if (element.theme && THEMES[element.theme]) return THEMES[element.theme];
 
+  // 2. Group-based fallback (covers any element without a `theme` value).
   switch (element.group) {
     case 'nobleGas': return THEMES.NOBLE_GASES;
     case 'alkali': return THEMES.ALKALI_METALS;
     case 'halogen': return THEMES.HALOGENS;
     case 'transition': return THEMES.TRANSITION_METALS;
     case 'lanthanide': return THEMES.LANTHANIDES;
-    case 'actinide': return THEMES.ACTINIDES;
+    case 'actinide': THEMES.ACTINIDES;
     case 'metalloid': return THEMES.METALLOIDS;
     case 'alkalineEarth': return THEMES.ALKALINE_EARTH;
-    default: return THEMES.NONMETALS;
+    case 'metal': return THEMES.METAL;
+    default: return THEMES.NEUTRAL;
   }
 }
 
@@ -129,14 +132,21 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   // UI
   const elementUI = AdvancedDynamicTexture.CreateFullscreenUI('elementRoomUI');
 
-  // Build unified room
+  // Build themed room — colors are derived from the element's specific
+  // theme so every element room looks distinct (not a shared default).
+  const clamp = (v: number) => Math.min(0.6, Math.max(0.05, v));
+  const ambient = new Color3(
+    clamp(theme.baseColor.r * 1.6 + 0.1),
+    clamp(theme.baseColor.g * 1.6 + 0.1),
+    clamp(theme.baseColor.b * 1.6 + 0.1)
+  );
   const room = buildRoom(scene, {
     dimensions: { width: 14, height: 5, depth: 14 },
-    floorColor: BASE_ROOM_COLOR,
-    wallColor: new Color3(0.18, 0.19, 0.22),
-    ceilingColor: new Color3(0.10, 0.10, 0.13),
-    ambientColor: new Color3(0.35, 0.36, 0.40),
-    pointLightColor: new Color3(0.98, 0.95, 0.88),
+    floorColor: theme.baseColor.scale(0.9),
+    wallColor: theme.baseColor,
+    ceilingColor: theme.baseColor.scale(0.55),
+    ambientColor: ambient,
+    pointLightColor: theme.accentColor,
     doorways: [
       { wall: 'south', offset: 0 },
       { wall: 'north', offset: 0, width: 1.8, height: 2.2 }
@@ -157,13 +167,8 @@ export function setup(ctx: AppContext, elementSymbol?: string): void {
   createTriviaCards(ctx, element, elementUI!);
   createExperimentButtons(ctx, element, elementUI!);
 
-  // Add particles for certain elements
-  if (['Li', 'Na', 'K'].includes(element.symbol)) {
-    addReactionParticles(ctx, element);
-  }
-  if (['F', 'Cl', 'Br'].includes(element.symbol)) {
-    addHalogenParticles(ctx, element);
-  }
+  // Theme-driven ambient particles (enabled per theme in data/themes.ts)
+  addThemeParticles(ctx, element, theme);
 
   // Connection lines/exploration hints
   createKeyConnections(ctx);
@@ -551,26 +556,23 @@ function createHistoricalPanel(ctx: AppContext, element: ElementData, ui: Advanc
   }
 }
 
-function addReactionParticles(ctx: AppContext, element: ElementData): void {
+function addThemeParticles(ctx: AppContext, _element: ElementData, theme: Theme): void {
+  const cfg = theme.ambientParticles;
+  if (!cfg || !cfg.enabled) return;
+
   const scene = ctx.scene;
-  const theme = THEMES[element.group] || THEMES.METAL;
-  const particleCount = 8;
-
+  // Density (0–1) maps to a sensible particle count for the room.
+  const particleCount = Math.max(4, Math.round(cfg.density * 24));
   const origin = new Vector3(0, 2.5, 0);
-  const particles = AnimationHelper.emitParticles(scene, particleCount, origin, theme.accentColor, 2000);
+  const particles = AnimationHelper.emitParticles(
+    scene,
+    particleCount,
+    origin,
+    cfg.color,
+    2000
+  );
 
-  particles.forEach(p => ctx.trackMesh(p));
-}
-
-function addHalogenParticles(ctx: AppContext, element: ElementData): void {
-  const scene = ctx.scene;
-  const theme = THEMES.HALOGEN || THEMES.NON_METAL;
-  const particleCount = 12;
-
-  const origin = new Vector3(0, 2.5, 0);
-  const particles = AnimationHelper.emitParticles(scene, particleCount, origin, theme.accentColor, 1500);
-
-  particles.forEach(p => ctx.trackMesh(p));
+  particles.forEach((p) => ctx.trackMesh(p));
 }
 
 export function enter(ctx: AppContext, elementSymbol?: string): void {
