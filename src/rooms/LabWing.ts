@@ -6,6 +6,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js'
 import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/index.js';
 import { buildRoom } from './RoomBuilder.js';
 
 const ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
@@ -165,10 +166,10 @@ function createLabStation(ctx: AppContext, exp: any, position: Vector3, roomInde
   buttonLabel.linkWithMesh(expButton);
   buttonLabel.linkOffsetY = -10;
 
-  expButton.actionManager = new (window as any).BABYLON.ActionManager(scene);
-  expButton.actionManager?.registerAction(
-    new (window as any).BABYLON.ExecuteCodeAction(
-      (window as any).BABYLON.ActionManager.OnPickTrigger,
+  expButton.actionManager = new ActionManager(scene);
+  expButton.actionManager.registerAction(
+    new ExecuteCodeAction(
+      ActionManager.OnPickTrigger,
       () => {
         ctx.goto = roomIndex;
       }

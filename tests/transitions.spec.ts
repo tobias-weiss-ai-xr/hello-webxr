@@ -49,7 +49,7 @@ test('input locked during transition', async ({ page }) => {
   await waitForRoom(page, 1);
 });
 
-test('transition cancel on rapid navigation', async ({ page }) => {
+test('transition cancel on rapid navigation completes in target room', async ({ page }) => {
   await page.goto('/');
   await waitForApp(page);
 
@@ -67,7 +67,7 @@ test('transition cancel on rapid navigation', async ({ page }) => {
   expect(room).toBe(carbonIndex);
 });
 
-test('input locked during transition', async ({ page }) => {
+test('input locked during transition ends in target room', async ({ page }) => {
   await page.goto('/');
   await waitForApp(page);
 

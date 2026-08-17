@@ -3,6 +3,7 @@ import { EXPERIMENTAL_ROOMS } from '../data/elements.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
 import { buildRoom } from './RoomBuilder.js';
 
@@ -45,7 +46,7 @@ export function setup(ctx: AppContext, expId?: string): void {
 
   ctx.setFloorMesh?.(room.floor);
 
-  experimentGroup = new (window as any).BABYLON.TransformNode('experimentGroup', scene);
+  experimentGroup = new TransformNode('experimentGroup', scene);
   ctx.trackNode(experimentGroup);
 
   createExperimentSetup(ctx);

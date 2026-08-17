@@ -277,46 +277,53 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     console.warn('WebXR not available:', e);
   }
 
-  // Determine initial room from URL params or options.
-  // Supported deep-links (case-insensitive):
-  //   ?room=<SYMBOL> | ?element=<SYMBOL>  -> that element's room
-  //   ?group=<GROUP>                      -> first element of that group
-  // Unknown symbol/group -> PeriodicPavilion + a "not found" banner (NO silent
-  // redirect to the Lobby/fair).
+  // Determine initial room. URL deep-links (?room=/?element=/?group=) take
+  // precedence over the embed-configured startRoom. The standalone app always
+  // passes startRoom:'lobby' (default Lobby), so URL params must win for the
+  // directory page / Hubs links that target a specific element.
   let initialRoom = ROOM_LOBBY;
   let initialParam: string | undefined;
   let notFoundQuery: string | undefined;
 
-  const deepLink = options.startRoom || urlParams.get('room') || urlParams.get('element');
-  if (deepLink) {
-    const sym = deepLink.toUpperCase();
-    const elementIndex = ELEMENTS.findIndex(e => e.symbol.toUpperCase() === sym);
-    if (elementIndex !== -1) {
-      initialRoom = ROOM_ELEMENTS_START + elementIndex;
-      initialParam = ELEMENTS[elementIndex].symbol;
+  const resolveSymbol = (raw: string | null): { room: number; param: string } | null => {
+    if (!raw) return null;
+    const sym = raw.toUpperCase();
+    const ei = ELEMENTS.findIndex((e) => e.symbol.toUpperCase() === sym);
+    if (ei !== -1) return { room: ROOM_ELEMENTS_START + ei, param: ELEMENTS[ei].symbol };
+    const xi = EXPERIMENTAL_ROOMS.findIndex((r) => (r.id || '').toUpperCase() === sym);
+    if (xi !== -1) return { room: ROOM_EXP_START + xi, param: EXPERIMENTAL_ROOMS[xi].id };
+    return null;
+  };
+
+  const urlRoom = urlParams.get('room') || urlParams.get('element');
+  const urlGroup = urlParams.get('group');
+
+  if (urlRoom) {
+    const r = resolveSymbol(urlRoom);
+    if (r) {
+      initialRoom = r.room;
+      initialParam = r.param;
     } else {
-      const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => (r.id || '').toUpperCase() === sym);
-      if (expIndex !== -1) {
-        initialRoom = ROOM_EXP_START + expIndex;
-        initialParam = EXPERIMENTAL_ROOMS[expIndex].id;
-      } else {
-        notFoundQuery = deepLink;
-        initialRoom = ROOM_PERIODIC_PAVILION;
-      }
+      notFoundQuery = urlRoom;
+      initialRoom = ROOM_PERIODIC_PAVILION;
     }
-  } else {
-    const groupLink = urlParams.get('group');
-    if (groupLink) {
-      const grp = groupLink.toLowerCase();
-      const groupIndex = ELEMENTS.findIndex(e => (e.group || '').toLowerCase() === grp);
-      if (groupIndex !== -1) {
-        initialRoom = ROOM_ELEMENTS_START + groupIndex;
-        initialParam = ELEMENTS[groupIndex].symbol;
-      } else {
-        notFoundQuery = groupLink;
-        initialRoom = ROOM_PERIODIC_PAVILION;
-      }
+  } else if (urlGroup) {
+    const grp = urlGroup.toLowerCase();
+    const gi = ELEMENTS.findIndex((e) => (e.group || '').toLowerCase() === grp);
+    if (gi !== -1) {
+      initialRoom = ROOM_ELEMENTS_START + gi;
+      initialParam = ELEMENTS[gi].symbol;
+    } else {
+      notFoundQuery = urlGroup;
+      initialRoom = ROOM_PERIODIC_PAVILION;
     }
+  } else if (options.startRoom && options.startRoom !== 'lobby') {
+    const r = resolveSymbol(options.startRoom);
+    if (r) {
+      initialRoom = r.room;
+      initialParam = r.param;
+    }
+    // Invalid configured startRoom -> fall back to Lobby (no not-found banner).
   }
 
   // Render loop

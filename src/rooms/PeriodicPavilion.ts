@@ -6,6 +6,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@babylonjs/core/Maths/math.
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { ActionManager, ExecuteCodeAction } from '@babylonjs/core/index.js';
 import { buildRoom } from './RoomBuilder.js';
 
 const ROOM_COLOR = new Color3(0.15, 0.17, 0.20);
@@ -104,22 +105,22 @@ function createPeriodicTable(ctx: AppContext): void {
     ctx.trackMesh(button);
     elementButtons.push(button);
 
-    button.actionManager = new (window as any).BABYLON.ActionManager(scene);
-    button.actionManager?.registerAction(
-      new (window as any).BABYLON.ExecuteCodeAction(
-        (window as any).BABYLON.ActionManager.OnPointerOverTrigger,
+    button.actionManager = new ActionManager(scene);
+    button.actionManager.registerAction(
+      new ExecuteCodeAction(
+        ActionManager.OnPointerOverTrigger,
         () => onElementHover(ctx, element, buttonMat)
       )
     );
-    button.actionManager?.registerAction(
-      new (window as any).BABYLON.ExecuteCodeAction(
-        (window as any).BABYLON.ActionManager.OnPointerOutTrigger,
+    button.actionManager.registerAction(
+      new ExecuteCodeAction(
+        ActionManager.OnPointerOutTrigger,
         () => onElementHoverOut(ctx, buttonMat)
       )
     );
-    button.actionManager?.registerAction(
-      new (window as any).BABYLON.ExecuteCodeAction(
-        (window as any).BABYLON.ActionManager.OnPickTrigger,
+    button.actionManager.registerAction(
+      new ExecuteCodeAction(
+        ActionManager.OnPickTrigger,
         () => onElementClick(ctx, element)
       )
     );

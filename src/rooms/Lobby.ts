@@ -4,7 +4,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
-import { AbstractMesh, TransformNode } from '@babylonjs/core/index.js';
+import { AbstractMesh, TransformNode, ActionManager, ExecuteCodeAction } from '@babylonjs/core/index.js';
 import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
 import { ROOM_PERIODIC_PAVILION } from './RoomManager.js';
 import { ExhibitBuilder, type ExhibitArtifacts } from '../lib/ExhibitBuilder.js';
@@ -181,11 +181,11 @@ function createPeriodensystemEntry(ctx: AppContext): void {
   label.linkWithMesh(btn);
   label.linkOffsetY = 0;
 
-  const entryAm = new (window as any).BABYLON.ActionManager(scene);
+  const entryAm = new ActionManager(scene);
   btn.actionManager = entryAm;
   entryAm.registerAction(
-    new (window as any).BABYLON.ExecuteCodeAction(
-      (window as any).BABYLON.ActionManager.OnPickTrigger,
+    new ExecuteCodeAction(
+      ActionManager.OnPickTrigger,
       () => { ctx.goto = ROOM_PERIODIC_PAVILION; }
     )
   );
