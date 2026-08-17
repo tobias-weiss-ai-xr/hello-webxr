@@ -6,6 +6,7 @@ import { Color3, Color4, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { AdvancedDynamicTexture, TextBlock } from '@babylonjs/gui/2D/index.js';
 import { AbstractMesh, TransformNode } from '@babylonjs/core/index.js';
 import { buildRoom, type RoomBuildOptions } from './RoomBuilder.js';
+import { ROOM_PERIODIC_PAVILION } from './RoomManager.js';
 import { ExhibitBuilder, type ExhibitArtifacts } from '../lib/ExhibitBuilder.js';
 
 const FEATURED_ELEMENTS: ElementData[] = [
@@ -49,6 +50,7 @@ let exploreButtons: AbstractMesh[] = [];
 let welcomePanel: AbstractMesh | null = null;
 let welcomeTitle: TextBlock | null = null;
 let welcomeText: TextBlock | null = null;
+let periodensystemEntry: AbstractMesh | null = null;
 
 function toColor3(color: number): Color3 {
   return Color3.FromInts((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
@@ -79,6 +81,7 @@ export function setup(ctx: AppContext): void {
 
   createPeriodicTableHologram(ctx);
   createWelcomePanel(ctx);
+  createPeriodensystemEntry(ctx);
   createFeaturedExhibits(ctx);
 
   ctx.room = 0;
@@ -159,6 +162,35 @@ function createWelcomePanel(ctx: AppContext): void {
   welcomeText.linkOffsetY = 30;
 }
 
+function createPeriodensystemEntry(ctx: AppContext): void {
+  const scene = ctx.scene;
+  const btn = MeshBuilder.CreateBox('periodensystemEntry', { width: 4, height: 1.1, depth: 0.2 }, scene);
+  btn.position.set(0, 1.1, -5.4);
+  const mat = new StandardMaterial('pseEntryMat', scene);
+  mat.diffuseColor = new Color3(0.10, 0.55, 0.62);
+  mat.emissiveColor = new Color3(0.05, 0.32, 0.38);
+  btn.material = mat;
+  ctx.trackMesh(btn);
+  periodensystemEntry = btn;
+
+  const label = new TextBlock('pseEntryLabel', '→ Periodensystem (alle 118 Elemente)');
+  label.color = 'white';
+  label.fontSize = 18;
+  label.fontWeight = 'bold';
+  uiTexture?.addControl(label);
+  label.linkWithMesh(btn);
+  label.linkOffsetY = 0;
+
+  const entryAm = new (window as any).BABYLON.ActionManager(scene);
+  btn.actionManager = entryAm;
+  entryAm.registerAction(
+    new (window as any).BABYLON.ExecuteCodeAction(
+      (window as any).BABYLON.ActionManager.OnPickTrigger,
+      () => { ctx.goto = ROOM_PERIODIC_PAVILION; }
+    )
+  );
+}
+
 function createFeaturedExhibits(ctx: AppContext): void {
   const scene = ctx.scene;
 
@@ -182,6 +214,7 @@ function createFeaturedExhibits(ctx: AppContext): void {
 }
 
 export function enter(ctx: AppContext): void {
+  if (periodensystemEntry) periodensystemEntry.isVisible = true;
   exhibits.forEach(e => e.isVisible = true);
   atomGroups.forEach(g => g.isEnabled(true));
   exploreButtons.forEach(b => b.isVisible = true);
@@ -192,6 +225,7 @@ export function enter(ctx: AppContext): void {
 }
 
 export function exit(_ctx: AppContext): void {
+  if (periodensystemEntry) periodensystemEntry.isVisible = false;
   exhibits.forEach(e => {
     e.isVisible = false;
     if (e.actionManager) {

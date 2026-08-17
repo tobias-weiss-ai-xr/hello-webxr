@@ -6,7 +6,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { HemisphericLight, PointLight } from '@babylonjs/core/Lights/index.js';
 import { AdvancedDynamicTexture, TextBlock, Rectangle } from '@babylonjs/gui/2D/index.js';
 import { buildRoom, type RoomBuildOptions, type ThemeBasedRoomOptions } from './RoomBuilder.js';
-import { ROOM_ELEMENTS_START } from './RoomManager.js';
+import { ROOM_ELEMENTS_START, ROOM_PERIODIC_PAVILION } from './RoomManager.js';
 
 import type { AppContext, ElementData } from '../types/index.js';
 import { ELEMENTS } from '../data/elements.js';
@@ -417,8 +417,30 @@ backText.fontSize = 16;
   
   ui?.addControl(backBtn);
   backBtn.isVisible = true;  // Fix: Make back button visible
+  backBtn.left = '-165px';
   backBtn.onPointerDownObservable.add(() => {
     ctx.GotoRoom(0, undefined, undefined);
+  });
+
+  // Direct return to the periodic table (no dead-end via the Lobby).
+  const pseBtn = new Rectangle('pseBtn');
+  pseBtn.width = '320px';
+  pseBtn.height = '40px';
+  pseBtn.cornerRadius = 6;
+  pseBtn.color = '#38b2ac';
+  pseBtn.thickness = 0;
+  pseBtn.background = '#38b2ac';
+  pseBtn.alpha = 0.9;
+  pseBtn.left = '165px';
+  const pseText = new TextBlock('pseText', '→ Periodensystem');
+  pseText.color = 'white';
+  pseText.fontSize = 16;
+  pseText.fontWeight = 'bold';
+  pseBtn.addControl(pseText);
+  ui?.addControl(pseBtn);
+  pseBtn.isVisible = true;
+  pseBtn.onPointerDownObservable.add(() => {
+    ctx.GotoRoom(ROOM_PERIODIC_PAVILION, undefined, undefined);
   });
   
   // Keyboard shortcuts (desktop)

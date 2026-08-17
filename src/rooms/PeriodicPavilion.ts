@@ -48,6 +48,16 @@ export function setup(ctx: AppContext): void {
 
   createPeriodicTable(ctx);
   createInfoPanels(ctx);
+
+  // Show a banner when a deep-link target didn't resolve, instead of the user
+  // being silently dropped into the fair/lobby.
+  window.addEventListener('pse:room-not-found', (ev: Event) => {
+    const q = (ev as CustomEvent).detail?.query;
+    if (infoText) {
+      infoText.text = `Element „${q}" nicht gefunden — bitte ein Element im Periodensystem wählen.`;
+      infoText.color = '#ffd166';
+    }
+  });
 }
 
 function createPeriodicTable(ctx: AppContext): void {

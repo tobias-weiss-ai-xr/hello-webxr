@@ -66,7 +66,6 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
 
   // Read URL params
   const urlParams = new URLSearchParams(window.location.search);
-  const roomName = options.startRoom || urlParams.get('room');
   const handedness = (urlParams.get('handedness') as 'left' | 'right') || 'right';
 
   // Inject scoped styles
@@ -278,20 +277,44 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
     console.warn('WebXR not available:', e);
   }
 
-  // Determine initial room from URL params or options
+  // Determine initial room from URL params or options.
+  // Supported deep-links (case-insensitive):
+  //   ?room=<SYMBOL> | ?element=<SYMBOL>  -> that element's room
+  //   ?group=<GROUP>                      -> first element of that group
+  // Unknown symbol/group -> PeriodicPavilion + a "not found" banner (NO silent
+  // redirect to the Lobby/fair).
   let initialRoom = ROOM_LOBBY;
   let initialParam: string | undefined;
+  let notFoundQuery: string | undefined;
 
-  if (roomName) {
-    const elementIndex = ELEMENTS.findIndex(e => e.symbol === roomName);
+  const deepLink = options.startRoom || urlParams.get('room') || urlParams.get('element');
+  if (deepLink) {
+    const sym = deepLink.toUpperCase();
+    const elementIndex = ELEMENTS.findIndex(e => e.symbol.toUpperCase() === sym);
     if (elementIndex !== -1) {
       initialRoom = ROOM_ELEMENTS_START + elementIndex;
-      initialParam = roomName;
+      initialParam = ELEMENTS[elementIndex].symbol;
     } else {
-      const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => r.id === roomName);
+      const expIndex = EXPERIMENTAL_ROOMS.findIndex(r => (r.id || '').toUpperCase() === sym);
       if (expIndex !== -1) {
         initialRoom = ROOM_EXP_START + expIndex;
         initialParam = EXPERIMENTAL_ROOMS[expIndex].id;
+      } else {
+        notFoundQuery = deepLink;
+        initialRoom = ROOM_PERIODIC_PAVILION;
+      }
+    }
+  } else {
+    const groupLink = urlParams.get('group');
+    if (groupLink) {
+      const grp = groupLink.toLowerCase();
+      const groupIndex = ELEMENTS.findIndex(e => (e.group || '').toLowerCase() === grp);
+      if (groupIndex !== -1) {
+        initialRoom = ROOM_ELEMENTS_START + groupIndex;
+        initialParam = ELEMENTS[groupIndex].symbol;
+      } else {
+        notFoundQuery = groupLink;
+        initialRoom = ROOM_PERIODIC_PAVILION;
       }
     }
   }
@@ -343,6 +366,12 @@ export function mount(options: EmbedOptions): { unmount: () => void } {
 
   // Navigate to initial room from URL params or options
   gotoRoom(initialRoom, initialParam);
+
+  // If the deep-link target didn't resolve, tell the (now-active) pavilion to
+  // show a "not found" banner instead of silently dumping the user in the fair.
+  if (notFoundQuery) {
+    window.dispatchEvent(new CustomEvent('pse:room-not-found', { detail: { query: notFoundQuery } }));
+  }
 
   // Fire onReady
   if (options.onReady) {
