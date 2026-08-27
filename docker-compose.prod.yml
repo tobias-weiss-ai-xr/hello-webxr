@@ -1,0 +1,68 @@
+# PSE VR stack — pse.chemie-lernen.org
+# Serves the PSE (Periodensystem der Elemente) VR learning app at the domain
+# root (so ?element=h deep links from the Hubs PSE rooms work) plus the
+# Arachnophobia spider room under /arachnophobia.
+#
+# Topology (see ansible/docs/routing-topology.md):
+#   pse.chemie-lernen.org (catch-all)          -> hello-webxr :80  (PSE in VR)
+#   pse.chemie-lernen.org /arachnophobia/*     -> spider-room :80  (Arachnophobia)
+#
+# TLS terminated by the host Traefik (mytlschallenge). Both containers join the
+# external `traefik-public` network that Traefik's docker provider watches.
+#
+# Images are prebuilt (hello-webxr:latest = PSE in VR, spider-room:latest =
+# Arachnophobia) — no build happens here.
+
+services:
+  # --- PSE in VR app (domain root / catch-all) ---
+  hello-webxr:
+    image: hello-webxr:latest
+    container_name: hello-webxr
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      # legacy prefix routing (tobias-weiss.org/hello-webxr redirects here)
+      - "traefik.http.routers.hello-webxr-legacy.rule=Host(`pse.chemie-lernen.org`) && PathPrefix(`/hello-webxr`)"
+      - "traefik.http.routers.hello-webxr-legacy.priority=90"
+      - "traefik.http.routers.hello-webxr-legacy.entrypoints=websecure"
+      - "traefik.http.routers.hello-webxr-legacy.tls=true"
+      - "traefik.http.routers.hello-webxr-legacy.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.hello-webxr-legacy.middlewares=hello-webxr-stripprefix"
+      - "traefik.http.middlewares.hello-webxr-stripprefix.stripprefix.prefixes=/hello-webxr"
+      # catch-all at domain root (?element= deep links)
+      - "traefik.http.routers.hello-webxr-secure.rule=Host(`pse.chemie-lernen.org`)"
+      - "traefik.http.routers.hello-webxr-secure.priority=80"
+      - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
+      - "traefik.http.routers.hello-webxr-secure.tls=true"
+      - "traefik.http.routers.hello-webxr-secure.tls.certresolver=mytlschallenge"
+
+  # --- Arachnophobia spider room (path prefixed, higher priority wins) ---
+  spider-room:
+    image: spider-room:latest
+    container_name: spider-room
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.spider-room-secure.rule=Host(`pse.chemie-lernen.org`) && PathPrefix(`/arachnophobia`)"
+      - "traefik.http.routers.spider-room-secure.priority=100"
+      - "traefik.http.routers.spider-room-secure.entrypoints=websecure"
+      - "traefik.http.routers.spider-room-secure.tls=true"
+      - "traefik.http.routers.spider-room-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.spider-room-secure.middlewares=spider-room-stripprefix"
+      - "traefik.http.middlewares.spider-room-stripprefix.stripprefix.prefixes=/arachnophobia"
+
+networks:
+  traefik-public:
+    external: true
