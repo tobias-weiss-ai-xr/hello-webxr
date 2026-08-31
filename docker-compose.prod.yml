@@ -30,8 +30,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
+      # Explicit service + port: containers publish no ports (VE numiptent
+      # quota), so Traefik cannot auto-detect a port and errors
+      # "port is missing" -> whole domain 404s without these labels.
+      - "traefik.http.services.hello-webxr-svc.loadbalancer.server.port=80"
       # legacy prefix routing (tobias-weiss.org/hello-webxr redirects here)
       - "traefik.http.routers.hello-webxr-legacy.rule=Host(`pse.chemie-lernen.org`) && PathPrefix(`/hello-webxr`)"
+      - "traefik.http.routers.hello-webxr-legacy.service=hello-webxr-svc"
       - "traefik.http.routers.hello-webxr-legacy.priority=90"
       - "traefik.http.routers.hello-webxr-legacy.entrypoints=websecure"
       - "traefik.http.routers.hello-webxr-legacy.tls=true"
@@ -44,6 +49,7 @@ services:
       - "traefik.http.routers.hello-webxr-secure.entrypoints=websecure"
       - "traefik.http.routers.hello-webxr-secure.tls=true"
       - "traefik.http.routers.hello-webxr-secure.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.hello-webxr-secure.service=hello-webxr-svc"
 
   # --- Arachnophobia spider room (path prefixed, higher priority wins) ---
   spider-room:
@@ -55,7 +61,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
+      - "traefik.http.services.spider-room-svc.loadbalancer.server.port=80"
       - "traefik.http.routers.spider-room-secure.rule=Host(`pse.chemie-lernen.org`) && PathPrefix(`/arachnophobia`)"
+      - "traefik.http.routers.spider-room-secure.service=spider-room-svc"
       - "traefik.http.routers.spider-room-secure.priority=100"
       - "traefik.http.routers.spider-room-secure.entrypoints=websecure"
       - "traefik.http.routers.spider-room-secure.tls=true"
